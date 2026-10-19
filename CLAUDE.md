@@ -16,7 +16,7 @@ Le suivi est dans [docs/features/](docs/features/) (un fichier par fonctionnalit
 
 ## Commandes
 
-État actuel : seul le dossier `server/` existe (pas de client, pas de linter). À lancer depuis `server/` :
+Trois packages indépendants, chacun avec son `npm install` : `server/`, `client/` et `e2e/`. Pas de linter. Depuis `server/` :
 
 ```
 npm run dev                 # serveur HTTP en mode watch (PORT, 3000 par défaut, écoute sur le réseau local)
@@ -28,7 +28,18 @@ npm run catalog:download    # extraits 30 s + pochettes -> data/media/ (incréme
 npm run catalog:verify      # recoupe les années avec MusicBrainz -> data/year-report.json
 ```
 
-TypeScript 7 : `tsconfig.json` doit déclarer `"types": ["node"]` explicitement, sinon les types Node ne sont pas vus.
+Depuis `client/` (Vite, Vue 3, Vuetify 4) :
+
+```
+npm run dev          # serveur de dev Vite (relaie /api, /media et /ws vers le serveur sur le port 3000)
+npm run type-check   # vue-tsc, sur le code puis sur vite.config.ts
+npm run build        # type-check puis vite build -> client/dist, que le serveur sert ensuite sur /
+npm test             # vitest (connexion, avatars) ; un seul fichier : npx vitest run src/net/connection.test.ts
+```
+
+Depuis `e2e/` : `npm test` joue un tour complet (un écran hôte, deux téléphones en paysage) dans un vrai Chrome contre le vrai serveur et le vrai catalogue. Prérequis : `npm run build` dans `server/` et dans `client/`, et Chrome (variable `CHROME_PATH` si le chemin n'est pas standard). Le script démarre lui-même le serveur (port 3399, `E2E_PORT`) et écrit des captures dans `e2e/shots/`. Les tests unitaires et le build ne voient pas les problèmes de rendu : relancer ce test après toute modification de l'interface, et regarder les captures.
+
+Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"types": ["node"]`), le client en TypeScript 6.0.3 car `vue-tsc` ne fonctionne pas avec TypeScript 7.
 
 ## Architecture du serveur
 
@@ -36,7 +47,24 @@ TypeScript 7 : `tsconfig.json` doit déclarer `"types": ["node"]` explicitement,
 - `src/catalog/store.ts` : `loadCatalog` ne garde que les titres dont l'audio et la pochette existent sur disque ; `Catalog.select(categories)` fournit le paquet au moteur.
 - `src/net/protocol.ts` : le protocole WebSocket (messages client → serveur validés par `parseClientMessage`, messages serveur, `GameView`). `src/net/view.ts` construit la vue envoyée à tous les clients ; `src/net/ws.ts` branche `/ws` sur le serveur HTTP avec un ping de 20 s.
 - `src/rooms/` : `Room` (une partie, l'hôte, les joueurs, la diffusion de l'état) et `RoomManager`/`Session` (code de 6 caractères, routage des messages, nettoyage). Ils ne connaissent que l'interface `Connection`, donc se testent sans réseau. Hôte et joueurs se reconnectent avec un jeton reçu dans le message `session`.
+- Le serveur sert aussi `client/dist` sur `/` (repli vers `index.html` pour `/host`, `/play`, `/join/CODE`). Fichiers lus à la demande : pas besoin de redémarrer après un `npm run build` du client.
+- `host:advance` porte la phase quittée (`from`) : un message en double ou obsolète est ignoré sans erreur, ce qui rend le double clic inoffensif.
 - `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
+
+## Architecture du client
+
+- `src/net/connection.ts` : connexion WebSocket unique (`useConnection()`), état réactif, file d'attente avant l'ouverture, reconnexion avec le jeton (délai 1 s à 8 s, immédiate au réveil de l'appareil), session mémorisée dans `localStorage` pour reprendre après un rechargement. Testée avec un faux WebSocket.
+- `src/views/` : `HomeView`, `HostView` (écran hôte, une section par phase), `PlayView` (manette). Les composants partagés sont dans `src/components/` : `TimelineStrip` (frise défilante, interactive côté joueur), `TrackCard`, `RevealPanel`, `RecapPanel`.
+- `src/audio.ts` : l'écran hôte joue les extraits. Le clic « Créer une partie » appelle `unlockAudio()`, ce qui autorise ensuite la lecture sans geste.
+- Les types et constantes du protocole viennent du serveur via l'alias `@server` (`../server/src`). N'importer que `net/protocol.ts`, `game/types.ts` et `catalog/types.ts` : `shared-purity.test.ts` vérifie qu'ils n'importent rien de Node.
+- Les avatars sont des icônes `mdi-*` dans `src/avatars.ts` ; l'index est l'identifiant échangé avec le serveur.
+- Pendant la partie, la manette affiche `RotateOverlay` tant que le téléphone est en portrait (`useOrientation`).
+
+Pièges de Vuetify 4 rencontrés :
+
+- Les classes `text-h1` à `text-h6`, `text-subtitle-*` et `text-caption` n'existent plus : utiliser `text-display-*`, `text-headline-*`, `text-title-*`, `text-body-*`, `text-label-*`.
+- `:model-value` sur un `v-chip` en contrôle la visibilité : un `false` cache la pastille. Pour une sélection, jouer sur `variant`, `color` et `prepend-icon`.
+- `v-btn block` a `flex: 1 0 auto` : dans une colonne flex il s'étire en hauteur. Utiliser `class="w-100"`.
 
 ## Catalogue musical
 

@@ -11,4 +11,4 @@ Les joueurs choisissent les catégories avant de lancer la partie.
 - [x] Sélection par l'hôte (`host:setCategories`), validée côté serveur, une ou plusieurs catégories
 - [x] Règle : le moteur refuse de démarrer sans assez de titres dans les catégories choisies
 - [ ] Message clair côté écran de sélection quand la sélection est trop petite
-- [ ] Écran de sélection (une fois le client créé)
+- [x] Écran de sélection sur l'écran hôte (pastilles avec le nombre de titres)

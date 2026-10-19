@@ -1,6 +1,6 @@
 # 04 · Salles et temps réel
 
-Statut : En cours (serveur terminé, client à faire)
+Statut : Terminé (hors limite de débit, voir plus bas)
 
 WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code dans `server/src/net/` (protocole, vue, WebSocket) et `server/src/rooms/` (salle et gestionnaire). Le gestionnaire est indépendant de WebSocket : les tests l'utilisent avec de fausses connexions, et un second jeu de tests passe par de vrais sockets.
 
@@ -19,15 +19,16 @@ WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code
 - [x] L'hôte peut passer le tour d'un joueur absent (`host:skipTurn`) et exclure un joueur dans le salon (`host:kick`)
 - [x] Nettoyage des salles sans connexion depuis 30 min, plafond de 100 salles
 - [ ] Limite de débit par connexion (non fait : usage entre amis)
-- [ ] Protocole partagé avec le client (types importés des deux côtés, à faire avec le package client)
-- [ ] Reprise automatique de l'hôte si la salle reste ouverte mais l'écran a rechargé la page (côté client : stocker code et jeton)
+- [x] Protocole partagé avec le client (alias `@server`)
+- [x] Reprise automatique de l'hôte et des joueurs après rechargement ou coupure (code et jeton mémorisés dans le navigateur)
+- [x] `host:advance` indique la phase quittée : un message en double (double clic) est ignoré
 
 ## Messages (résumé)
 
-Client → serveur : `host:create`, `host:rejoin`, `host:setCategories`, `host:start`, `host:advance`, `host:skipTurn`, `host:kick`, `player:join`, `player:rejoin`, `player:place`, `player:play`, `player:leave`.
+Client → serveur : `host:create`, `host:rejoin`, `host:setCategories`, `host:start`, `host:advance` (avec `from`), `host:skipTurn`, `host:kick`, `player:join`, `player:rejoin`, `player:place`, `player:play`, `player:leave`.
 
 Serveur → client : `session` (jeton à conserver), `state` (vue complète à chaque changement, `you` = identifiant du joueur ou null pour l'hôte), `audio:play`, `kicked`, `error` (`bad-message`, `room-not-found`, `not-allowed`, `rule`, `internal`).
 
 ## Client
 
-- [ ] Dessiner ou choisir les 10 avatars
+- [x] 10 avatars (icônes d'animaux colorées, `client/src/avatars.ts`)
