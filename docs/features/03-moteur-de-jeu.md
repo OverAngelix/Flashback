@@ -13,8 +13,9 @@ Déroulement : `lobby` → `awaiting-placement` → `reveal` → (fin de tour de
 - [x] Carte de départ pour chaque joueur
 - [x] Placement dans la frise et validation (les années égales sont acceptées)
 - [x] Carte gardée si le placement est bon, défaussée sinon
-- [x] Victoire : premier joueur à 10 cartes (`cardsToWin`, configurable), fin immédiate sans récapitulatif
+- [x] Victoire : on termine toujours le tour de plateau ; à la fin du tour, un seul joueur en tête avec au moins 10 cartes (`cardsToWin`, configurable) gagne
+- [x] Égalité en tête : on rejoue un tour, l'objectif monte à 11, 12…
 - [x] Paquet épuisé : la partie se termine, victoire à égalité possible
-- [x] Tests unitaires des règles (17 tests)
+- [x] Tests unitaires des règles (19 tests)
 
-Décisions : la partie s'arrête dès qu'un joueur atteint 10 cartes (Hitster de base), même au milieu d'un tour de plateau.
+Décisions : tous les joueurs jouent le même nombre de tours. Atteindre 10 cartes ne met pas fin à la partie en cours de tour de plateau ; la victoire est évaluée à la fin du tour. Seule exception : le paquet épuisé met fin à la partie immédiatement.

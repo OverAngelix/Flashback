@@ -8,7 +8,7 @@ Flashback : un jeu de type Hitster. On écoute un extrait de 30 s et on le place
 
 - **Mode local, style Jackbox** : un PC ou une télé héberge la partie et joue le son. L'hôte n'est **pas** un joueur. Les joueurs rejoignent avec un code depuis un téléphone ou un navigateur, après avoir choisi un nom et un avatar parmi 10. Après chaque tour de plateau, l'hôte affiche un récapitulatif de la frise de chaque joueur.
 - **Mode en ligne** : reporté à la V2.
-- Règles : Hitster de base.
+- Règles : Hitster de base, avec fin de partie à la fin du tour de plateau (tous les joueurs jouent autant). Un seul meilleur joueur à 10 cartes ou plus gagne ; en cas d'égalité en tête, on rejoue un tour (objectif 11, 12…).
 
 ## Suivi des fonctionnalités
 
