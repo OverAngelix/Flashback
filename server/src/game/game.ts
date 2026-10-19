@@ -22,7 +22,11 @@ export interface GameOptions {
 /**
  * Règles Hitster de base. Le placement est correct quand l'année du titre est comprise (bornes
  * incluses) entre celles de ses voisins dans la frise. Une carte bien placée est gardée, sinon
- * elle est défaussée. Le premier à atteindre `cardsToWin` cartes gagne.
+ * elle est défaussée.
+ *
+ * Fin de partie : le tour de plateau est toujours terminé, pour que tous les joueurs aient joué
+ * autant de fois. À la fin d'un tour, si un seul joueur a le plus de cartes et au moins
+ * `cardsToWin`, il gagne. En cas d'égalité en tête, on rejoue un tour (l'objectif monte à 11, 12…).
  *
  * Déroulement : lobby → awaiting-placement → reveal → (fin de tour de plateau : round-recap)
  * → awaiting-placement … → finished. Le moteur est indépendant du réseau et du mode de jeu.
@@ -119,23 +123,24 @@ export class Game {
     this.lastResult = { playerId, position, correct, track };
     this.current = undefined;
     this.phase = "reveal";
-    if (correct && player.timeline.length >= this.cardsToWin) this.winnerIds = [player.id];
     return this.lastResult;
   }
 
   /**
    * Fait avancer la partie après la révélation ou le récapitulatif (action de l'hôte).
-   * Fin de partie dès qu'un joueur atteint cardsToWin, sans récapitulatif.
+   * À la fin d'un tour de plateau : fin de partie s'il y a un vainqueur, sinon récapitulatif.
    */
   advance(): void {
     if (this.phase === "reveal") {
-      if (this.winnerIds.length > 0) {
-        this.phase = "finished";
-        return;
-      }
       const wrapped = this.turnIndex === this.players.length - 1;
       this.turnIndex = (this.turnIndex + 1) % this.players.length;
       if (wrapped) {
+        const leaders = this.leadersAtGoal();
+        if (leaders.length === 1) {
+          this.winnerIds = leaders.map((p) => p.id);
+          this.phase = "finished";
+          return;
+        }
         this.round++;
         this.phase = "round-recap";
         return;
@@ -146,6 +151,13 @@ export class Game {
     } else {
       throw new GameError("Rien à faire avancer pour le moment.");
     }
+  }
+
+  /** Joueurs en tête de frise, seulement si la tête a atteint l'objectif (sinon aucun). */
+  private leadersAtGoal(): Player[] {
+    const best = Math.max(...this.players.map((p) => p.timeline.length));
+    if (best < this.cardsToWin) return [];
+    return this.players.filter((p) => p.timeline.length === best);
   }
 
   /** Pioche le prochain titre ; si le paquet est vide, la partie se termine. */

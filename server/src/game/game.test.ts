@@ -168,16 +168,60 @@ describe("tours", () => {
 });
 
 describe("fin de partie", () => {
-  it("désigne le premier joueur à atteindre le nombre de cartes, sans récapitulatif", () => {
-    // 1 carte de départ chacun, 2 cartes à gagner : Ana gagne au premier bon placement.
+  it("attend la fin du tour de plateau, même si un joueur a déjà atteint l'objectif", () => {
+    // Objectif 2 cartes. Pioche : 1980 (Ana), 1970 (Ben), puis 1960 et 1950.
     const game = newGame([1940, 1950, 1960, 1970, 1980], 2);
-    const { a } = twoPlayers(game);
+    const { a, b } = twoPlayers(game);
     game.start();
-    game.placeCard(a.id, 0);
+    game.placeCard(a.id, 0); // 1960 avant 1980 : Ana a 2 cartes
+    assert.deepEqual(game.winnerIds, []);
+    game.advance();
+    assert.equal(game.phase, "awaiting-placement");
+    assert.equal(game.activePlayer?.id, b.id); // Ben joue encore son tour
+
+    game.placeCard(b.id, 1); // 1950 après 1970 : faux
+    game.advance(); // fin du tour de plateau
+    assert.equal(game.phase, "finished");
     assert.deepEqual(game.winnerIds, [a.id]);
-    assert.equal(game.phase, "reveal");
+  });
+
+  it("rejoue un tour quand plusieurs joueurs sont à égalité en tête (l'objectif monte)", () => {
+    const game = newGame([1920, 1930, 1940, 1950, 1960, 1970, 1980], 2);
+    const { a, b } = twoPlayers(game);
+    game.start(); // Ana 1980, Ben 1970, courant 1960
+    game.placeCard(a.id, 0); // Ana : 2 cartes
+    game.advance(); // courant 1950
+    game.placeCard(b.id, 0); // Ben : 2 cartes
+    game.advance(); // égalité à 2 : pas de vainqueur
+    assert.equal(game.phase, "round-recap");
+    assert.deepEqual(game.winnerIds, []);
+
+    game.advance(); // courant 1940
+    game.placeCard(a.id, 0); // Ana : 3 cartes
+    game.advance(); // courant 1930
+    game.placeCard(b.id, 2); // 1930 après 1970 : faux, Ben reste à 2
     game.advance();
     assert.equal(game.phase, "finished");
+    assert.deepEqual(game.winnerIds, [a.id]);
+  });
+
+  it("continue tant que l'égalité en tête persiste sur plusieurs tours", () => {
+    // Ana et Ben gagnent chacun une carte à chaque tour : l'égalité persiste, pas de vainqueur.
+    const game = newGame([1900, 1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990], 2);
+    const { a, b } = twoPlayers(game);
+    game.start(); // Ana 1990, Ben 1980, courant 1970
+    game.placeCard(a.id, 0);
+    game.advance();
+    game.placeCard(b.id, 0);
+    game.advance();
+    assert.equal(game.phase, "round-recap");
+    game.advance();
+    game.placeCard(a.id, 0);
+    game.advance();
+    game.placeCard(b.id, 0);
+    game.advance();
+    assert.equal(game.phase, "round-recap");
+    assert.deepEqual(game.winnerIds, []);
   });
 
   it("ne donne pas la victoire sur un mauvais placement", () => {
