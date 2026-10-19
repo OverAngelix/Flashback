@@ -22,7 +22,7 @@ Fonctionnement calqué sur les jeux Jackbox : un PC ou une télé **héberge** l
 - [ ] Choix du nom et d'un avatar parmi 10 avant de rejoindre (voir [04-salles-temps-reel.md](04-salles-temps-reel.md))
 - [ ] Écran d'attente quand ce n'est pas son tour
 - [ ] Au tour du joueur : placement de la carte dans sa frise
-- [ ] Appui pour lancer l'extrait (geste utilisateur exigé par les navigateurs)
+- [ ] Appui pour lancer l'extrait : le téléphone envoie `player:play`, l'écran hôte joue le son (le premier clic de l'hôte, pour créer la partie, débloque l'audio du navigateur)
 
 ## Récapitulatif après chaque tour de plateau
 

@@ -16,7 +16,7 @@ Le suivi est dans [docs/features/](docs/features/) (un fichier par fonctionnalit
 
 ## Commandes
 
-État actuel : seul le dossier `server/` existe (pas de client, pas de WebSocket ni de salles, pas de linter). À lancer depuis `server/` :
+État actuel : seul le dossier `server/` existe (pas de client, pas de linter). À lancer depuis `server/` :
 
 ```
 npm run dev                 # serveur HTTP en mode watch (PORT, 3000 par défaut, écoute sur le réseau local)
@@ -34,7 +34,9 @@ TypeScript 7 : `tsconfig.json` doit déclarer `"types": ["node"]` explicitement,
 
 - `src/game/` : le moteur Hitster (`Game`), pur et sans réseau, c'est la seule source des règles. Il manipule des `GameTrack` qui contiennent l'année : toute vue envoyée à un client devra masquer titre, artiste et année du titre courant jusqu'à la phase `reveal`.
 - `src/catalog/store.ts` : `loadCatalog` ne garde que les titres dont l'audio et la pochette existent sur disque ; `Catalog.select(categories)` fournit le paquet au moteur.
-- `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
+- `src/net/protocol.ts` : le protocole WebSocket (messages client → serveur validés par `parseClientMessage`, messages serveur, `GameView`). `src/net/view.ts` construit la vue envoyée à tous les clients ; `src/net/ws.ts` branche `/ws` sur le serveur HTTP avec un ping de 20 s.
+- `src/rooms/` : `Room` (une partie, l'hôte, les joueurs, la diffusion de l'état) et `RoomManager`/`Session` (code de 6 caractères, routage des messages, nettoyage). Ils ne connaissent que l'interface `Connection`, donc se testent sans réseau. Hôte et joueurs se reconnectent avec un jeton reçu dans le message `session`.
+- `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
 
 ## Catalogue musical
 

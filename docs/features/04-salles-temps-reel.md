@@ -1,14 +1,33 @@
 # 04 · Salles et temps réel
 
-Statut : À faire
+Statut : En cours (serveur terminé, client à faire)
 
-- [ ] Serveur WebSocket (bibliothèque à choisir)
-- [ ] Création d'une salle avec un code court
-- [ ] Rejoindre avec un code, **après** avoir choisi un nom et un avatar
-- [ ] 10 avatars (icônes) à dessiner ou choisir ; un avatar n'est pris que par un joueur à la fois dans une salle
-- [ ] Validation du nom (longueur, unicité dans la salle)
-- [ ] Rôles : l'hôte (écran, ne joue pas) et les joueurs
-- [ ] Protocole de messages typé, partagé avec le client
-- [ ] Vue publique de l'état de jeu selon le rôle (hôte, joueur actif, autres joueurs) : jamais le titre, l'artiste ni l'année du titre courant avant la révélation
-- [ ] Gestion des déconnexions et des reconnexions en cours de partie
-- [ ] Nettoyage des salles inactives
+WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code dans `server/src/net/` (protocole, vue, WebSocket) et `server/src/rooms/` (salle et gestionnaire). Le gestionnaire est indépendant de WebSocket : les tests l'utilisent avec de fausses connexions, et un second jeu de tests passe par de vrais sockets.
+
+## Serveur
+
+- [x] Serveur WebSocket sur le port HTTP, messages limités à 4 Ko, texte uniquement
+- [x] Création d'une salle avec un code de 6 caractères (sans I, O, 0, 1), saisie insensible à la casse
+- [x] Rejoindre avec un code, un nom et un avatar (0 à 9) ; `GET /api/rooms/:code` donne les avatars déjà pris pour griser le formulaire, sans révéler les noms
+- [x] Validation du nom et de l'avatar côté serveur (nom unique, 16 caractères, avatar unique)
+- [x] Rôles : l'hôte (écran, ne joue pas) et les joueurs ; chaque message est réservé à son rôle
+- [x] Protocole de messages typé et validé (`server/src/net/protocol.ts`)
+- [x] Vue publique de l'état, identique pour tous : jamais le titre, l'artiste, l'année ni la pochette du titre courant avant la révélation (testé)
+- [x] Lancement de l'extrait : le joueur actif envoie `player:play`, l'hôte reçoit `audio:play` et joue le son
+- [x] Déconnexion : le joueur reste dans la partie, marqué absent ; il revient avec son jeton (`player:rejoin`) ; l'hôte aussi (`host:rejoin`)
+- [x] Battement de cœur (ping toutes les 20 s) pour détecter un téléphone en veille
+- [x] L'hôte peut passer le tour d'un joueur absent (`host:skipTurn`) et exclure un joueur dans le salon (`host:kick`)
+- [x] Nettoyage des salles sans connexion depuis 30 min, plafond de 100 salles
+- [ ] Limite de débit par connexion (non fait : usage entre amis)
+- [ ] Protocole partagé avec le client (types importés des deux côtés, à faire avec le package client)
+- [ ] Reprise automatique de l'hôte si la salle reste ouverte mais l'écran a rechargé la page (côté client : stocker code et jeton)
+
+## Messages (résumé)
+
+Client → serveur : `host:create`, `host:rejoin`, `host:setCategories`, `host:start`, `host:advance`, `host:skipTurn`, `host:kick`, `player:join`, `player:rejoin`, `player:place`, `player:play`, `player:leave`.
+
+Serveur → client : `session` (jeton à conserver), `state` (vue complète à chaque changement, `you` = identifiant du joueur ou null pour l'hôte), `audio:play`, `kicked`, `error` (`bad-message`, `room-not-found`, `not-allowed`, `rule`, `internal`).
+
+## Client
+
+- [ ] Dessiner ou choisir les 10 avatars
