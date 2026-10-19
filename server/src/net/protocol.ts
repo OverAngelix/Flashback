@@ -16,7 +16,8 @@ export type ClientMessage =
   | { type: "player:rejoin"; code: string; token: string }
   | { type: "host:setCategories"; categories: string[] }
   | { type: "host:start" }
-  | { type: "host:advance" }
+  /** `from` = phase que l'hôte croit quitter : un message en double (double clic) est ignoré. */
+  | { type: "host:advance"; from: Phase }
   | { type: "host:skipTurn" }
   | { type: "host:kick"; playerId: string }
   | { type: "player:place"; position: number }
@@ -81,6 +82,8 @@ export interface GameView {
   winnerIds: string[];
 }
 
+const PHASES: readonly Phase[] = ["lobby", "awaiting-placement", "reveal", "round-recap", "finished"];
+
 const isString = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max;
 
 /** Valide un message brut. Renvoie null s'il est illisible ou mal formé. */
@@ -95,9 +98,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
   const m = data as Record<string, unknown>;
 
   switch (m.type) {
+    case "host:advance":
+      return PHASES.includes(m.from as Phase) ? { type: "host:advance", from: m.from as Phase } : null;
     case "host:create":
     case "host:start":
-    case "host:advance":
     case "host:skipTurn":
     case "player:play":
     case "player:leave":

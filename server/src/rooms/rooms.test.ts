@@ -150,7 +150,7 @@ describe("partie complète", () => {
     assert.ok(revealed.lastResult);
     assert.equal(revealed.current, null);
 
-    host.send({ type: "host:advance" });
+    host.send({ type: "host:advance", from: "reveal" });
     assert.equal(host.conn.view().activePlayerId, ben.conn.last("session").playerId);
     assert.equal(host.conn.view().lastResult, null);
   });
@@ -170,13 +170,24 @@ describe("partie complète", () => {
   it("récapitule après un tour de plateau complet et termine la partie", () => {
     const { host, ana, ben } = started();
     ana.send({ type: "player:place", position: 0 });
-    host.send({ type: "host:advance" });
+    host.send({ type: "host:advance", from: "reveal" });
     ben.send({ type: "player:place", position: 0 });
-    host.send({ type: "host:advance" });
+    host.send({ type: "host:advance", from: "reveal" });
     assert.equal(host.conn.view().phase, "round-recap");
     assert.equal(host.conn.view().round, 2);
-    host.send({ type: "host:advance" });
+    host.send({ type: "host:advance", from: "round-recap" });
     assert.equal(host.conn.view().phase, "awaiting-placement");
+  });
+
+  it("ignore un avancement en double ou obsolète (double clic sur Continuer)", () => {
+    const { host, ana } = started();
+    ana.send({ type: "player:place", position: 0 });
+    host.send({ type: "host:advance", from: "reveal" });
+    host.send({ type: "host:advance", from: "reveal" }); // double clic : sans effet, sans erreur
+    assert.equal(host.conn.view().phase, "awaiting-placement");
+    assert.equal(host.conn.sent.some((m) => m.type === "error"), false);
+    host.send({ type: "host:advance", from: "round-recap" }); // phase déjà passée : ignoré aussi
+    assert.equal(host.conn.view().activePlayerId, host.conn.view().players[1]!.id);
   });
 
   it("n'accepte la sélection de catégories qu'avant le départ, et exige un choix valide", () => {
@@ -218,7 +229,7 @@ describe("droits", () => {
 
   it("sépare les messages de l'hôte et des joueurs", () => {
     const { host, ana } = started();
-    ana.send({ type: "host:advance" });
+    ana.send({ type: "host:advance", from: "reveal" });
     assert.equal(ana.conn.last("error").code, "not-allowed");
     ana.send({ type: "host:skipTurn" });
     assert.equal(ana.conn.last("error").code, "not-allowed");
@@ -347,11 +358,14 @@ describe("nettoyage des salles", () => {
 describe("parseClientMessage", () => {
   it("accepte les messages bien formés", () => {
     assert.deepEqual(parseClientMessage('{"type":"host:create"}'), { type: "host:create" });
+    assert.deepEqual(parseClientMessage('{"type":"host:advance","from":"reveal"}'), { type: "host:advance", from: "reveal" });
     assert.deepEqual(parseClientMessage('{"type":"player:place","position":2,"extra":1}'), { type: "player:place", position: 2 });
     assert.deepEqual(parseClientMessage('{"type":"host:setCategories","categories":["fr"]}'), { type: "host:setCategories", categories: ["fr"] });
   });
   it("refuse les types et formes invalides", () => {
     assert.equal(parseClientMessage('{"type":"player:place","position":1.5}'), null);
+    assert.equal(parseClientMessage('{"type":"host:advance"}'), null);
+    assert.equal(parseClientMessage('{"type":"host:advance","from":"nimporte"}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCategories","categories":[1]}'), null);
     assert.equal(parseClientMessage('{"type":"player:join","code":"A","name":"x".repeat(100),"avatar":0}'), null);
     assert.equal(parseClientMessage(`{"type":"player:join","code":"ABCDEF","name":"${"x".repeat(65)}","avatar":0}`), null);

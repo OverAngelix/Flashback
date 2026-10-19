@@ -107,6 +107,8 @@ export class Room {
         this.game.start();
         break;
       case "host:advance":
+        // Message obsolète (double clic, ou état déjà passé à la suite) : on l'ignore sans erreur.
+        if (message.from !== this.game.phase) return;
         this.game.advance();
         break;
       case "host:skipTurn":
