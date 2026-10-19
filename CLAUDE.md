@@ -54,4 +54,4 @@ Définies dans [.claude/commands/commit.md](.claude/commands/commit.md) (command
 - `<type>` : `F` feature, `B` bugfix, `R` refactor, `D` documentation, `C` chore, `T` test.
 - Corps : une ligne `- <fichier ou zone> : <changement>` par élément modifié, séparé du titre par une ligne vide.
 - Aucune signature ni ligne `Co-Authored-By`.
-- Indexer les fichiers explicitement (jamais `git add -A` à l'aveugle), ne pas embarquer de fichier généré ni de secret (`.env`, `node_modules`, `dist`), et ne jamais pousser sans demande explicite. Le dépôt git n'est pas encore initialisé.
+- Indexer les fichiers explicitement (jamais `git add -A` à l'aveugle), ne pas embarquer de fichier généré ni de secret (`.env`, `node_modules`, `dist`), et ne jamais pousser sans demande explicite.
