@@ -9,5 +9,6 @@ Statut : À faire
 - [ ] Validation du nom (longueur, unicité dans la salle)
 - [ ] Rôles : l'hôte (écran, ne joue pas) et les joueurs
 - [ ] Protocole de messages typé, partagé avec le client
+- [ ] Vue publique de l'état de jeu selon le rôle (hôte, joueur actif, autres joueurs) : jamais le titre, l'artiste ni l'année du titre courant avant la révélation
 - [ ] Gestion des déconnexions et des reconnexions en cours de partie
 - [ ] Nettoyage des salles inactives

@@ -16,17 +16,25 @@ Le suivi est dans [docs/features/](docs/features/) (un fichier par fonctionnalit
 
 ## Commandes
 
-État actuel : seul le dossier `server/` existe (pas de client, pas de serveur HTTP, pas de tests, pas de linter). À lancer depuis `server/` :
+État actuel : seul le dossier `server/` existe (pas de client, pas de WebSocket ni de salles, pas de linter). À lancer depuis `server/` :
 
 ```
-npm run type-check          # tsc --noEmit
-npm run build               # tsc vers dist/
+npm run dev                 # serveur HTTP en mode watch (PORT, 3000 par défaut, écoute sur le réseau local)
+npm run type-check          # tsc --noEmit (tests compris)
+npm run build               # tsc vers dist/ (sans les tests), puis npm start
+npm test                    # node:test via tsx ; un seul fichier : npx tsx --test src/game/game.test.ts
 npm run catalog:build       # iTunes -> data/catalog.json (incrémental ; -- --refresh pour tout refaire)
 npm run catalog:download    # extraits 30 s + pochettes -> data/media/ (incrémental ; -- --refresh)
 npm run catalog:verify      # recoupe les années avec MusicBrainz -> data/year-report.json
 ```
 
 TypeScript 7 : `tsconfig.json` doit déclarer `"types": ["node"]` explicitement, sinon les types Node ne sont pas vus.
+
+## Architecture du serveur
+
+- `src/game/` : le moteur Hitster (`Game`), pur et sans réseau, c'est la seule source des règles. Il manipule des `GameTrack` qui contiennent l'année : toute vue envoyée à un client devra masquer titre, artiste et année du titre courant jusqu'à la phase `reveal`.
+- `src/catalog/store.ts` : `loadCatalog` ne garde que les titres dont l'audio et la pochette existent sur disque ; `Catalog.select(categories)` fournit le paquet au moteur.
+- `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
 
 ## Catalogue musical
 

@@ -7,8 +7,8 @@ cocher `[x]` quand c'est fait, `[~]` quand c'est en cours, `[ ]` sinon.
 |---|----------------|--------|---------|
 | 00 | Socle du projet | En cours | [00-socle.md](00-socle.md) |
 | 01 | Catalogue musical | En cours | [01-catalogue.md](01-catalogue.md) |
-| 02 | Catégories et sélection | À faire | [02-categories.md](02-categories.md) |
-| 03 | Moteur de jeu (règles Hitster) | À faire | [03-moteur-de-jeu.md](03-moteur-de-jeu.md) |
+| 02 | Catégories et sélection | En cours | [02-categories.md](02-categories.md) |
+| 03 | Moteur de jeu (règles Hitster) | Terminé | [03-moteur-de-jeu.md](03-moteur-de-jeu.md) |
 | 04 | Salles et temps réel | À faire | [04-salles-temps-reel.md](04-salles-temps-reel.md) |
 | 05 | Mode local (style Jackbox) | À faire | [05-mode-local.md](05-mode-local.md) |
 | 06 | Mode en ligne | V2 | [06-mode-en-ligne.md](06-mode-en-ligne.md) |

@@ -8,4 +8,6 @@ Statut : En cours
 - [x] Dépôt git initialisé (branche `main`)
 - [ ] Package `client` TypeScript (outil de build à choisir)
 - [ ] Types partagés serveur/client (messages WebSocket, état de partie)
-- [ ] Serveur HTTP qui sert le catalogue, les extraits audio et les pochettes depuis `server/data/media/`, et le client
+- [x] Serveur HTTP (Fastify) : catégories, extraits audio et pochettes servis depuis `server/data/media/` (requêtes Range gérées pour Safari/iOS)
+- [x] Scripts `dev`, `start`, `test` ; tests avec le runner de Node (`tsx --test`)
+- [ ] Le serveur sert aussi le client (une fois le client construit)
