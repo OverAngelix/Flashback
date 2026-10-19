@@ -1,4 +1,4 @@
-import type { CategorySummary } from "../catalog/store.js";
+import type { CategorySummary } from "../catalog/types.js";
 import type { Game } from "../game/game.js";
 import type { GameTrack } from "../game/types.js";
 import type { GameView, PublicCard } from "./protocol.js";

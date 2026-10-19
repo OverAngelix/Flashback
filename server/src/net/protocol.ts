@@ -1,5 +1,12 @@
-import type { CategorySummary } from "../catalog/store.js";
+import type { CategorySummary } from "../catalog/types.js";
 import type { Phase } from "../game/types.js";
+
+/**
+ * Ce fichier est aussi importé par le client (alias @server) : il ne doit dépendre que de
+ * game/types.ts et catalog/types.ts, jamais d'un module Node (voir shared-purity.test.ts).
+ */
+
+export const ROOM_CODE_LENGTH = 6;
 
 /** Messages envoyés par un client (écran hôte ou téléphone) au serveur. */
 export type ClientMessage =

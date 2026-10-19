@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { networkInterfaces } from "node:os";
+import { resolve } from "node:path";
 import { DEFAULT_DATA_DIR, loadCatalog } from "./catalog/store.js";
 import { buildApp } from "./http/app.js";
 import { RoomManager } from "./rooms/manager.js";
@@ -12,7 +14,9 @@ if (skipped.length > 0) {
 }
 
 const rooms = new RoomManager({ catalog });
-const app = buildApp({ catalog, rooms, dataDir: DEFAULT_DATA_DIR, logger: true });
+const clientDir = resolve(DEFAULT_DATA_DIR, "../../client/dist");
+if (!existsSync(clientDir)) console.warn("client/dist absent : lancer npm run build dans client/ (ou utiliser le serveur de dev Vite).");
+const app = buildApp({ catalog, rooms, dataDir: DEFAULT_DATA_DIR, clientDir, logger: true });
 setInterval(() => rooms.sweep(), 60_000).unref();
 // 0.0.0.0 : les téléphones du réseau local doivent pouvoir joindre le serveur.
 await app.listen({ port, host: "0.0.0.0" });

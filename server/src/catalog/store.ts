@@ -2,19 +2,13 @@ import { access, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { GameTrack } from "../game/types.js";
-import { CATEGORIES, type CatalogTrack, type CategoryId } from "./types.js";
+import { CATEGORIES, type CatalogTrack, type CategoryId, type CategorySummary } from "./types.js";
 
 /** server/data, que le code tourne depuis src/ (tsx) ou dist/ (tsc). */
 export const DEFAULT_DATA_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../data");
 
 export interface CatalogEntry extends GameTrack {
   category: CategoryId;
-}
-
-export interface CategorySummary {
-  id: CategoryId;
-  label: string;
-  count: number;
 }
 
 export class Catalog {

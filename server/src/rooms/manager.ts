@@ -1,12 +1,11 @@
 import { randomInt, timingSafeEqual } from "node:crypto";
 import type { Catalog } from "../catalog/store.js";
 import { AVATAR_COUNT, GameError, MAX_PLAYERS } from "../game/types.js";
-import { parseClientMessage, type ErrorCode } from "../net/protocol.js";
+import { parseClientMessage, ROOM_CODE_LENGTH, type ErrorCode } from "../net/protocol.js";
 import { Room, type Connection } from "./room.js";
 
 /** Sans I, O, 0 et 1 : un code lu sur une télé ne doit pas prêter à confusion. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-export const ROOM_CODE_LENGTH = 6;
 
 /** Erreur de protocole (et non de règle de jeu) : renvoyée au client avec son code. */
 class ProtocolError extends Error {

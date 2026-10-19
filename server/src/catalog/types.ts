@@ -12,6 +12,12 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
   international: { id: "international", label: "International", store: "US" },
 };
 
+export interface CategorySummary {
+  id: CategoryId;
+  label: string;
+  count: number;
+}
+
 export interface CatalogTrack {
   /** trackId iTunes : permet de rafraîchir l'extrait via l'API lookup. */
   id: number;

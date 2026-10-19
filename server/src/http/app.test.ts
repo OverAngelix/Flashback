@@ -101,3 +101,40 @@ describe("API HTTP", () => {
     }
   });
 });
+
+describe("réseau et client compilé", () => {
+  it("donne les adresses du réseau local avec le port du serveur", async () => {
+    const res = await app.inject("/api/network");
+    assert.equal(res.statusCode, 200);
+    const { urls } = res.json() as { urls: string[] };
+    assert.ok(Array.isArray(urls));
+    for (const url of urls) assert.match(url, /^http:\/\/\d+\.\d+\.\d+\.\d+:\d+$/);
+  });
+
+  it("sert le client et renvoie index.html pour les routes du routeur", async () => {
+    const clientDir = join(dir, "client-dist");
+    await mkdir(join(clientDir, "assets"), { recursive: true });
+    await writeFile(join(clientDir, "index.html"), "<html>CLIENT</html>");
+    await writeFile(join(clientDir, "assets/app.js"), "console.log(1)");
+    const { catalog } = await loadCatalog(dir);
+    const withClient = buildApp({ catalog, rooms: new RoomManager({ catalog }), dataDir: dir, clientDir });
+    await withClient.ready();
+    try {
+      assert.match((await withClient.inject("/")).payload, /CLIENT/);
+      assert.match((await withClient.inject("/host")).payload, /CLIENT/);
+      assert.match((await withClient.inject("/join/ABC234")).payload, /CLIENT/);
+      assert.equal((await withClient.inject("/assets/app.js")).payload, "console.log(1)");
+      // Ni les API, ni les médias, ni un fichier manquant ne retombent sur la page d'accueil.
+      for (const url of ["/api/inconnu", "/media/audio/999.m4a", "/assets/manquant.js"]) {
+        const res = await withClient.inject(url);
+        assert.equal(res.statusCode, 404, url);
+        assert.doesNotMatch(res.payload, /CLIENT/, url);
+      }
+      // Toujours aucune fuite du catalogue.
+      assert.equal((await withClient.inject("/catalog.json")).payload.includes("Titre 1"), false);
+      assert.equal((await withClient.inject("/api/categories")).statusCode, 200);
+    } finally {
+      await withClient.close();
+    }
+  });
+});
