@@ -124,6 +124,9 @@ describe("réseau et client compilé", () => {
       assert.match((await withClient.inject("/host")).payload, /CLIENT/);
       assert.match((await withClient.inject("/join/ABC234")).payload, /CLIENT/);
       assert.equal((await withClient.inject("/assets/app.js")).payload, "console.log(1)");
+      // Une recompilation du client crée de nouveaux fichiers sans redémarrer le serveur.
+      await writeFile(join(clientDir, "assets/nouveau-hash.js"), "console.log(2)");
+      assert.equal((await withClient.inject("/assets/nouveau-hash.js")).payload, "console.log(2)");
       // Ni les API, ni les médias, ni un fichier manquant ne retombent sur la page d'accueil.
       for (const url of ["/api/inconnu", "/media/audio/999.m4a", "/assets/manquant.js"]) {
         const res = await withClient.inject(url);

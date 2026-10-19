@@ -62,7 +62,7 @@ export function buildApp({ catalog, rooms, dataDir, clientDir, logger = false, h
   });
 
   if (clientDir && existsSync(resolve(clientDir, "index.html"))) {
-    app.register(fastifyStatic, { root: clientDir, prefix: "/", decorateReply: false, wildcard: false, maxAge: "1h" });
+    app.register(fastifyStatic, { root: clientDir, prefix: "/", decorateReply: false, maxAge: "1h" });
     // Routes du client (/host, /play, /join/CODE…) : on renvoie la page, le routeur fait le reste.
     app.setNotFoundHandler((request, reply) => {
       const { pathname } = new URL(request.url, "http://localhost");
