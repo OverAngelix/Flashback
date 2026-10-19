@@ -1,6 +1,7 @@
 import { networkInterfaces } from "node:os";
 import { DEFAULT_DATA_DIR, loadCatalog } from "./catalog/store.js";
 import { buildApp } from "./http/app.js";
+import { RoomManager } from "./rooms/manager.js";
 
 const port = Number(process.env.PORT ?? 3000);
 
@@ -10,7 +11,9 @@ if (skipped.length > 0) {
   for (const q of skipped) console.warn(`  - ${q}`);
 }
 
-const app = buildApp({ catalog, dataDir: DEFAULT_DATA_DIR, logger: true });
+const rooms = new RoomManager({ catalog });
+const app = buildApp({ catalog, rooms, dataDir: DEFAULT_DATA_DIR, logger: true });
+setInterval(() => rooms.sweep(), 60_000).unref();
 // 0.0.0.0 : les téléphones du réseau local doivent pouvoir joindre le serveur.
 await app.listen({ port, host: "0.0.0.0" });
 

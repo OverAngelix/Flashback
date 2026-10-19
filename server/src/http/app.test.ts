@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { loadCatalog } from "../catalog/store.js";
+import { RoomManager } from "../rooms/manager.js";
 import { buildApp } from "./app.js";
 
 let dir: string;
@@ -33,7 +34,7 @@ before(async () => {
     await writeFile(join(dir, `media/images/${id}.jpg`), Buffer.alloc(100, id));
   }
   const { catalog } = await loadCatalog(dir);
-  app = buildApp({ catalog, dataDir: dir });
+  app = buildApp({ catalog, rooms: new RoomManager({ catalog }), dataDir: dir });
   await app.ready();
 });
 
