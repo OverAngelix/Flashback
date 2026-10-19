@@ -12,8 +12,8 @@ import {
 } from "./types.js";
 
 export interface GameOptions {
-  /** Titres disponibles pour la partie (déjà filtrés par catégories). */
-  tracks: GameTrack[];
+  /** Titres disponibles pour la partie (déjà filtrés par catégories) ; modifiables avec setTracks. */
+  tracks?: GameTrack[];
   cardsToWin?: number;
   /** Générateur dans [0, 1[, injectable pour les tests. */
   rng?: () => number;
@@ -51,7 +51,18 @@ export class Game {
   constructor(options: GameOptions) {
     this.cardsToWin = options.cardsToWin ?? DEFAULT_CARDS_TO_WIN;
     this.rng = options.rng ?? Math.random;
-    this.deck = shuffle([...options.tracks], this.rng);
+    this.deck = shuffle([...(options.tracks ?? [])], this.rng);
+  }
+
+  /** Nombre de titres encore dans le paquet (avant le départ : taille du paquet choisi). */
+  get remainingTracks(): number {
+    return this.deck.length;
+  }
+
+  /** Change le paquet (choix des catégories) ; uniquement avant le départ. */
+  setTracks(tracks: GameTrack[]): void {
+    if (this.phase !== "lobby") throw new GameError("La partie a déjà commencé.");
+    this.deck = shuffle([...tracks], this.rng);
   }
 
   get activePlayer(): Player | undefined {
@@ -121,6 +132,21 @@ export class Game {
     if (correct) player.timeline.splice(position, 0, track);
 
     this.lastResult = { playerId, position, correct, track };
+    this.current = undefined;
+    this.phase = "reveal";
+    return this.lastResult;
+  }
+
+  /**
+   * L'hôte passe le tour du joueur actif (par exemple s'il est déconnecté) : le titre est défaussé,
+   * comme un mauvais placement. `position` vaut -1 dans le résultat pour signaler le passage.
+   */
+  skipTurn(): PlacementResult {
+    if (this.phase !== "awaiting-placement" || !this.current) {
+      throw new GameError("Ce n'est pas le moment de passer un tour.");
+    }
+    const player = this.players[this.turnIndex]!;
+    this.lastResult = { playerId: player.id, position: -1, correct: false, track: this.current };
     this.current = undefined;
     this.phase = "reveal";
     return this.lastResult;

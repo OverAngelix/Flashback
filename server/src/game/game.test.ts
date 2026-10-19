@@ -247,3 +247,30 @@ describe("fin de partie", () => {
     assert.deepEqual(game.winnerIds.sort(), [a.id, b.id].sort());
   });
 });
+
+describe("paquet et tour passé", () => {
+  it("permet de changer le paquet avant le départ seulement", () => {
+    const game = new Game({ rng: noShuffle });
+    twoPlayers(game);
+    assert.throws(() => game.start(), /Pas assez de titres/);
+    game.setTracks([1950, 1960, 1970, 1980].map((y, i) => track(i + 1, y)));
+    assert.equal(game.remainingTracks, 4);
+    game.start();
+    assert.throws(() => game.setTracks([]), /déjà commencé/);
+  });
+
+  it("défausse le titre quand l'hôte passe le tour", () => {
+    const game = newGame([1940, 1950, 1960, 1970, 1980], 10);
+    const { a, b } = twoPlayers(game);
+    game.start();
+    const result = game.skipTurn();
+    assert.equal(result.correct, false);
+    assert.equal(result.position, -1);
+    assert.equal(result.playerId, a.id);
+    assert.equal(a.timeline.length, 1);
+    assert.equal(game.phase, "reveal");
+    assert.throws(() => game.skipTurn(), /pas le moment/);
+    game.advance();
+    assert.equal(game.activePlayer?.id, b.id);
+  });
+});

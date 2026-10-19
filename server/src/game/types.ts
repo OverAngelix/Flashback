@@ -26,7 +26,7 @@ export type Phase =
 
 export interface PlacementResult {
   playerId: string;
-  /** Position demandée dans la frise (0 = avant la première carte). */
+  /** Position demandée dans la frise (0 = avant la première carte), -1 si le tour a été passé. */
   position: number;
   correct: boolean;
   track: GameTrack;
