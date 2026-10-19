@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.DS_Store
+server/data/media/
+server/data/catalog-misses.json
+server/data/year-report.json
