@@ -1,0 +1,12 @@
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  user-select: none;
+}
+
+.min-width-0 {
+  min-width: 0;
+}
