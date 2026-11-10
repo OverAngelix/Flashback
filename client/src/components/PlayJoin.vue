@@ -4,11 +4,13 @@ import { AVATARS } from "@/avatars";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import { useConnection } from "@/net/connection";
+import { useSettings } from "@/settings";
 import { ROOM_CODE_LENGTH } from "@server/net/protocol";
 import { MAX_NAME_LENGTH } from "@server/game/types";
 
 const props = defineProps<{ initialCode?: string }>();
 const connection = useConnection();
+const settings = useSettings();
 
 interface RoomInfo {
   phase: string;
@@ -18,7 +20,7 @@ interface RoomInfo {
 }
 
 const code = ref((props.initialCode ?? "").toUpperCase());
-const name = ref("");
+const name = ref(settings.playerName);
 const avatar = ref<number | null>(null);
 const info = ref<RoomInfo | null>(null);
 const notFound = ref(false);
@@ -77,6 +79,7 @@ watch(
 function join() {
   if (!canJoin.value || avatar.value === null) return;
   sending.value = true;
+  settings.playerName = name.value.trim();
   connection.join(code.value, name.value, avatar.value);
 }
 </script>

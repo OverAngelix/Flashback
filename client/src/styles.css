@@ -154,3 +154,15 @@ body {
     transform: none;
   }
 }
+
+/* Réglage « Animations réduites » : tout est figé, sauf l'indicateur de chargement (la note qui tourne). */
+.reduce-motion *:not(.loader, .loader *),
+.reduce-motion *:not(.loader, .loader *)::before,
+.reduce-motion *:not(.loader, .loader *)::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+.reduce-motion .confetti {
+  display: none;
+}
