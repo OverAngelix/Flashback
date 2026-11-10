@@ -34,7 +34,7 @@ Depuis `client/` (Vite, Vue 3, Vuetify 4) :
 npm run dev          # serveur de dev Vite (relaie /api, /media et /ws vers le serveur sur le port 3000)
 npm run type-check   # vue-tsc, sur le code puis sur vite.config.ts
 npm run build        # type-check puis vite build -> client/dist, que le serveur sert ensuite sur /
-npm test             # vitest (connexion, avatars) ; un seul fichier : npx vitest run src/net/connection.test.ts
+npm test             # vitest (connexion, avatars, QR code, adresse de jonction) ; un seul fichier : npx vitest run src/net/connection.test.ts
 ```
 
 Depuis `e2e/` : `npm test` joue un tour complet (un écran hôte, deux téléphones en paysage) dans un vrai Chrome contre le vrai serveur et le vrai catalogue. Prérequis : `npm run build` dans `server/` et dans `client/`, et Chrome (variable `CHROME_PATH` si le chemin n'est pas standard). Le script démarre lui-même le serveur (port 3399, `E2E_PORT`) et écrit des captures dans `e2e/shots/`. Les tests unitaires et le build ne voient pas les problèmes de rendu : relancer ce test après toute modification de l'interface, et regarder les captures.
@@ -48,6 +48,7 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - `src/net/protocol.ts` : le protocole WebSocket (messages client → serveur validés par `parseClientMessage`, messages serveur, `GameView`). `src/net/view.ts` construit la vue envoyée à tous les clients ; `src/net/ws.ts` branche `/ws` sur le serveur HTTP avec un ping de 20 s.
 - `src/rooms/` : `Room` (une partie, l'hôte, les joueurs, la diffusion de l'état) et `RoomManager`/`Session` (code de 6 caractères, routage des messages, nettoyage). Ils ne connaissent que l'interface `Connection`, donc se testent sans réseau. Hôte et joueurs se reconnectent avec un jeton reçu dans le message `session`.
 - Le serveur sert aussi `client/dist` sur `/` (repli vers `index.html` pour `/host`, `/play`, `/join/CODE`). Fichiers lus à la demande : pas besoin de redémarrer après un `npm run build` du client.
+- Une seule écoute de l'extrait par tour : `Game.listen` (drapeau `listened`, remis à zéro à chaque pioche) ; `Room` ne la consomme que si l'écran hôte est connecté.
 - `host:advance` porte la phase quittée (`from`) : un message en double ou obsolète est ignoré sans erreur, ce qui rend le double clic inoffensif.
 - `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
 
@@ -57,6 +58,9 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - `src/views/` : `HomeView`, `HostView` (écran hôte, une section par phase), `PlayView` (manette). Les composants partagés sont dans `src/components/` : `TimelineStrip` (frise défilante, interactive côté joueur), `TrackCard`, `RevealPanel`, `RecapPanel`.
 - `src/audio.ts` : l'écran hôte joue les extraits. Le clic « Créer une partie » appelle `unlockAudio()`, ce qui autorise ensuite la lecture sans geste.
 - Les types et constantes du protocole viennent du serveur via l'alias `@server` (`../server/src`). N'importer que `net/protocol.ts`, `game/types.ts` et `catalog/types.ts` : `shared-purity.test.ts` vérifie qu'ils n'importent rien de Node.
+- Le QR code (`src/qr.ts`, bibliothèque `qrcode`) encode `joinLink(joinBase(...), code)` (`src/joinUrl.ts`) : sur `localhost`, l'adresse du réseau local donnée par `/api/network`. Ses tests le décodent avec `jsqr`.
+- Chaque manette montre la frise de son joueur (jamais celle du joueur actif, visible sur l'écran hôte) ; `RevealPanel` et `RecapPanel` prennent `viewerId`.
+- Écrans peu hauts (téléphone en paysage, environ 300 px utiles) : cartes et emplacements rétrécis par media query (`TrackCard`, `TimelineStrip`), boutons de jeu dans la colonne de gauche (`PlayTurn`).
 - Les avatars sont des icônes `mdi-*` dans `src/avatars.ts` ; l'index est l'identifiant échangé avec le serveur.
 - Pendant la partie, la manette affiche `RotateOverlay` tant que le téléphone est en portrait (`useOrientation`).
 

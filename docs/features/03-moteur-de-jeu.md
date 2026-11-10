@@ -17,6 +17,7 @@ Déroulement : `lobby` → `awaiting-placement` → `reveal` → (fin de tour de
 - [x] Égalité en tête : on rejoue un tour, l'objectif monte à 11, 12…
 - [x] Paquet épuisé : la partie se termine, victoire à égalité possible
 - [x] Paquet modifiable avant le départ (`setTracks`, pour le choix des catégories) et tour passé par l'hôte (`skipTurn`)
-- [x] Tests unitaires des règles (21 tests)
+- [x] Une seule écoute de l'extrait par tour (`listen`, drapeau `listened`)
+- [x] Tests unitaires des règles (23 tests)
 
 Décisions : tous les joueurs jouent le même nombre de tours. Atteindre 10 cartes ne met pas fin à la partie en cours de tour de plateau ; la victoire est évaluée à la fin du tour. Seule exception : le paquet épuisé met fin à la partie immédiatement.

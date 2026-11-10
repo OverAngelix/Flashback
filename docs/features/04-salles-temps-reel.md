@@ -13,7 +13,7 @@ WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code
 - [x] Rôles : l'hôte (écran, ne joue pas) et les joueurs ; chaque message est réservé à son rôle
 - [x] Protocole de messages typé et validé (`server/src/net/protocol.ts`)
 - [x] Vue publique de l'état, identique pour tous : jamais le titre, l'artiste, l'année ni la pochette du titre courant avant la révélation (testé)
-- [x] Lancement de l'extrait : le joueur actif envoie `player:play`, l'hôte reçoit `audio:play` et joue le son
+- [x] Lancement de l'extrait : le joueur actif envoie `player:play` (une seule fois par tour, et seulement si l'écran est connecté), l'hôte reçoit `audio:play` et joue le son ; l'état porte `listened`
 - [x] Déconnexion : le joueur reste dans la partie, marqué absent ; il revient avec son jeton (`player:rejoin`) ; l'hôte aussi (`host:rejoin`)
 - [x] Battement de cœur (ping toutes les 20 s) pour détecter un téléphone en veille
 - [x] L'hôte peut passer le tour d'un joueur absent (`host:skipTurn`) et exclure un joueur dans le salon (`host:kick`)

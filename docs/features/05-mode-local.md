@@ -20,15 +20,17 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Reprise de l'écran après un rechargement de la page (code et jeton mémorisés)
 - [ ] Vérifier la lisibilité sur une vraie télé (tailles de texte, distance)
 - [ ] Faire avancer la partie sans souris ni clavier (depuis un téléphone, ou automatiquement après quelques secondes) : une télé n'a pas toujours de pointeur
-- [ ] Code QR pour rejoindre sans taper l'adresse
+- [x] Code QR pour rejoindre sans taper l'adresse : il mène à `/join/CODE` (code pré-rempli) et utilise l'adresse du réseau local, jamais `localhost`
 - [ ] Empêcher la mise en veille de l'écran pendant la partie (Wake Lock)
 
 ## Manette joueur (téléphone ou PC)
 
 - [x] Saisie du code de salle (ou lien direct `/join/CODE`)
 - [x] Choix du nom et d'un avatar parmi 10 avant de rejoindre ; les avatars déjà pris sont grisés en direct
-- [x] Écran d'attente quand ce n'est pas son tour (frise du joueur actif visible)
-- [x] Au tour du joueur : bouton « Écouter » (l'écran hôte joue le son), frise défilante avec emplacements entre les cartes, bouton « Placer ici »
+- [x] Chaque joueur voit sa propre frise quand ce n'est pas son tour, à la révélation et au récapitulatif (l'écran principal montre celle du joueur actif)
+- [x] Au tour du joueur : bouton « Écouter » (l'écran hôte joue le son, une seule écoute par tour), frise défilante avec emplacements entre les cartes, bouton « Placer ici » ; les deux boutons sont dans la colonne de gauche, visibles même sur un écran de 740x300
+- [x] L'écran hôte suit l'écoute : attente du lancement, « Écoute… », puis « place le titre dans sa frise » à la fin de l'extrait
+- [x] Formulaire d'entrée sans débordement de 320 à 390 px de large
 - [x] Paysage obligatoire pendant la partie : écran « Tourne ton téléphone » tant que le téléphone est en portrait (le salon et la saisie du nom restent possibles en portrait ; le formulaire passe sur deux colonnes en paysage)
 - [x] Reprise automatique après une coupure ou un rechargement, et dès le réveil du téléphone
 - [ ] Verrouillage d'orientation en plein écran (Android seulement, optionnel)
