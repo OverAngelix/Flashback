@@ -388,6 +388,25 @@ try {
   await ben.click(sel("leader-advance"));
   await host.waitForFunction(() => document.querySelector('[data-testid="turn-status"]'));
   ok("Ana déconnectée : Ben devient chef de partie et lance le tour suivant depuis son téléphone");
+
+  // Quitter en pleine partie : bouton toujours visible, confirmation, puis la partie continue sans lui
+  // (ici il ne reste qu'Ana, la partie s'arrête).
+  await ben.waitForSelector(sel("leave-game"));
+  await shot(ben, "13-ben-watch-leave-button");
+  await ben.click(sel("leave-game"));
+  await ben.waitForSelector(sel("leave-confirm-ok"));
+  await shot(ben, "14-ben-leave-confirm");
+  await ben.click(sel("leave-confirm-ok"));
+  await ben.waitForSelector(sel("menu-host"));
+  await host.waitForFunction(() => document.body.innerText.includes("Nouvelle partie"));
+  if ((await host.evaluate(() => document.body.innerText)).includes("Ben")) throw new Error("Ben est encore affiché sur l'écran hôte");
+  await shot(host, "15-host-finished-after-leave");
+  ok("Ben quitte en pleine partie après confirmation : retour à l'accueil, la partie se termine sans lui");
+
+  // Fin de partie par l'hôte : retour à l'accueil sans confirmation (la partie est finie)
+  await host.click(sel("host-leave"));
+  await host.waitForSelector(sel("menu-host"));
+  ok("hôte : quitter une partie terminée ramène à l'accueil");
 } catch (e) {
   console.log("✗ ÉCHEC :", e.message);
   for (const [k, p] of Object.entries(pages)) await p.screenshot({ path: OUT + "fail-" + k + ".png" }).catch(() => {});
