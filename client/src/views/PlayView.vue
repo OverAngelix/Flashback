@@ -5,13 +5,13 @@ import AvatarBadge from "@/components/AvatarBadge.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
+import PlayGroove from "@/components/PlayGroove.vue";
 import PlayJoin from "@/components/PlayJoin.vue";
 import PlayTurn from "@/components/PlayTurn.vue";
 import PlayersBar from "@/components/PlayersBar.vue";
 import RecapPanel from "@/components/RecapPanel.vue";
 import RevealPanel from "@/components/RevealPanel.vue";
 import RotateOverlay from "@/components/RotateOverlay.vue";
-import TimelineStrip from "@/components/TimelineStrip.vue";
 import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
 import { usePortraitPhone } from "@/composables/useOrientation";
@@ -108,18 +108,18 @@ function leave() {
         </section>
 
         <!-- Mon tour -->
-        <PlayTurn v-else-if="view.phase === 'awaiting-placement' && isMyTurn" :me="me" :listened="view.listened" :leader="isLeader" />
+        <PlayTurn v-else-if="view.phase === 'awaiting-placement' && isMyTurn" :me="me" :listened="view.listened" :leader="isLeader" :groove-count="view.grooveGuessIds.length" />
 
-        <!-- Le tour d'un autre : l'écran principal montre sa frise, la manette montre la mienne -->
-        <section v-else-if="view.phase === 'awaiting-placement' && active" class="p-watch">
-          <div class="watch-head">
-            <AvatarBadge :avatar="active.avatar" :size="40" :leader="active.id === view.leaderId" />
-            <div class="display t-md min-width-0 text-truncate">{{ active.name }} réfléchit…</div>
-            <v-btn v-if="isLeader && !active.connected" class="btn-ghost ml-auto" size="small" data-testid="leader-skip" @click="skipTurn">Passer son tour</v-btn>
-          </div>
-          <div class="muted small">Ta frise</div>
-          <TimelineStrip :cards="me.timeline" />
-        </section>
+        <!-- Le tour d'un autre : sa frise, pour la placer avant lui (point groove) -->
+        <PlayGroove
+          v-else-if="view.phase === 'awaiting-placement' && active"
+          :me="me"
+          :active="active"
+          :listened="view.listened"
+          :guessed="view.grooveGuessIds.includes(me.id)"
+          :leader="isLeader"
+          @skip="skipTurn"
+        />
 
         <!-- Révélation : le chef peut continuer depuis son téléphone -->
         <section v-else-if="view.phase === 'reveal'" class="p-reveal">
@@ -177,7 +177,6 @@ function leave() {
   font-size: 0.85rem;
 }
 .p-lobby,
-.p-watch,
 .p-reveal,
 .p-recap {
   display: flex;
@@ -187,10 +186,22 @@ function leave() {
   margin: 0 auto;
   padding: 16px;
 }
-.p-watch,
 .p-reveal {
+  /* Sur un PC, la frise a la place de s'étaler au lieu de défiler ; le tout est centré dans l'écran. */
+  max-width: 1400px;
+  min-height: 100dvh;
+  justify-content: center;
   gap: 6px;
   padding: 10px 12px;
+}
+/* Récapitulatif et fin de partie : centrés au milieu de l'écran, en hauteur aussi. */
+.p-recap {
+  min-height: 100dvh;
+  justify-content: center;
+}
+/* Marge symétrique de celle du bouton Quitter, pour un centrage exact. */
+.in-game > .p-recap {
+  padding-left: 56px;
 }
 .in-game > section {
   padding-right: 56px;
@@ -216,10 +227,5 @@ function leave() {
 }
 .label {
   margin-top: 4px;
-}
-.p-watch-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 </style>

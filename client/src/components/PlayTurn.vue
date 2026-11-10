@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { PlayerView } from "@server/net/protocol";
+import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 import Equalizer from "./Equalizer.vue";
 import TimelineStrip from "./TimelineStrip.vue";
 import { useConnection } from "@/net/connection";
 
-const props = defineProps<{ me: PlayerView; listened: boolean; leader?: boolean }>();
+/** `grooveCount` : nombre d'autres joueurs qui ont déjà placé ce titre dans ma frise (point groove). */
+const props = defineProps<{ me: PlayerView; listened: boolean; leader?: boolean; grooveCount?: number }>();
 const connection = useConnection();
 const selected = ref<number | null>(null);
 
@@ -41,6 +43,9 @@ function place() {
         </div>
       </div>
       <div class="hint muted">{{ hint }}</div>
+      <div v-if="grooveCount" class="pressure" data-testid="groove-pressure">
+        <DiscoBall :size="14" class="mr-1" />{{ grooveCount }} {{ grooveCount > 1 ? "joueurs ont" : "joueur a" }} déjà placé
+      </div>
       <v-btn class="btn-success w-100" :disabled="selected === null" prepend-icon="mdi-check" data-testid="place" @click="place">Placer ici</v-btn>
     </div>
     <div class="main">
@@ -108,6 +113,12 @@ function place() {
   min-height: 2.4em;
   font-size: 0.85rem;
   line-height: 1.2;
+}
+.pressure {
+  margin-top: -6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold);
 }
 .main {
   flex: 1;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { GameView } from "@server/net/protocol";
+import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 import Confetti from "./Confetti.vue";
 import TimelineStrip from "./TimelineStrip.vue";
@@ -11,13 +12,14 @@ const props = defineProps<{ view: GameView; final?: boolean; viewerId?: string |
 const ranked = computed(() =>
   [...props.view.players]
     .filter((p) => !props.viewerId || p.id === props.viewerId)
-    .sort((a, b) => b.timeline.length - a.timeline.length),
+    .sort((a, b) => b.timeline.length - a.timeline.length || b.groove - a.groove),
 );
 const winners = computed(() => props.view.players.filter((p) => props.view.winnerIds.includes(p.id)));
 </script>
 
 <template>
-  <div class="recap">
+  <!-- Sur un téléphone (une seule frise), le récapitulatif est centré. -->
+  <div class="recap" :class="{ solo: !!viewerId }">
     <Confetti v-if="final && winners.length" :count="70" />
     <div v-if="final && winners.length" class="winner glass">
       <v-icon icon="mdi-trophy" size="56" color="warning" class="trophy" />
@@ -32,9 +34,10 @@ const winners = computed(() => props.view.players.filter((p) => props.view.winne
         <AvatarBadge :avatar="p.avatar" :size="44" :leader="p.id === view.leaderId" />
         <span class="display name">{{ p.name }}</span>
         <span class="chip display">{{ p.timeline.length }} carte{{ p.timeline.length > 1 ? "s" : "" }}</span>
+        <span class="chip gv display" title="Points groove"><DiscoBall :size="18" class="mr-1" />{{ p.groove }} groove</span>
         <v-icon v-if="final && view.winnerIds.includes(p.id)" icon="mdi-trophy" color="warning" />
       </div>
-      <TimelineStrip :cards="p.timeline" />
+      <TimelineStrip :cards="p.timeline" :centered="!!viewerId" />
     </div>
   </div>
 </template>
@@ -44,6 +47,11 @@ const winners = computed(() => props.view.players.filter((p) => props.view.winne
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.solo > .display,
+.solo .who {
+  justify-content: center;
+  text-align: center;
 }
 .winner {
   display: flex;
@@ -74,6 +82,11 @@ const winners = computed(() => props.view.players.filter((p) => props.view.winne
   border-radius: 999px;
   background: var(--glass-strong);
   font-size: 0.95rem;
+}
+.gv {
+  display: inline-flex;
+  align-items: center;
+  color: var(--gold);
 }
 @keyframes bounce {
   0%,

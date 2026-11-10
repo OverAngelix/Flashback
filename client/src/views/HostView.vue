@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { audio, fadeOutExtract, playExtract, stopExtract, unlockAudio } from "@/audio";
+import DiscoBall from "@/components/DiscoBall.vue";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
@@ -189,7 +190,7 @@ watch(turnKey, (key) => {
 
         <!-- Un joueur écoute et place son titre -->
         <section v-else-if="view.phase === 'awaiting-placement' && active" class="turn">
-          <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" />
+          <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" groove :guessed-ids="view.grooveGuessIds" />
           <div class="spotlight">
             <VinylDisc :size="260" :spinning="audio.playing" />
             <div class="info">
@@ -202,6 +203,13 @@ watch(turnKey, (key) => {
               </div>
               <div class="status display t-md" data-testid="turn-status">{{ status }}</div>
               <div class="eq-row"><Equalizer :active="audio.playing" /><span class="muted">{{ view.listened ? "Une seule écoute par tour." : "Une seule écoute : bien écouter !" }}</span></div>
+              <div class="groove-hint" data-testid="groove-hint">
+                <DiscoBall :size="30" />
+                <span>
+                  Les autres : placez aussi ce titre dans cette frise depuis votre écran, avant {{ active.name }}, pour un point groove.
+                  <strong v-if="view.grooveGuessIds.length">{{ view.grooveGuessIds.length }}/{{ view.players.length - 1 }} ont placé.</strong>
+                </span>
+              </div>
             </div>
           </div>
           <TimelineStrip :cards="active.timeline" />
@@ -213,7 +221,7 @@ watch(turnKey, (key) => {
 
         <!-- Révélation -->
         <section v-else-if="view.phase === 'reveal'" class="h-reveal">
-          <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" />
+          <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" groove />
           <RevealPanel :view="view" />
           <div class="next-row">
             <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Continuer</v-btn>
@@ -439,6 +447,17 @@ watch(turnKey, (key) => {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+.groove-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 620px;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+.groove-hint strong {
+  color: var(--gold);
 }
 .h-reveal,
 .h-recap {

@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import type { PlayerView } from "@server/net/protocol";
+import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 
-defineProps<{ players: PlayerView[]; activeId?: string | null; leaderId?: string | null; compact?: boolean }>();
+/** `groove` : affiche les points groove ; `guessedIds` : joueurs qui ont déjà placé le titre en cours. */
+defineProps<{
+  players: PlayerView[];
+  activeId?: string | null;
+  leaderId?: string | null;
+  compact?: boolean;
+  groove?: boolean;
+  guessedIds?: string[];
+}>();
 </script>
 
 <!-- Les joueurs avec leur nombre de cartes ; le joueur actif est mis en lumière. -->
@@ -11,7 +20,9 @@ defineProps<{ players: PlayerView[]; activeId?: string | null; leaderId?: string
     <div v-for="p in players" :key="p.id" class="pill glass" :class="{ active: p.id === activeId, off: !p.connected, compact }">
       <AvatarBadge :avatar="p.avatar" :size="compact ? 28 : 40" :leader="p.id === leaderId" />
       <span class="name text-truncate">{{ p.name }}</span>
-      <span class="count display">{{ p.timeline.length }}</span>
+      <span class="count display" title="Cartes">{{ p.timeline.length }}</span>
+      <span v-if="groove" class="gv display" title="Points groove"><DiscoBall :size="18" class="mr-1" />{{ p.groove }}</span>
+      <v-icon v-if="guessedIds?.includes(p.id)" icon="mdi-check-decagram" color="success" size="small" title="A placé le titre" data-testid="guessed" />
       <v-icon v-if="!p.connected" icon="mdi-wifi-off" size="small" title="Déconnecté" />
     </div>
   </div>
@@ -54,6 +65,12 @@ defineProps<{ players: PlayerView[]; activeId?: string | null; leaderId?: string
   border-radius: 999px;
   background: var(--glass-strong);
   font-size: 1rem;
+}
+.gv {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: var(--gold);
 }
 .pill.active {
   border-color: transparent;

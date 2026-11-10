@@ -2,16 +2,18 @@
 import { ref } from "vue";
 import type { PublicCard } from "@server/net/protocol";
 
-defineProps<{ card: PublicCard; highlight?: boolean; big?: boolean }>();
+/** `tone` : verdict d'un placement, vert si juste, rouge si faux (la carte fausse n'est pas gardée). */
+defineProps<{ card: PublicCard; highlight?: boolean; big?: boolean; tone?: "ok" | "ko" }>();
 const loaded = ref(false);
 </script>
 
 <!-- Une pochette : l'année en pastille sur l'image, le titre et l'artiste dessous. -->
 <template>
-  <article class="track-card" :class="{ big, highlight }">
+  <article class="track-card" :class="[{ big, highlight }, tone && `tone-${tone}`]">
     <div class="cover">
       <img :src="card.imageUrl" :alt="card.title" :class="{ loaded }" draggable="false" @load="loaded = true" />
       <span class="year display">{{ card.year }}</span>
+      <span v-if="tone" class="verdict-badge"><v-icon :icon="tone === 'ok' ? 'mdi-check-bold' : 'mdi-close-thick'" /></span>
     </div>
     <div class="meta">
       <div class="title text-truncate">{{ card.title }}</div>
@@ -81,6 +83,41 @@ const loaded = ref(false);
   border-color: transparent;
   box-shadow: 0 0 0 2px var(--pink), 0 0 36px rgba(255, 61, 154, 0.55);
   animation: pop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.tone-ok,
+.tone-ko {
+  border-color: transparent;
+  animation: pop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.tone-ok {
+  box-shadow: 0 0 0 3px var(--green), 0 0 34px rgba(46, 229, 157, 0.5);
+}
+.tone-ko {
+  box-shadow: 0 0 0 3px var(--red), 0 0 34px rgba(255, 92, 112, 0.5);
+}
+.tone-ko .cover img.loaded {
+  opacity: 0.6;
+  filter: grayscale(0.6);
+}
+.verdict-badge {
+  position: absolute;
+  top: calc(var(--w) * 0.05);
+  right: calc(var(--w) * 0.05);
+  display: grid;
+  place-items: center;
+  width: calc(var(--w) * 0.22);
+  height: calc(var(--w) * 0.22);
+  border-radius: 50%;
+  font-size: calc(var(--w) * 0.13);
+  color: #1a1340;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+.tone-ok .verdict-badge {
+  background: var(--green);
+}
+.tone-ko .verdict-badge {
+  background: var(--red);
+  color: #fff;
 }
 @keyframes pop {
   from {
