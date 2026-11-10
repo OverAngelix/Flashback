@@ -32,6 +32,8 @@ export type ClientMessage =
   /** L'écran hôte met fin à la partie : la salle est supprimée, les joueurs reçoivent `closed`. */
   | { type: "host:close" }
   | { type: "player:place"; position: number }
+  /** Un autre joueur place le titre dans la frise du joueur actif, avant lui, pour un point groove. */
+  | { type: "player:groove"; position: number }
   | { type: "player:play" }
   /** Quitter la salle, à tout moment : en cours de partie, le joueur en est retiré avec sa frise. */
   | { type: "player:leave" };
@@ -71,6 +73,15 @@ export interface PlayerView {
   avatar: number;
   connected: boolean;
   timeline: PublicCard[];
+  /** Points groove (titres bien placés dans la frise des autres) : ne comptent pas pour la victoire. */
+  groove: number;
+}
+
+/** Placement groove révélé : `position` dans la frise du joueur actif, avant son propre placement. */
+export interface GrooveView {
+  playerId: string;
+  position: number;
+  correct: boolean;
 }
 
 /**
@@ -98,8 +109,13 @@ export interface GameView {
   current: { audioUrl: string } | null;
   /** Le joueur actif a déjà écouté l'extrait : il ne peut plus le relancer pendant ce tour. */
   listened: boolean;
+  /**
+   * Joueurs qui ont déjà fait leur placement groove pendant ce tour. Les positions restent secrètes
+   * jusqu'à la révélation (le joueur actif pourrait s'en inspirer).
+   */
+  grooveGuessIds: string[];
   /** Résultat du dernier placement, uniquement pendant la phase "reveal". */
-  lastResult: { playerId: string; position: number; correct: boolean; track: PublicCard } | null;
+  lastResult: { playerId: string; position: number; correct: boolean; track: PublicCard; groove: GrooveView[] } | null;
   winnerIds: string[];
 }
 
@@ -144,7 +160,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case "host:kick":
       return isString(m.playerId, 16) ? { type: "host:kick", playerId: m.playerId } : null;
     case "player:place":
-      return Number.isInteger(m.position) ? { type: "player:place", position: m.position as number } : null;
+    case "player:groove":
+      return Number.isInteger(m.position) ? { type: m.type, position: m.position as number } : null;
     default:
       return null;
   }

@@ -154,6 +154,9 @@ export class Room {
       case "player:place":
         this.game.placeCard(playerId, message.position);
         break;
+      case "player:groove":
+        this.game.placeGroove(playerId, message.position);
+        break;
       case "player:play": {
         // L'écoute n'est consommée que si l'écran peut réellement jouer le son.
         this.game.assertCanListen(playerId);

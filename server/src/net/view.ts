@@ -40,10 +40,12 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
       avatar: p.avatar,
       connected: ctx.connectedPlayerIds.has(p.id),
       timeline: p.timeline.map(publicCard),
+      groove: p.groove,
     })),
     activePlayerId: game.activePlayer?.id ?? null,
     current: game.current ? { audioUrl: mediaUrl(game.current.audioFile) } : null,
     listened: game.listened,
+    grooveGuessIds: game.phase === "awaiting-placement" ? [...game.grooveGuesses.keys()] : [],
     lastResult:
       game.phase === "reveal" && game.lastResult
         ? {
@@ -51,6 +53,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
             position: game.lastResult.position,
             correct: game.lastResult.correct,
             track: publicCard(game.lastResult.track),
+            groove: game.lastResult.groove.map((g) => ({ ...g })),
           }
         : null,
     winnerIds: game.winnerIds,

@@ -2,10 +2,12 @@ import {
   AVATAR_COUNT,
   DEFAULT_CARDS_TO_WIN,
   GameError,
+  isCorrectPlacement,
   MAX_NAME_LENGTH,
   MAX_PLAYERS,
   MIN_PLAYERS,
   type GameTrack,
+  type GrooveGuess,
   type Phase,
   type PlacementResult,
   type Player,
@@ -28,9 +30,16 @@ export interface GameOptions {
  * autant de fois. À la fin d'un tour, si un seul joueur a le plus de cartes et au moins
  * `cardsToWin`, il gagne. En cas d'égalité en tête, on rejoue un tour (l'objectif monte à 11, 12…).
  *
+ * Groove : pendant le tour d'un joueur, une fois l'extrait lancé, chacun des autres peut placer le
+ * titre dans la frise du joueur actif (une fois, sans retour). Il doit le faire avant lui : dès que
+ * le joueur actif a placé, c'est trop tard. Un placement groove juste rapporte un point groove ; il
+ * ne compte pas pour la victoire, qui ne dépend que des frises.
+ *
  * Déroulement : lobby → awaiting-placement → reveal → (fin de tour de plateau : round-recap)
  * → awaiting-placement … → finished. Le moteur est indépendant du réseau et du mode de jeu.
  */
+export { isCorrectPlacement };
+
 export class Game {
   readonly cardsToWin: number;
   private readonly rng: () => number;
@@ -47,6 +56,8 @@ export class Game {
   current?: GameTrack;
   /** Le joueur actif a déjà écouté l'extrait de ce tour : une seule écoute par tour. */
   listened = false;
+  /** Placements groove du tour en cours : joueur -> position dans la frise du joueur actif. */
+  readonly grooveGuesses = new Map<string, number>();
   lastResult?: PlacementResult;
   winnerIds: string[] = [];
 
@@ -88,7 +99,7 @@ export class Game {
     if (this.players.some((p) => p.avatar === avatar)) {
       throw new GameError("Cet avatar est déjà pris.");
     }
-    const player: Player = { id: `p${this.nextPlayerId++}`, name: clean, avatar, timeline: [] };
+    const player: Player = { id: `p${this.nextPlayerId++}`, name: clean, avatar, timeline: [], groove: 0 };
     this.players.push(player);
     return player;
   }
@@ -103,6 +114,7 @@ export class Game {
     const index = this.players.findIndex((p) => p.id === playerId);
     if (index < 0 || this.phase === "finished") return;
     this.players.splice(index, 1);
+    this.grooveGuesses.delete(playerId);
     if (this.phase === "lobby") return;
 
     if (this.players.length < MIN_PLAYERS) {
@@ -146,13 +158,48 @@ export class Game {
     }
 
     const track = this.current;
+    const groove = this.settleGroove(player, track);
     const correct = isCorrectPlacement(player.timeline, position, track.year);
     if (correct) player.timeline.splice(position, 0, track);
 
-    this.lastResult = { playerId, position, correct, track };
+    this.lastResult = { playerId, position, correct, track, groove };
     this.current = undefined;
     this.phase = "reveal";
     return this.lastResult;
+  }
+
+  /**
+   * Un autre joueur que le joueur actif place le titre courant dans la frise de ce dernier (position 0
+   * à timeline.length du joueur actif), pour un point groove. Possible une fois l'extrait lancé,
+   * une seule fois par tour, et seulement tant que le joueur actif n'a pas placé.
+   */
+  placeGroove(playerId: string, position: number): void {
+    if (this.phase !== "awaiting-placement" || !this.current) {
+      throw new GameError("Trop tard : le titre a déjà été placé.");
+    }
+    const active = this.players[this.turnIndex]!;
+    if (active.id === playerId) throw new GameError("C'est ton tour : place le titre dans ta frise.");
+    if (!this.players.some((p) => p.id === playerId)) throw new GameError("Joueur inconnu.");
+    if (!this.listened) throw new GameError("Attends que l'extrait soit lancé.");
+    if (this.grooveGuesses.has(playerId)) throw new GameError("Tu as déjà placé ce titre.");
+    if (!Number.isInteger(position) || position < 0 || position > active.timeline.length) {
+      throw new GameError("Position invalide.");
+    }
+    this.grooveGuesses.set(playerId, position);
+  }
+
+  /** Corrige les placements groove du tour sur la frise du joueur actif (avant son propre placement). */
+  private settleGroove(active: Player, track: GameTrack): GrooveGuess[] {
+    const results: GrooveGuess[] = [];
+    for (const p of this.players) {
+      const position = this.grooveGuesses.get(p.id);
+      if (position === undefined || p.id === active.id) continue;
+      const correct = isCorrectPlacement(active.timeline, position, track.year);
+      if (correct) p.groove++;
+      results.push({ playerId: p.id, position, correct });
+    }
+    this.grooveGuesses.clear();
+    return results;
   }
 
   /** Vérifie que ce joueur peut écouter l'extrait maintenant, sans rien modifier. */
@@ -174,14 +221,16 @@ export class Game {
 
   /**
    * L'hôte passe le tour du joueur actif (par exemple s'il est déconnecté) : le titre est défaussé,
-   * comme un mauvais placement. `position` vaut -1 dans le résultat pour signaler le passage.
+   * comme un mauvais placement. `position` vaut -1 dans le résultat pour signaler le passage. Les
+   * placements groove déjà faits sont corrigés normalement.
    */
   skipTurn(): PlacementResult {
     if (this.phase !== "awaiting-placement" || !this.current) {
       throw new GameError("Ce n'est pas le moment de passer un tour.");
     }
     const player = this.players[this.turnIndex]!;
-    this.lastResult = { playerId: player.id, position: -1, correct: false, track: this.current };
+    const groove = this.settleGroove(player, this.current);
+    this.lastResult = { playerId: player.id, position: -1, correct: false, track: this.current, groove };
     this.current = undefined;
     this.phase = "reveal";
     return this.lastResult;
@@ -238,6 +287,7 @@ export class Game {
     }
     this.current = next;
     this.listened = false;
+    this.grooveGuesses.clear();
     this.phase = "awaiting-placement";
   }
 
@@ -247,12 +297,6 @@ export class Game {
     this.winnerIds = this.players.filter((p) => p.timeline.length === best).map((p) => p.id);
     this.phase = "finished";
   }
-}
-
-export function isCorrectPlacement(timeline: GameTrack[], position: number, year: number): boolean {
-  const before = timeline[position - 1];
-  const after = timeline[position];
-  return (before === undefined || before.year <= year) && (after === undefined || year <= after.year);
 }
 
 /** Mélange de Fisher-Yates. */
