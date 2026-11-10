@@ -18,6 +18,7 @@ Déroulement : `lobby` → `awaiting-placement` → `reveal` → (fin de tour de
 - [x] Paquet épuisé : la partie se termine, victoire à égalité possible
 - [x] Paquet modifiable avant le départ (`setTracks`, pour le choix des catégories) et tour passé par l'hôte (`skipTurn`)
 - [x] Une seule écoute de l'extrait par tour (`listen`, drapeau `listened`)
-- [x] Tests unitaires des règles (23 tests)
+- [x] Groove : `placeGroove` (autre joueur que l'actif, après l'écoute, une fois par tour, avant le placement du joueur actif), correction sur la frise d'avant ce placement, y compris quand le tour est passé ; `Player.groove` ; placement oublié si le joueur s'en va (détail dans [09-groove.md](09-groove.md))
+- [x] Tests unitaires des règles (36 tests)
 
-Décisions : tous les joueurs jouent le même nombre de tours. Atteindre 10 cartes ne met pas fin à la partie en cours de tour de plateau ; la victoire est évaluée à la fin du tour. Seule exception : le paquet épuisé met fin à la partie immédiatement.
+Décisions : les points groove ne comptent pas pour la victoire (ni pour l'égalité en tête). Tous les joueurs jouent le même nombre de tours. Atteindre 10 cartes ne met pas fin à la partie en cours de tour de plateau ; la victoire est évaluée à la fin du tour. Seule exception : le paquet épuisé met fin à la partie immédiatement.

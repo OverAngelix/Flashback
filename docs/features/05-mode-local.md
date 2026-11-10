@@ -32,7 +32,9 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Saisie du code de salle, ou lien direct `/join/CODE` (QR code) : dans ce cas le champ code disparaît, il ne reste que le nom et l'avatar (bouton « Changer » pour corriger)
 - [x] Choix du nom et d'un avatar parmi 10 avant de rejoindre ; les avatars déjà pris sont grisés en direct
 - [x] Salon du chef de partie : catégories et bouton de lancement ; « Continuer », « Tour suivant » et « Passer son tour » aux bons moments
-- [x] Chaque joueur voit sa propre frise quand ce n'est pas son tour, à la révélation et au récapitulatif (l'écran principal montre celle du joueur actif)
+- [x] Pendant le tour d'un autre, la manette montre la frise du joueur en cours (et non plus la sienne) ; au récapitulatif, chacun voit sa propre frise
+- [x] Groove pendant le tour des autres (placement, points, écrans) : voir [09-groove.md](09-groove.md)
+- [x] Révélation sur tous les écrans : frise du joueur avec la carte à l'endroit choisi, en vert si juste, en rouge sinon (carte fausse affichée puis défaussée, et tous les emplacements qui étaient justes marqués d'une pastille verte) ; verdict avec le nom (« Dark a trouvé ! », « Dark n'a pas trouvé… », « Dark passe ce tour » ; « Bien joué ! » ou « Raté… » sur le téléphone de Dark) ; révélation centrée sur la manette (PC compris, la frise ne défile que si la carte jouée est cachée), « En attente de la suite… » ou « Continuer » en bas au centre ; résultat groove : voir [09-groove.md](09-groove.md)
 - [x] Au tour du joueur : bouton « Écouter » (l'écran hôte joue le son, une seule écoute par tour), frise défilante avec emplacements entre les cartes, bouton « Placer ici » ; les deux boutons sont dans la colonne de gauche, visibles même sur un écran de 740x300
 - [x] L'écran hôte suit l'écoute : attente du lancement, « Écoute… », puis « place le titre dans sa frise » à la fin de l'extrait
 - [x] Formulaire d'entrée sans débordement de 320 à 390 px de large
@@ -46,7 +48,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 
 Un « tour de plateau » = tous les joueurs ont joué une fois. À la fin, l'écran hôte affiche la frise de chaque joueur (avatar, nom, cartes dans l'ordre chronologique avec l'année) avant de passer au tour suivant.
 
-- [x] Écran de récapitulatif sur l'hôte et sur les manettes
+- [x] Écran de récapitulatif sur l'hôte et sur les manettes ; sur la manette, la frise du joueur est centrée au milieu de l'écran (largeur et hauteur)
 - [x] Bouton « Tour suivant » (touche Entrée ou Espace aussi) ; un double clic est ignoré par le serveur
 - [ ] Durée d'affichage automatique (à décider avec l'avancement sans pointeur)
 - [ ] Mise en évidence des cartes gagnées pendant le tour
