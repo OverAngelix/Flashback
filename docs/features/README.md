@@ -11,8 +11,9 @@ cocher `[x]` quand c'est fait, `[~]` quand c'est en cours, `[ ]` sinon.
 | 03 | Moteur de jeu (règles Hitster) | Terminé | [03-moteur-de-jeu.md](03-moteur-de-jeu.md) |
 | 04 | Salles et temps réel | Terminé (hors limite de débit) | [04-salles-temps-reel.md](04-salles-temps-reel.md) |
 | 05 | Mode local (style Jackbox) | En cours | [05-mode-local.md](05-mode-local.md) |
-| 06 | Mode en ligne | V2 |
-| 07 | Interface et identité visuelle | Terminé (à valider sur appareils) | [07-interface.md](07-interface.md) | [06-mode-en-ligne.md](06-mode-en-ligne.md) |
+| 06 | Mode en ligne | V2 | [06-mode-en-ligne.md](06-mode-en-ligne.md) |
+| 07 | Interface et identité visuelle | Terminé (à valider sur appareils) | [07-interface.md](07-interface.md) |
+| 08 | Déploiement sur le VPS | En cours | [08-deploiement.md](08-deploiement.md) |
 
 Statuts : À faire · En cours · Terminé · V2 (reporté).
 

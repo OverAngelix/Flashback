@@ -99,6 +99,10 @@ Pièges connus :
 - iTunes limite à environ 20 requêtes par minute ; le script attend 3,2 s entre deux appels. MusicBrainz tolère 1 requête par seconde.
 - Les titres de la liste d'origine peuvent être inexacts (« Les yeux revolver » est en réalité « Elle a les yeux revolver ») : un échec de correspondance vient souvent de là, regarder `catalog-misses.json`.
 
+## Déploiement
+
+Sur le VPS, comme SDPC (GitHub Actions, registre privé, K3s, Keel, Traefik) : voir [DEPLOY.md](DEPLOY.md). L'image client se construit depuis la racine du dépôt (alias `@server`), et Traefik envoie `/api`, `/media` et `/ws` au serveur. Les médias ne sont pas dans l'image : rsync vers le VPS, puis redémarrage du serveur.
+
 ## Conventions de commit
 
 Définies dans [.claude/commands/commit.md](.claude/commands/commit.md) (commande `/commit`) :

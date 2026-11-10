@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    keel.sh/policy: force
+    keel.sh/trigger: poll
+    keel.sh/pollSchedule: "@every 1m"
+    keel.sh/match-tag: "true"
+  name: flashback-server
+  namespace: dev
+spec:
+  replicas: 1
+  # Une seule réplique, jamais deux pods à la fois : les salles vivent en mémoire
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: flashback-server
+  template:
+    metadata:
+      labels:
+        app: flashback-server
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: registry-pull-secret
+      containers:
+        - name: flashback-server
+          image: <REGISTRE>/flashback-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            # Extraits et pochettes, copiés à la main sur le VPS (rsync), absents de l'image
+            - name: media
+              mountPath: /app/data/media
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+      volumes:
+        - name: media
+          hostPath:
+            path: /home/deploy/apps-k3s/flashback-server/media
+            type: DirectoryOrCreate
