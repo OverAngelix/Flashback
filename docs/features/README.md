@@ -3,6 +3,8 @@
 Un fichier par fonctionnalité, avec ses sous-tâches. Mis à jour au fil du développement :
 cocher `[x]` quand c'est fait, `[~]` quand c'est en cours, `[ ]` sinon.
 
+Pour comprendre le jeu dans son ensemble avant d'entrer dans le détail : [vue-d-ensemble.md](vue-d-ensemble.md).
+
 | # | Fonctionnalité | Statut | Fichier |
 |---|----------------|--------|---------|
 | 00 | Socle du projet | Terminé | [00-socle.md](00-socle.md) |

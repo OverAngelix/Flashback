@@ -1,6 +1,6 @@
 # 00 · Socle du projet
 
-Statut : En cours
+Statut : Terminé
 
 - [x] Package `server` TypeScript (NodeNext, strict) avec scripts `build`, `type-check`, `catalog:build`
 - [x] `.gitignore` racine

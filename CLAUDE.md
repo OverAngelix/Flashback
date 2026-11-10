@@ -12,7 +12,9 @@ Flashback : un jeu de type Hitster. On écoute un extrait de 30 s et on le place
 
 ## Suivi des fonctionnalités
 
-Le suivi est dans [docs/features/](docs/features/) (un fichier par fonctionnalité, avec des sous-tâches à cocher, et un index dans `README.md`). **Le mettre à jour à chaque avancée** : cocher les sous-tâches faites, ajouter celles qui apparaissent, corriger le statut dans l'index. Les décisions actées y sont aussi.
+Pour une vue globale du jeu (rôles, déroulement d'une partie, règles, imprévus gérés, état d'avancement), lire d'abord [docs/features/vue-d-ensemble.md](docs/features/vue-d-ensemble.md).
+
+Le suivi est dans [docs/features/](docs/features/) (un fichier par fonctionnalité, avec des sous-tâches à cocher, et un index dans `README.md`). La vue d'ensemble est à tenir à jour quand une fonctionnalité visible par les joueurs change ou qu'un domaine change d'état. **Le mettre à jour à chaque avancée** : cocher les sous-tâches faites, ajouter celles qui apparaissent, corriger le statut dans l'index. Les décisions actées y sont aussi.
 
 ## Commandes
 
