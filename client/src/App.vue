@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppBackground from "@/components/AppBackground.vue";
 import SplashScreen from "@/components/SplashScreen.vue";
+import { menuMusic } from "@/menuMusic";
 import { useConnection } from "@/net/connection";
+import { useSettings } from "@/settings";
 
 const connection = useConnection();
 const route = useRoute();
 const router = useRouter();
+const settings = useSettings();
 
 const error = computed({
   get: () => connection.state.error?.message ?? null,
@@ -21,7 +24,16 @@ const onVisible = () => document.visibilityState === "visible" && connection.wak
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Écran de démarrage : visible au moins un instant, le temps de charger les polices. */
-const booting = ref(!new URLSearchParams(location.search).has("nosplash"));
+const booting = ref(settings.splash && !new URLSearchParams(location.search).has("nosplash"));
+
+// La musique accompagne le menu et les paramètres ; elle s'arrête en entrant dans une partie.
+const inMenu = computed(() => route.path === "/" || route.path === "/settings");
+watchEffect(() => {
+  if (settings.music && inMenu.value) menuMusic.start(settings.musicVolume);
+  else menuMusic.stop();
+});
+watch(() => settings.musicVolume, (v) => menuMusic.setVolume(v));
+watchEffect(() => document.documentElement.classList.toggle("reduce-motion", settings.reducedMotion));
 
 onMounted(async () => {
   document.addEventListener("visibilitychange", onVisible);
