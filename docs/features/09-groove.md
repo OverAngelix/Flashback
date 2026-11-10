@@ -1,6 +1,6 @@
 # 09 · Groove (jouer pendant le tour des autres)
 
-Statut : Terminé (une décision reste à prendre sur la victoire)
+Statut : Terminé
 
 Pour qu'on ne s'ennuie pas pendant le tour des autres : chaque joueur voit la frise du joueur en cours sur son écran et peut, lui aussi, y placer le titre. Il doit être plus rapide que le joueur en cours. Un placement juste rapporte un **point groove** (logo : une boule disco). On a donc deux scores : les cartes de sa frise et ses points groove.
 
@@ -14,7 +14,8 @@ Pour qu'on ne s'ennuie pas pendant le tour des autres : chaque joueur voit la fr
 - [x] Tour passé (joueur déconnecté) : les placements groove déjà faits sont corrigés quand même
 - [x] Un joueur qui quitte la partie : son placement groove du tour est oublié
 - [x] Les points groove ne comptent pas pour la victoire, qui ne dépend que des frises ; ils départagent seulement l'ordre d'affichage du récapitulatif
-- [ ] À décider : faire compter les points groove (cartes + groove, ou groove pour départager une égalité en tête au lieu de rejouer un tour)
+
+Décision : les points groove sont **uniquement pour le style**. Ils ne comptent ni pour la victoire ni pour départager une égalité en tête (on rejoue toujours un tour).
 
 ## Serveur
 

@@ -33,7 +33,7 @@ Les titres, artistes et années du titre en cours ne quittent jamais le serveur 
 - À la fin d'un tour de plateau, un **seul** joueur en tête avec au moins 10 cartes gagne.
 - Égalité en tête : on rejoue un tour, l'objectif passe à 11, puis 12…
 - Deux années égales sont acceptées dans n'importe quel ordre.
-- **Points groove** (logo : boule disco) : un titre bien placé dans la frise d'un autre, pendant son tour, rapporte 1 point groove. Ils s'affichent à côté du nombre de cartes (barre des joueurs, récapitulatif, téléphone) et départagent l'ordre d'affichage du récapitulatif, mais ne comptent pas pour la victoire, qui ne dépend que des frises.
+- **Points groove** (logo : boule disco) : un titre bien placé dans la frise d'un autre, pendant son tour, rapporte 1 point groove. Ils s'affichent à côté du nombre de cartes (barre des joueurs, récapitulatif, téléphone) et départagent l'ordre d'affichage du récapitulatif, mais sont uniquement pour le style : ils ne comptent pas pour la victoire, qui ne dépend que des frises.
 - Paquet épuisé : la partie s'arrête aussitôt, victoire partagée possible.
 - Moins de 2 joueurs restants (départs) : la partie s'arrête, le meilleur restant gagne.
 
@@ -60,7 +60,7 @@ Volume des extraits, musique de menu (activée, volume), animations réduites, �
 |---------|------|---------------------------|
 | Moteur de jeu | Terminé | — |
 | Salles et temps réel | Terminé | Limite de débit (non prioritaire) |
-| Groove | Terminé | Décider si les points groove comptent pour la victoire |
+| Groove | Terminé | — |
 | Mode local (hôte + manettes) | Jouable de bout en bout | Essais sur vrais téléphones et vraie télé, Wake Lock, avancement automatique, mise en évidence des cartes gagnées |
 | Interface | Terminé | Sons d'interface, icône et manifeste web, validation sur appareils |
 | Catalogue | 94 titres en jeu | Vérifier les années restantes, passer à environ 1000 titres |

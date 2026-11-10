@@ -16,7 +16,7 @@ Pour comprendre le jeu dans son ensemble avant d'entrer dans le détail : [vue-d
 | 06 | Mode en ligne | V2 | [06-mode-en-ligne.md](06-mode-en-ligne.md) |
 | 07 | Interface et identité visuelle | Terminé (à valider sur appareils) | [07-interface.md](07-interface.md) |
 | 08 | Déploiement sur le VPS | En cours | [08-deploiement.md](08-deploiement.md) |
-| 09 | Groove (jouer pendant le tour des autres) | Terminé (victoire à décider) | [09-groove.md](09-groove.md) |
+| 09 | Groove (jouer pendant le tour des autres) | Terminé | [09-groove.md](09-groove.md) |
 
 Statuts : À faire · En cours · Terminé · V2 (reporté).
 
@@ -38,4 +38,4 @@ Statuts : À faire · En cours · Terminé · V2 (reporté).
 - Sur téléphone, le jeu se joue en paysage (obligatoire pendant la partie) pour faire glisser la frise.
 - Le joueur doit toucher l'écran pour lancer la musique (restriction d'autoplay des navigateurs mobiles).
 - Version actuelle : 100 titres. Version finale : environ 1000.
-- Groove : pendant le tour d'un autre, chacun voit sa frise sur son écran et peut y placer le titre, une fois, avant lui ; un placement juste rapporte un point groove (logo : boule disco). Les points groove ne comptent pas pour la victoire.
+- Groove : pendant le tour d'un autre, chacun voit sa frise sur son écran et peut y placer le titre, une fois, avant lui ; un placement juste rapporte un point groove (logo : boule disco). Les points groove sont uniquement pour le style : ils ne comptent ni pour la victoire ni pour départager une égalité.
