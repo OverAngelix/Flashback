@@ -46,6 +46,8 @@ export function createConnection(deps: ConnectionDeps) {
     /** La reprise a échoué (salle supprimée ou jeton refusé). */
     sessionLost: false,
     kicked: false,
+    /** L'hôte a mis fin à la partie. */
+    closed: false,
   });
 
   let socket: SocketLike | null = null;
@@ -153,6 +155,10 @@ export function createConnection(deps: ConnectionDeps) {
         reset();
         state.kicked = true;
         return;
+      case "closed":
+        reset();
+        state.closed = true;
+        return;
       case "error":
         if (rejoining && message.code === "room-not-found") {
           reset();
@@ -182,6 +188,12 @@ export function createConnection(deps: ConnectionDeps) {
     s?.close();
   }
 
+  function clearNotices() {
+    state.kicked = false;
+    state.sessionLost = false;
+    state.closed = false;
+  }
+
   function send(message: ClientMessage) {
     if (socket?.readyState === OPEN) rawSend(message);
     else {
@@ -198,15 +210,13 @@ export function createConnection(deps: ConnectionDeps) {
     /** Crée une salle. L'ancienne session éventuelle est abandonnée. */
     createRoom() {
       reset();
-      state.kicked = false;
-      state.sessionLost = false;
+      clearNotices();
       send({ type: "host:create" });
     },
 
     join(code: string, name: string, avatar: number) {
       reset();
-      state.kicked = false;
-      state.sessionLost = false;
+      clearNotices();
       send({ type: "player:join", code, name, avatar });
     },
 
@@ -227,8 +237,15 @@ export function createConnection(deps: ConnectionDeps) {
       }
     },
 
-    /** Quitter la partie volontairement. */
-    leave: reset,
+    /**
+     * Quitter la partie volontairement. Le serveur est prévenu si la connexion est ouverte : le
+     * joueur sort de la partie (avec sa frise), l'hôte y met fin pour tout le monde.
+     */
+    leave() {
+      const role = state.session?.role;
+      if (role && socket?.readyState === OPEN) rawSend({ type: role === "host" ? "host:close" : "player:leave" });
+      reset();
+    },
 
     clearError() {
       state.error = null;

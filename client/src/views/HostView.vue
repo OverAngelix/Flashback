@@ -5,6 +5,7 @@ import { audio, playExtract, stopExtract, unlockAudio } from "@/audio";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import Equalizer from "@/components/Equalizer.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
 import PlayersBar from "@/components/PlayersBar.vue";
@@ -84,18 +85,41 @@ function reactivateSound() {
   unlockAudio();
   if (lastAudioUrl.value) playExtract(lastAudioUrl.value);
 }
+/** Quitter l'écran met fin à la partie pour tous : confirmation dès qu'il y a des joueurs. */
+const askLeave = ref(false);
+function requestLeave() {
+  if (view.value && view.value.phase !== "finished" && view.value.players.length > 0) askLeave.value = true;
+  else leave();
+}
 function leave() {
   connection.leave();
   router.push("/");
 }
+
+// Le joueur actif est parti pendant l'écoute : son extrait ne doit pas déborder sur la suite.
+watch(
+  () => (view.value ? { phase: view.value.phase, turn: `${view.value.round}-${view.value.activePlayerId}` } : null),
+  (now, before) => {
+    if (before?.phase !== "awaiting-placement" || now?.phase === "reveal") return;
+    if (now?.phase !== "awaiting-placement" || now.turn !== before.turn) stopExtract();
+  },
+);
 </script>
 
 <template>
   <div class="host" @click="audio.blocked && reactivateSound()">
     <header class="top">
       <div class="brand"><BrandMark class="mark" /><span class="display">Flashback</span></div>
-      <v-btn v-if="view" icon="mdi-exit-to-app" class="btn-ghost" size="default" title="Quitter" @click.stop="leave" />
+      <v-btn v-if="view" icon="mdi-exit-to-app" class="btn-ghost" size="default" title="Mettre fin à la partie" data-testid="host-leave" @click.stop="requestLeave" />
     </header>
+    <ConfirmDialog
+      v-model="askLeave"
+      title="Mettre fin à la partie ?"
+      text="La partie s'arrête pour tout le monde : les téléphones reviennent à l'accueil."
+      confirm-label="Mettre fin"
+      testid="host-leave-confirm"
+      @confirm="leave"
+    />
 
     <v-alert v-if="audio.blocked" type="warning" variant="flat" icon="mdi-volume-off" class="mb-4 sound-alert">Touche l'écran pour activer le son.</v-alert>
     <v-alert v-if="connection.state.status === 'reconnecting'" type="warning" variant="tonal" class="mb-4">Connexion au serveur perdue, nouvelle tentative…</v-alert>

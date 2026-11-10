@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
 import PlayJoin from "@/components/PlayJoin.vue";
 import PlayTurn from "@/components/PlayTurn.vue";
@@ -34,8 +35,11 @@ onMounted(() => {
 const inGame = computed(() => !!view.value && view.value.phase !== "lobby");
 const stageKey = computed(() => (view.value ? `${view.value.phase}-${view.value.round}-${view.value.activePlayerId}` : "loading"));
 
+/** Pendant la partie, quitter retire le joueur et sa frise : on demande confirmation. */
+const canLeaveInGame = computed(() => inGame.value && view.value?.phase !== "finished");
+const askLeave = ref(false);
+
 function leave() {
-  if (view.value?.phase === "lobby") connection.send({ type: "player:leave" });
   connection.leave();
   router.push("/");
 }
@@ -45,6 +49,18 @@ function leave() {
   <div class="screen">
     <RotateOverlay v-if="portrait && inGame" />
 
+    <template v-if="canLeaveInGame && me">
+      <v-btn icon="mdi-exit-to-app" class="btn-ghost exit" size="small" title="Quitter la partie" aria-label="Quitter la partie" data-testid="leave-game" @click="askLeave = true" />
+      <ConfirmDialog
+        v-model="askLeave"
+        title="Quitter la partie ?"
+        text="Ta frise sera perdue et tu ne pourras pas revenir dans cette partie. Les autres continuent sans toi."
+        confirm-label="Quitter"
+        testid="leave-confirm"
+        @confirm="leave"
+      />
+    </template>
+
     <PlayJoin v-if="!connection.state.session" :initial-code="code" />
 
     <div v-else-if="!view || !me" class="loading">
@@ -53,7 +69,7 @@ function leave() {
     </div>
 
     <Transition v-else name="phase" mode="out-in">
-      <div :key="stageKey" class="play">
+      <div :key="stageKey" class="play" :class="{ 'in-game': canLeaveInGame }">
         <div v-if="connection.state.status === 'reconnecting'" class="reconnect glass"><MusicLoader :size="22" /> Reconnexion…</div>
 
         <!-- Salon -->
@@ -140,6 +156,13 @@ function leave() {
 .play {
   position: relative;
 }
+/* Toujours accessible pendant la partie, dans le coin laissé libre par chaque écran. */
+.exit.v-btn {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 50;
+}
 .reconnect {
   position: fixed;
   top: 10px;
@@ -168,6 +191,9 @@ function leave() {
 .p-reveal {
   gap: 6px;
   padding: 10px 12px;
+}
+.in-game > section {
+  padding-right: 56px;
 }
 .me-head {
   display: flex;

@@ -199,6 +199,49 @@ describe("connexion", () => {
     expect(d.state.status).toBe("idle");
   });
 
+  it("prévient le serveur en quittant : player:leave pour un joueur, host:close pour l'hôte", () => {
+    const p = make();
+    p.join("ABC234", "Ana", 3);
+    last().open();
+    last().receive({ type: "session", role: "player", code: "ABC234", token: "t1", playerId: "p1" });
+    const playerSocket = last();
+    p.leave();
+    expect(playerSocket.sent.at(-1)).toEqual({ type: "player:leave" });
+    expect(playerSocket.closed).toBe(true);
+
+    const h = make();
+    h.createRoom();
+    last().open();
+    last().receive({ type: "session", role: "host", code: "ABC234", token: "h1" });
+    const hostSocket = last();
+    h.leave();
+    expect(hostSocket.sent.at(-1)).toEqual({ type: "host:close" });
+  });
+
+  it("n'envoie rien en quittant si la connexion n'est pas ouverte", () => {
+    storage.setItem("flashback.session", JSON.stringify({ role: "player", code: "ABC234", token: "t1" }));
+    const c = make();
+    c.resume();
+    c.leave();
+    expect(last().sent).toEqual([]);
+    expect(c.state.session).toBeNull();
+  });
+
+  it("revient à l'accueil quand l'hôte met fin à la partie", () => {
+    const c = make();
+    c.join("ABC234", "Ana", 3);
+    last().open();
+    last().receive({ type: "session", role: "player", code: "ABC234", token: "t1", playerId: "p1" });
+    last().receive({ type: "closed" });
+    expect(c.state.closed).toBe(true);
+    expect(c.state.session).toBeNull();
+    expect(storage.getItem("flashback.session")).toBeNull();
+    vi.advanceTimersByTime(20000);
+    expect(FakeSocket.all).toHaveLength(1);
+    c.join("XYZ234", "Ana", 3);
+    expect(c.state.closed).toBe(false);
+  });
+
   it("transmet l'ordre de jouer un extrait aux abonnés", () => {
     const c = make();
     const heard: string[] = [];

@@ -36,6 +36,7 @@ function hostGame() {
 
     <v-alert v-if="connection.state.sessionLost" type="warning" variant="tonal" class="notice" closable>La partie que tu avais en cours n'existe plus.</v-alert>
     <v-alert v-if="connection.state.kicked" type="info" variant="tonal" class="notice" closable>L'hôte t'a retiré de la partie.</v-alert>
+    <v-alert v-if="connection.state.closed" type="info" variant="tonal" class="notice" closable data-testid="notice-closed">L'hôte a mis fin à la partie.</v-alert>
 
     <nav class="tiles" aria-label="Menu principal">
       <button type="button" class="tile glass host" data-testid="menu-host" @click="hostGame">
