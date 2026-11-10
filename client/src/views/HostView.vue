@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { audio, playExtract, stopExtract, unlockAudio } from "@/audio";
 import AvatarBadge from "@/components/AvatarBadge.vue";
@@ -8,6 +8,8 @@ import RecapPanel from "@/components/RecapPanel.vue";
 import RevealPanel from "@/components/RevealPanel.vue";
 import TimelineStrip from "@/components/TimelineStrip.vue";
 import { useGame } from "@/composables/useGame";
+import { joinBase, joinLink } from "@/joinUrl";
+import { qrDataUrl } from "@/qr";
 import { MIN_PLAYERS } from "@server/game/types";
 
 const router = useRouter();
@@ -51,8 +53,18 @@ onUnmounted(() => {
   window.removeEventListener("keydown", onKey);
 });
 
-/** Adresse à taper sur un téléphone : une adresse du réseau local, sinon celle de cette page. */
-const joinUrl = computed(() => `${joinUrls.value[0] ?? location.origin}/play`);
+/** Adresse que les téléphones peuvent joindre (jamais localhost) : texte à taper et QR code. */
+const base = computed(() => joinBase(location, joinUrls.value));
+const joinUrl = computed(() => `${base.value}/play`);
+const qrLink = computed(() => (view.value ? joinLink(base.value, view.value.code) : null));
+const qr = ref<string>();
+watch(
+  qrLink,
+  async (link) => {
+    qr.value = link ? await qrDataUrl(link) : undefined;
+  },
+  { immediate: true },
+);
 
 const chosen = computed(() => new Set(view.value?.categories ?? []));
 function toggleCategory(id: string) {
@@ -63,6 +75,13 @@ function toggleCategory(id: string) {
 }
 
 const canStart = computed(() => (view.value?.players.length ?? 0) >= MIN_PLAYERS && chosen.value.size > 0);
+
+/** Où en est le tour : avant l'écoute, pendant l'extrait, puis pendant que le joueur place son titre. */
+const status = computed(() => {
+  const name = active.value?.name ?? "";
+  if (!view.value?.listened) return `${name}, lance l'extrait depuis ton téléphone`;
+  return audio.playing ? "Écoute…" : `${name} place le titre dans sa frise`;
+});
 
 function reactivateSound() {
   unlockAudio();
@@ -94,10 +113,16 @@ function leave() {
           <div class="text-title-large">Code de la partie</div>
           <div class="code font-weight-black" data-testid="room-code">{{ view.code }}</div>
         </v-sheet>
+        <v-sheet v-if="qr" rounded="xl" class="qr pa-2 flex-shrink-0" color="white">
+          <img :src="qr" :data-join-url="qrLink" alt="QR code pour rejoindre la partie" width="200" height="200" data-testid="qr" />
+        </v-sheet>
         <div class="text-headline-small">
-          Sur ton téléphone, ouvre
-          <div class="text-primary font-weight-bold my-2" data-testid="join-url">{{ joinUrl }}</div>
-          puis entre le code.
+          Scanne le QR code avec ton téléphone,
+          <div class="text-title-large text-medium-emphasis mt-2">
+            ou ouvre
+            <span class="text-primary font-weight-bold" data-testid="join-url">{{ joinUrl }}</span>
+            et entre le code.
+          </div>
         </div>
       </div>
 
@@ -151,9 +176,9 @@ function leave() {
         </div>
       </div>
       <v-sheet rounded="xl" class="pa-8 text-center">
-        <v-icon :icon="audio.playing ? 'mdi-music-note' : 'mdi-cellphone-sound'" size="72" :color="audio.playing ? 'primary' : undefined" />
-        <div class="text-headline-large mt-2">{{ audio.playing ? "Écoute…" : `${active.name}, lance l'extrait depuis ton téléphone` }}</div>
-        <div class="text-medium-emphasis mt-1">puis place le titre dans ta frise.</div>
+        <v-icon :icon="audio.playing ? 'mdi-music-note' : view.listened ? 'mdi-gesture-tap' : 'mdi-cellphone-sound'" size="72" :color="audio.playing ? 'primary' : undefined" />
+        <div class="text-headline-large mt-2" data-testid="turn-status">{{ status }}</div>
+        <div class="text-medium-emphasis mt-1">{{ view.listened ? "Une seule écoute par tour." : "Une seule écoute : bien écouter !" }}</div>
       </v-sheet>
       <TimelineStrip :cards="active.timeline" />
       <v-alert v-if="!active.connected" type="warning" variant="tonal">
@@ -192,6 +217,10 @@ function leave() {
   font-size: clamp(3rem, 12vw, 8rem);
   letter-spacing: 0.15em;
   line-height: 1.1;
+}
+.qr img {
+  display: block;
+  border-radius: 12px;
 }
 .exit {
   position: fixed;
