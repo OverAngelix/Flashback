@@ -256,14 +256,16 @@ try {
   if (await ben.$(sel("play-extract"))) throw new Error("Ben ne devrait pas pouvoir écouter");
   ok("Ben : pas de bouton d'écoute hors de son tour");
 
-  // Chacun voit sa propre frise : l'écran montre celle d'Ana, le téléphone de Ben la sienne.
+  // L'écran et le téléphone de Ben montrent tous deux la frise d'Ana, le joueur en cours.
   const anaStart = await titles(host);
   const benStart = await titles(ben);
   if (anaStart.length === 0 || benStart.length === 0) throw new Error("frise introuvable");
-  if (benStart.some((t) => anaStart.includes(t))) throw new Error("Ben voit la frise du joueur actif");
+  if (JSON.stringify(benStart) !== JSON.stringify(anaStart)) throw new Error(`Ben devrait voir la frise d'Ana : ${benStart} / ${anaStart}`);
   const benText = await ben.evaluate(() => document.body.innerText);
-  if (!benText.includes("Ta frise") || !benText.includes("Ana réfléchit")) throw new Error("écran d'attente de Ben incorrect");
-  ok("Ben : voit sa propre frise pendant le tour d'Ana (celle d'Ana est sur l'écran)");
+  if (!benText.includes("Tour de Ana") || !benText.includes("pas encore lancé")) throw new Error("écran groove de Ben incorrect : " + benText);
+  if (!(await ben.$eval(sel("groove-place"), (e) => e.disabled))) throw new Error("Ben ne devrait pas pouvoir placer avant l'écoute");
+  if (await ben.$(".slot")) throw new Error("emplacements cliquables avant l'écoute");
+  ok("Ben : voit la frise d'Ana pendant son tour ; placement groove fermé avant l'écoute");
 
   // Petit téléphone en paysage (barre du navigateur comprise) : tout doit tenir, boutons compris.
   await ana.setViewport({ width: 740, height: 300, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
@@ -299,6 +301,26 @@ try {
   if (playsCount !== 1) throw new Error(`l'extrait a été joué ${playsCount} fois`);
   ok("Ana : « Écouter » est désactivé après l'écoute, l'extrait n'est joué qu'une fois");
 
+  // Groove : Ben place le titre dans la frise d'Ana avant elle.
+  await ben.waitForSelector(".slot");
+  await ben.setViewport({ width: 740, height: 300, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await sleep(300);
+  await assertFits(ben, "placement groove à 740x300", { vertical: true });
+  const gb = await ben.$eval(sel("groove-place"), (e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; });
+  if (gb.top < 0 || gb.bottom > 300) throw new Error("bouton groove hors de l'écran à 740x300 : " + JSON.stringify(gb));
+  await ben.click(".slot");
+  await ben.waitForFunction(() => !document.querySelector('[data-testid="groove-place"]').disabled);
+  await shot(ben, "05b-ben-groove-740x300");
+  await ben.setViewport(phone);
+  await ben.click(sel("groove-place"));
+  await ben.waitForSelector(sel("groove-done"));
+  if (await ben.$(".slot")) throw new Error("Ben ne devrait plus pouvoir placer après son placement groove");
+  await host.waitForSelector(sel("guessed"));
+  await host.waitForFunction(() => document.querySelector('[data-testid="groove-hint"]').textContent.includes("1/1 ont placé"));
+  await ana.waitForSelector(sel("groove-pressure"));
+  await shot(host, "05c-host-groove-placed");
+  ok("Ben : place le titre dans la frise d'Ana (groove) ; l'écran et Ana le voient, sans la position");
+
   // Pendant l'extrait, puis à la fin de la musique : l'écran hôte suit.
   await host.evaluate(() => window.__lastAudio.dispatchEvent(new Event("playing")));
   await host.waitForFunction(() => document.querySelector('[data-testid="turn-status"]').textContent.includes("Écoute"));
@@ -316,17 +338,32 @@ try {
   await painted(host, sel("advance"), "bouton Continuer de l'hôte");
   await shot(host, "07-host-reveal");
   const revealText = await host.evaluate(() => document.body.innerText);
-  if (!/Bien joué|Raté/.test(revealText)) throw new Error("pas de résultat");
-  ok("hôte : révélation affichée (" + (revealText.includes("Bien joué") ? "bien joué" : "raté") + ")");
+  if (!/a trouvé|n'a pas trouvé/.test(revealText)) throw new Error("pas de résultat");
+  const anaOk = revealText.includes("Ana a trouvé");
+  const placedTone = await host.$eval(sel("placed-card"), (e) => (e.classList.contains("tone-ok") ? "ok" : e.classList.contains("tone-ko") ? "ko" : "?"));
+  if (placedTone !== (anaOk ? "ok" : "ko")) throw new Error(`la carte posée devrait être ${anaOk ? "verte" : "rouge"} (${placedTone})`);
+  // Ana et Ben ont choisi le même emplacement (le premier) : même verdict. Pas d'avatar sur la frise, juste qui a eu bon.
+  if (await host.$(".track .avatar")) throw new Error("la frise ne devrait pas porter d'avatars groove");
+  const hostGroove = await text(host, sel("groove-result"));
+  if (hostGroove !== (anaOk ? "Benaaussitrouvé" : "Personnen'atrouvé")) throw new Error("ligne groove incorrecte sur l'écran : " + hostGroove);
+  const verdict = await text(host, sel("verdict"));
+  if (verdict !== (anaOk ? "Anaatrouvé!" : "Anan'apastrouvé…")) throw new Error("verdict incorrect sur l'écran : " + verdict);
+  // Carte ratée : les emplacements justes sont marqués en vert ; carte juste : aucun.
+  const solutions = (await host.$$(sel("solution"))).length;
+  if (anaOk ? solutions !== 0 : solutions < 1) throw new Error(`bonnes réponses affichées : ${solutions} (Ana ${anaOk ? "a trouvé" : "a raté"})`);
+  ok("hôte : révélation affichée (" + (anaOk ? "bien joué" : "raté") + ") ; carte d'Ana " + (anaOk ? "en vert" : "en rouge, bonne réponse en vert") + " dans sa frise, « " + (anaOk ? "Ana a trouvé ! » puis « Ben a aussi trouvé" : "Ana n'a pas trouvé… » puis « Personne n'a trouvé") + " »");
   await ben.waitForFunction(() => document.body.innerText.includes("En attente de la suite"));
   await ben.setViewport({ width: 740, height: 300, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await sleep(300);
   await assertFits(ben, "révélation à 740x300", { vertical: true });
   await shot(ben, "08-ben-reveal");
   const benReveal = await titles(ben);
-  if (benReveal.includes(anaStart[0])) throw new Error("la révélation montre la frise d'Ana sur le téléphone de Ben");
-  if (!(await ben.evaluate(() => document.body.innerText.includes("Ta frise")))) throw new Error("« Ta frise » absent de la révélation de Ben");
-  ok("Ben : la révélation tient à 740x300 et montre sa frise, pas celle d'Ana");
+  if (!benReveal.includes(anaStart[0])) throw new Error("la révélation de Ben devrait montrer la frise d'Ana");
+  if (!(await ben.$(sel("placed-card")))) throw new Error("la carte jouée par Ana n'est pas dans la frise de Ben");
+  // Ben a choisi le même emplacement qu'Ana : même verdict. Son téléphone ne parle que de lui.
+  const benGroove = await text(ben, sel("groove-result"));
+  if (benGroove !== (anaOk ? "Toiaussi!" : "Toinonplus…")) throw new Error("résultat groove de Ben incorrect : " + benGroove);
+  ok("Ben : la révélation tient à 740x300, montre la frise d'Ana et « " + (anaOk ? "Toi aussi !" : "Toi non plus…") + " »");
   await ben.setViewport(phone);
 
   // Passage au joueur suivant : l'extrait d'Ana doit s'éteindre en une seconde environ, pas d'un coup.
@@ -382,8 +419,14 @@ try {
   await shot(host, "09-host-recap");
   ok("hôte : récapitulatif des frises après le tour de plateau, même avec un double clic");
   await ana.waitForFunction(() => document.body.innerText.includes("Ta frise après le tour 1"));
-  if ((await ana.evaluate(() => document.body.innerText)).includes("Ben")) throw new Error("le récapitulatif du téléphone d'Ana montre la frise de Ben");
-  ok("Ana : le récapitulatif de son téléphone montre sa frise seulement");
+  await assertFits(ana, "récapitulatif du téléphone", { vertical: true });
+  await shot(ana, "09b-ana-recap");
+  // Les noms des lignes, pas tout le texte : un artiste peut contenir « Ben » (Amel Bent).
+  const recapNames = await ana.$$eval(".recap .name", (els) => els.map((e) => e.textContent.trim()));
+  if (JSON.stringify(recapNames) !== '["Ana"]') throw new Error("le récapitulatif du téléphone d'Ana montre d'autres frises : " + recapNames);
+  const recapText = await host.evaluate(() => document.body.innerText);
+  if (!recapText.includes(`${anaOk ? 1 : 0} groove`)) throw new Error("le récapitulatif n'affiche pas les points groove de Ben");
+  ok("Ana : le récapitulatif de son téléphone montre sa frise seulement ; l'écran affiche les points groove");
 
   // Portrait : l'overlay doit bloquer la manette
   await ana.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
