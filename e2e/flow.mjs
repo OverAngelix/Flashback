@@ -102,10 +102,77 @@ try {
   await host.waitForFunction(() => !document.querySelector('[data-testid="splash"]'), { timeout: 8000 });
   ok("écran de démarrage : affiché au chargement, puis disparaît");
   await shot(host, "01-home");
-  const [createBtn] = await host.$$("xpath/.//button[contains(., 'Créer une partie')]");
-  await createBtn.click();
+  await host.waitForSelector(sel("menu-host"));
+
+  // Menu : quatre boîtes en grille 2x2, « Multijoueur » est grisé et ne mène nulle part.
+  const tiles = await host.evaluate(() =>
+    ["menu-host", "menu-join", "menu-multi", "menu-settings"].map((id) => {
+      const r = document.querySelector(`[data-testid="${id}"]`).getBoundingClientRect();
+      return { id, x: Math.round(r.left), y: Math.round(r.top), bottom: Math.round(r.bottom) };
+    }),
+  );
+  const [h, j, m, st] = tiles;
+  if (!(h.y === j.y && m.y === st.y && h.x === m.x && j.x === st.x && h.y < m.y && h.x < j.x)) {
+    throw new Error("le menu n'est pas une grille 2x2 : " + JSON.stringify(tiles));
+  }
+  if (m.bottom > 720 - 40) throw new Error("le menu est collé au bas de l'écran : " + JSON.stringify(m));
+  if (!(await host.$eval(sel("menu-multi"), (e) => e.disabled))) throw new Error("Multijoueur devrait être grisé");
+  await host.click(sel("menu-multi")).catch(() => {});
+  if (new URL(host.url()).pathname !== "/") throw new Error("Multijoueur ne devrait mener nulle part");
+  ok("menu : grille 2x2 sous le titre, pas collée au bas ; Multijoueur est grisé et inactif");
+
+  // /host sans partie en cours renvoie au menu (une salle se crée avec « Héberger »).
+  const direct = await newPage("direct-host", { width: 1280, height: 720 });
+  await go(direct, BASE + "/host");
+  await direct.waitForSelector(sel("menu-host"));
+  if (new URL(direct.url()).pathname !== "/") throw new Error("/host aurait dû renvoyer au menu");
+  await direct.close();
+  ok("/host sans partie en cours : retour au menu, aucune salle créée");
+
+  // Musique de menu : elle joue dans le menu, son rendu est audible et sans saturation, on peut la couper.
+  await host.waitForFunction(() => window.__menuMusic && window.__menuMusic.state().playing === true);
+  ok("musique de menu : lancée dans le menu");
+  const stats = await host.evaluate(() => window.__menuMusic.renderOffline(8, 1));
+  console.log(
+    "    rendu : " + stats.seconds.toFixed(1) + " s, niveau " + stats.rms.toFixed(3) + ", crête " + stats.peak.toFixed(2) + ", audible " + (stats.audibleRatio * 100).toFixed(0) + " %",
+  );
+  if (!(stats.rms > 0.01 && stats.rms < 0.25)) throw new Error("niveau de la musique incorrect : " + stats.rms);
+  if (!(stats.peak < 0.95)) throw new Error("la musique sature : crête " + stats.peak);
+  if (!(stats.audibleRatio > 0.95)) throw new Error("la musique a trop de silences : " + stats.audibleRatio);
+  ok("musique de menu : rendu hors ligne audible (niveau correct, sans saturation, sans trous)");
+  await host.click(sel("music-toggle"));
+  await host.waitForFunction(() => window.__menuMusic.state().playing === false);
+  await host.click(sel("music-toggle"));
+  await host.waitForFunction(() => window.__menuMusic.state().playing === true);
+  ok("musique de menu : se coupe et se relance avec le bouton du menu");
+
+  // Paramètres : nom par défaut, animations réduites, mémorisés dans le navigateur.
+  await host.click(sel("menu-settings"));
+  await host.waitForSelector(sel("setting-name") + " input");
+  await host.type(sel("setting-name") + " input", "Zoé");
+  await host.$eval(sel("setting-reduced") + " input", (e) => e.click());
+  await host.waitForFunction(() => document.documentElement.classList.contains("reduce-motion"));
+  const saved = await host.evaluate(() => JSON.parse(localStorage.getItem("flashback.settings")));
+  if (saved.playerName !== "Zoé" || saved.reducedMotion !== true) throw new Error("réglages non mémorisés : " + JSON.stringify(saved));
+  await host.$eval(sel("setting-reduced") + " input", (e) => e.click());
+  await host.waitForFunction(() => !document.documentElement.classList.contains("reduce-motion"));
+  await shot(host, "01b-settings");
+  await host.click(sel("settings-back"));
+  await host.waitForSelector(sel("menu-join"));
+  await host.click(sel("menu-join"));
+  await host.waitForSelector(sel("name-input") + " input");
+  if ((await host.$eval(sel("name-input") + " input", (e) => e.value)) !== "Zoé") throw new Error("le nom par défaut n'est pas proposé");
+  const [back] = await host.$$("xpath/.//a[contains(., 'Retour')]");
+  await back.click();
+  await host.waitForSelector(sel("menu-host"));
+  ok("paramètres : nom par défaut mémorisé et proposé, animations réduites activées puis coupées");
+
+  await host.click(sel("menu-host"));
+  await host.waitForFunction(() => window.__menuMusic.state().playing === false);
+  ok("musique de menu : coupée en entrant dans une partie");
   await host.waitForSelector(sel("room-code"));
   await painted(host, sel("room-code"), "code de la salle");
+  await assertFits(host, "salon de l'écran hôte");
   const code = await text(host, sel("room-code"));
   if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) throw new Error("code invalide: " + code);
   ok(`hôte : salle créée, code ${code}`);
