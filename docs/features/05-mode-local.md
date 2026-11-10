@@ -19,14 +19,17 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Passer le tour d'un joueur déconnecté
 - [x] Reprise de l'écran après un rechargement de la page (code et jeton mémorisés)
 - [ ] Vérifier la lisibilité sur une vraie télé (tailles de texte, distance)
-- [ ] Faire avancer la partie sans souris ni clavier (depuis un téléphone, ou automatiquement après quelques secondes) : une télé n'a pas toujours de pointeur
+- [x] Piloter la partie sans toucher à l'écran : le chef de partie (premier joueur arrivé, puis le suivant s'il se déconnecte) choisit les catégories, lance la partie, fait avancer et passe un tour depuis son téléphone ; l'écran hôte garde ses propres commandes
+- [x] L'écran hôte montre le chef de partie (couronne) et le dit dans le salon
+- [ ] Avancement automatique optionnel après quelques secondes (pour une partie sans aucun pilotage)
 - [x] Code QR pour rejoindre sans taper l'adresse : il mène à `/join/CODE` (code pré-rempli) et utilise l'adresse du réseau local, jamais `localhost`
 - [ ] Empêcher la mise en veille de l'écran pendant la partie (Wake Lock)
 
 ## Manette joueur (téléphone ou PC)
 
-- [x] Saisie du code de salle (ou lien direct `/join/CODE`)
+- [x] Saisie du code de salle, ou lien direct `/join/CODE` (QR code) : dans ce cas le champ code disparaît, il ne reste que le nom et l'avatar (bouton « Changer » pour corriger)
 - [x] Choix du nom et d'un avatar parmi 10 avant de rejoindre ; les avatars déjà pris sont grisés en direct
+- [x] Salon du chef de partie : catégories et bouton de lancement ; « Continuer », « Tour suivant » et « Passer son tour » aux bons moments
 - [x] Chaque joueur voit sa propre frise quand ce n'est pas son tour, à la révélation et au récapitulatif (l'écran principal montre celle du joueur actif)
 - [x] Au tour du joueur : bouton « Écouter » (l'écran hôte joue le son, une seule écoute par tour), frise défilante avec emplacements entre les cartes, bouton « Placer ici » ; les deux boutons sont dans la colonne de gauche, visibles même sur un écran de 740x300
 - [x] L'écran hôte suit l'écoute : attente du lancement, « Écoute… », puis « place le titre dans sa frise » à la fin de l'extrait

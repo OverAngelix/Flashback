@@ -11,6 +11,7 @@ WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code
 - [x] Rejoindre avec un code, un nom et un avatar (0 à 9) ; `GET /api/rooms/:code` donne les avatars déjà pris pour griser le formulaire, sans révéler les noms
 - [x] Validation du nom et de l'avatar côté serveur (nom unique, 16 caractères, avatar unique)
 - [x] Rôles : l'hôte (écran, ne joue pas) et les joueurs ; chaque message est réservé à son rôle
+- [x] Chef de partie (`leaderId` dans l'état) : premier joueur arrivé, remplacé par le premier joueur connecté s'il se déconnecte ou part, et il le reste même si l'ancien revient ; il peut envoyer `host:setCategories`, `host:start`, `host:advance`, `host:skipTurn`, `host:kick` (pas `host:create` ni `host:rejoin`, et il ne peut pas s'exclure)
 - [x] Protocole de messages typé et validé (`server/src/net/protocol.ts`)
 - [x] Vue publique de l'état, identique pour tous : jamais le titre, l'artiste, l'année ni la pochette du titre courant avant la révélation (testé)
 - [x] Lancement de l'extrait : le joueur actif envoie `player:play` (une seule fois par tour, et seulement si l'écran est connecté), l'hôte reçoit `audio:play` et joue le son ; l'état porte `listened`

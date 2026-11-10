@@ -37,7 +37,7 @@ npm run build        # type-check puis vite build -> client/dist, que le serveur
 npm test             # vitest (connexion, avatars, QR code, adresse de jonction) ; un seul fichier : npx vitest run src/net/connection.test.ts
 ```
 
-Depuis `e2e/` : `npm test` joue un tour complet (un écran hôte, deux téléphones en paysage) dans un vrai Chrome contre le vrai serveur et le vrai catalogue. Prérequis : `npm run build` dans `server/` et dans `client/`, et Chrome (variable `CHROME_PATH` si le chemin n'est pas standard). Le script démarre lui-même le serveur (port 3399, `E2E_PORT`) et écrit des captures dans `e2e/shots/`. Les tests unitaires et le build ne voient pas les problèmes de rendu : relancer ce test après toute modification de l'interface, et regarder les captures.
+Depuis `e2e/` : `npm test` joue deux tours (un écran hôte, deux téléphones en paysage, Ana chef de partie puis Ben) dans un vrai Chrome contre le vrai serveur et le vrai catalogue. Prérequis : `npm run build` dans `server/` et dans `client/`, et Chrome (variable `CHROME_PATH` si le chemin n'est pas standard). Le script démarre lui-même le serveur (port 3399, `E2E_PORT`) et écrit des captures dans `e2e/shots/`. Les tests unitaires et le build ne voient pas les problèmes de rendu : relancer ce test après toute modification de l'interface, et regarder les captures.
 
 Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"types": ["node"]`), le client en TypeScript 6.0.3 car `vue-tsc` ne fonctionne pas avec TypeScript 7.
 
@@ -48,6 +48,7 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - `src/net/protocol.ts` : le protocole WebSocket (messages client → serveur validés par `parseClientMessage`, messages serveur, `GameView`). `src/net/view.ts` construit la vue envoyée à tous les clients ; `src/net/ws.ts` branche `/ws` sur le serveur HTTP avec un ping de 20 s.
 - `src/rooms/` : `Room` (une partie, l'hôte, les joueurs, la diffusion de l'état) et `RoomManager`/`Session` (code de 6 caractères, routage des messages, nettoyage). Ils ne connaissent que l'interface `Connection`, donc se testent sans réseau. Hôte et joueurs se reconnectent avec un jeton reçu dans le message `session`.
 - Le serveur sert aussi `client/dist` sur `/` (repli vers `index.html` pour `/host`, `/play`, `/join/CODE`). Fichiers lus à la demande : pas besoin de redémarrer après un `npm run build` du client.
+- Chef de partie : `Room.leaderId` (premier joueur arrivé ; remplacé par le premier joueur connecté s'il se déconnecte, et il le reste si l'ancien revient). `Session` laisse un joueur envoyer les messages de `CONTROL_MESSAGE_TYPES` (`host:setCategories|start|advance|skipTurn|kick`) seulement s'il est chef ; `host:create` et `host:rejoin` restent réservés à l'hôte. `GameView.leaderId` l'expose.
 - Une seule écoute de l'extrait par tour : `Game.listen` (drapeau `listened`, remis à zéro à chaque pioche) ; `Room` ne la consomme que si l'écran hôte est connecté.
 - `host:advance` porte la phase quittée (`from`) : un message en double ou obsolète est ignoré sans erreur, ce qui rend le double clic inoffensif.
 - `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
@@ -61,8 +62,15 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - Le QR code (`src/qr.ts`, bibliothèque `qrcode`) encode `joinLink(joinBase(...), code)` (`src/joinUrl.ts`) : sur `localhost`, l'adresse du réseau local donnée par `/api/network`. Ses tests le décodent avec `jsqr`.
 - Chaque manette montre la frise de son joueur (jamais celle du joueur actif, visible sur l'écran hôte) ; `RevealPanel` et `RecapPanel` prennent `viewerId`.
 - Écrans peu hauts (téléphone en paysage, environ 300 px utiles) : cartes et emplacements rétrécis par media query (`TrackCard`, `TimelineStrip`), boutons de jeu dans la colonne de gauche (`PlayTurn`).
+- Commandes partagées par l'écran hôte et le téléphone du chef : `src/composables/useControls.ts` (catégories, lancement, suite, tour passé, exclusion).
+- Style : `src/styles.css` (variables `--pink`, `--violet`…, classes `.glass`, `.display`, `.grad-text`, boutons `.btn-primary|success|ghost`), polices Fredoka et Outfit embarquées. Éléments visuels : `BrandMark`, `MusicLoader` (la note qui tourne), `VinylDisc`, `Equalizer`, `Confetti`, `AppBackground`, `SplashScreen` (désactivé par `?nosplash`).
 - Les avatars sont des icônes `mdi-*` dans `src/avatars.ts` ; l'index est l'identifiant échangé avec le serveur.
 - Pendant la partie, la manette affiche `RotateOverlay` tant que le téléphone est en portrait (`useOrientation`).
+
+Pièges d'interface rencontrés (aucun n'est vu par le type-check ni le build) :
+
+- Un style `scoped` d'une vue s'applique aussi à la **racine** des composants enfants : ne pas réutiliser le nom de classe de la racine d'un composant (`.reveal`, `.recap`) dans la vue qui l'utilise (les vues préfixent `h-` et `p-`).
+- Deux `<Transition>` ne doivent pas se retrouver sur le même élément racine (celle du routeur et celle d'une vue) : leurs classes se gênent et l'élément reste bloqué à `opacity: 0`. Chaque vue a une racine `<div>` unique. Le test de bout en bout le vérifie avec `painted()`.
 
 Pièges de Vuetify 4 rencontrés :
 
