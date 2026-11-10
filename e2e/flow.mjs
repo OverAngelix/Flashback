@@ -59,7 +59,7 @@ async function newPage(label, viewport) {
   return page;
 }
 const sel = (id) => `[data-testid="${id}"]`;
-const text = (page, s) => page.$eval(s, (e) => e.textContent.trim());
+const text = (page, s) => page.$eval(s, (e) => e.textContent.replace(/\s+/g, ""));
 const shot = async (page, name) => { await new Promise((r) => setTimeout(r, 900)); return page.screenshot({ path: OUT + name + ".png" }); };
 const overflow = (page) =>
   page.evaluate(() => ({
@@ -72,16 +72,40 @@ async function assertFits(page, label, { vertical = false } = {}) {
   if (vertical && o.y > 1) throw new Error(`${label} : déborde de ${o.y}px sur la hauteur`);
 }
 const titles = (page) => page.$$eval(".track-card .title", (els) => els.map((e) => e.textContent.trim()));
+/** L'élément est présent ET visible : aucun parent à moitié transparent (transition bloquée). */
+async function painted(page, selector, label = selector) {
+  try {
+    await page.waitForFunction(
+      (q) => {
+        let e = document.querySelector(q);
+        if (!e) return false;
+        for (; e; e = e.parentElement) if (Number(getComputedStyle(e).opacity) < 0.99) return false;
+        return true;
+      },
+      { timeout: 3000 },
+      selector,
+    );
+  } catch {
+    throw new Error(`${label} : présent dans la page mais invisible (transition bloquée ou transparent)`);
+  }
+}
+const go = (page, url) => page.goto(url + (url.includes("?") ? "&" : "?") + "nosplash");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const phone = { width: 844, height: 390, isMobile: true, hasTouch: true, deviceScaleFactor: 2 };
 
 try {
   const host = await newPage("hôte", { width: 1280, height: 720 });
   await host.goto(BASE);
+  await host.waitForSelector(sel("splash"));
+  await sleep(600);
+  await host.screenshot({ path: OUT + "00-splash.png" });
+  await host.waitForFunction(() => !document.querySelector('[data-testid="splash"]'), { timeout: 8000 });
+  ok("écran de démarrage : affiché au chargement, puis disparaît");
   await shot(host, "01-home");
   const [createBtn] = await host.$$("xpath/.//button[contains(., 'Créer une partie')]");
   await createBtn.click();
   await host.waitForSelector(sel("room-code"));
+  await painted(host, sel("room-code"), "code de la salle");
   const code = await text(host, sel("room-code"));
   if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) throw new Error("code invalide: " + code);
   ok(`hôte : salle créée, code ${code}`);
@@ -90,7 +114,7 @@ try {
   // Le formulaire d'entrée ne doit jamais déborder, même sur un petit téléphone en portrait.
   for (const [w, h] of [[390, 844], [360, 640], [320, 568]]) {
     const p = await newPage(`portrait-${w}`, { width: w, height: h, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
-    await p.goto(`${BASE}/join/${code}`);
+    await go(p, `${BASE}/join/${code}`);
     await p.waitForSelector(sel("name-input"));
     await assertFits(p, `formulaire d'entrée à ${w}px`);
     if (w === 360) await shot(p, "02b-join-portrait-360");
@@ -100,7 +124,7 @@ try {
 
   async function join(label, name, avatar, viewport = phone) {
     const p = await newPage(label, viewport);
-    await p.goto(`${BASE}/join/${code}`);
+    await go(p, `${BASE}/join/${code}`);
     await p.waitForSelector(sel("name-input") + " input");
     await p.type(sel("name-input") + " input", name);
     await p.waitForSelector(sel(`avatar-${avatar}`) + ":not([disabled])");
@@ -111,9 +135,11 @@ try {
   const ana = await join("Ana", "Ana", 0);
   await shot(ana, "02-join-form");
   await assertFits(ana, "formulaire d'entrée en paysage");
+  if (await ana.$(sel("code-input"))) throw new Error("le champ code ne devrait pas s'afficher quand on arrive par un lien");
   await ana.click(sel("join"));
-  await ana.waitForFunction(() => document.body.innerText.includes("En attente du lancement"));
-  ok("Ana : a rejoint, salon affiché");
+  await ana.waitForSelector(sel("leader-banner"));
+  await painted(ana, sel("leader-banner"), "salon du chef de partie");
+  ok("Ana : a rejoint par le lien (sans retaper le code) ; première arrivée, elle est chef de partie");
 
   // Le QR code affiché sur l'écran hôte est lu comme le ferait un téléphone, puis suivi par Ben.
   await host.waitForSelector(sel("qr"));
@@ -129,23 +155,31 @@ try {
 
   // Avatar 0 pris : Ben ne peut pas le choisir
   const ben = await newPage("Ben", phone);
-  await ben.goto(qrLink);
+  await go(ben, qrLink);
   await ben.waitForSelector(sel("avatar-0") + "[disabled]");
-  ok("Ben : arrivé par le QR code, code pré-rempli ; l'avatar d'Ana est grisé");
+  if (await ben.$(sel("code-input"))) throw new Error("le champ code ne devrait pas s'afficher après un scan de QR code");
+  if ((await text(ben, sel("code-chip"))).replace("Partie", "").replace("Changer", "") !== code) throw new Error("le code annoncé ne correspond pas à la salle");
+  ok("Ben : arrivé par le QR code, aucun code à saisir ; l'avatar d'Ana est grisé");
   await ben.type(sel("name-input") + " input", "Ben");
   await ben.click(sel("avatar-1"));
   await ben.click(sel("join"));
   await ben.waitForFunction(() => document.body.innerText.includes("En attente du lancement"));
+  await painted(ben, sel("wait"), "salon de Ben");
   ok("Ben : a rejoint");
 
   await host.waitForFunction(() => document.body.innerText.includes("Joueurs (2)"));
-  await host.click(sel("category-fr"));
-  await host.waitForFunction(() => !document.querySelector('[data-testid="start"]').disabled);
+  // Le chef de partie (Ana) règle les catégories et lance depuis son téléphone ; Ben n'a pas ces commandes.
+  if (await ben.$(sel("leader-start"))) throw new Error("Ben ne devrait pas voir les commandes du chef");
+  await shot(ana, "02c-ana-leader-lobby");
+  await ana.click(sel("leader-category-fr"));
+  await host.waitForFunction(() => document.querySelector('[data-testid="category-fr"]')?.getAttribute("aria-pressed") === "true");
   await shot(host, "03-host-lobby");
-  await host.click(sel("start"));
-  ok("hôte : partie lancée");
+  await ana.waitForFunction(() => !document.querySelector('[data-testid="leader-start"]').disabled);
+  await ana.click(sel("leader-start"));
+  ok("Ana (chef) : choisit la catégorie et lance la partie depuis son téléphone");
 
   await ana.waitForSelector(sel("play-extract"));
+  await painted(ana, sel("play-extract"), "tour d'Ana");
   await shot(ana, "04-ana-turn");
   await host.waitForFunction(() => document.body.innerText.includes("lance l'extrait"));
   await shot(host, "05-host-waiting");
@@ -212,11 +246,12 @@ try {
   await shot(ana, "06-ana-slot");
   await ana.click(sel("place"));
   await host.waitForSelector(sel("advance"));
+  await painted(host, sel("advance"), "bouton Continuer de l'hôte");
   await shot(host, "07-host-reveal");
   const revealText = await host.evaluate(() => document.body.innerText);
   if (!/Bien joué|Raté/.test(revealText)) throw new Error("pas de résultat");
   ok("hôte : révélation affichée (" + (revealText.includes("Bien joué") ? "bien joué" : "raté") + ")");
-  await ben.waitForFunction(() => document.body.innerText.includes("En attente de l'écran"));
+  await ben.waitForFunction(() => document.body.innerText.includes("En attente de la suite"));
   await ben.setViewport({ width: 740, height: 300, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await sleep(300);
   await assertFits(ben, "révélation à 740x300", { vertical: true });
@@ -227,20 +262,22 @@ try {
   ok("Ben : la révélation tient à 740x300 et montre sa frise, pas celle d'Ana");
   await ben.setViewport(phone);
 
-  // Double clic sur « Continuer » : le second message doit être ignoré, pas faire sauter un tour.
+  // Double clic sur « Continuer » depuis le téléphone du chef : le second message doit être ignoré.
   // Deux clics dans la même tâche JS : le second part avant que l'écran ait changé (déterministe).
-  await host.evaluate((q) => {
+  await ana.evaluate((q) => {
     const b = document.querySelector(q);
     b.click();
     b.click();
-  }, sel("advance"));
+  }, sel("leader-advance"));
   await ben.waitForSelector(sel("play-extract"));
+  await painted(ben, sel("play-extract"), "tour de Ben");
   await new Promise((r) => setTimeout(r, 400));
   if (await host.$(sel("advance"))) throw new Error("le double clic a fait avancer deux fois");
+  if ((await ben.$(sel("leader-advance"))) !== null) throw new Error("Ben ne devrait pas pouvoir faire avancer la partie");
   if (await host.evaluate(() => document.body.innerText.includes("Rien à faire avancer"))) {
     throw new Error("le message en double a produit une erreur au lieu d'être ignoré");
   }
-  ok("hôte : un double clic sur Continuer est ignoré sans erreur ; c'est le tour de Ben");
+  ok("Ana (chef) : « Continuer » depuis son téléphone ; un double clic est ignoré sans erreur ; c'est le tour de Ben");
   await ben.click(sel("play-extract"));
   await ben.click(".slot");
   await ben.click(sel("place"));
@@ -276,6 +313,14 @@ try {
   ok("Ana : après rechargement, " + (afterReload.includes("Rejoindre une partie") ? "ÉCHEC reprise" : "reprise de la partie"));
   if (afterReload.includes("Rejoindre une partie")) throw new Error("reprise impossible");
   await shot(ana, "11-ana-after-reload");
+
+  // Le chef se déconnecte : Ben (premier joueur connecté) prend la relève et peut faire avancer la partie.
+  await ana.close();
+  await ben.waitForSelector(sel("leader-advance"));
+  await shot(ben, "12-ben-new-leader");
+  await ben.click(sel("leader-advance"));
+  await host.waitForFunction(() => document.querySelector('[data-testid="turn-status"]'));
+  ok("Ana déconnectée : Ben devient chef de partie et lance le tour suivant depuis son téléphone");
 } catch (e) {
   console.log("✗ ÉCHEC :", e.message);
   for (const [k, p] of Object.entries(pages)) await p.screenshot({ path: OUT + "fail-" + k + ".png" }).catch(() => {});
