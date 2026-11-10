@@ -6,7 +6,7 @@ Le fonctionnement est celui des jeux **Jackbox** : un écran (télé ou PC) héb
 
 ## Comment jouer
 
-1. Sur la télé ou le PC, ouvrir le jeu et choisir **Créer une partie**. Un code à 6 caractères et un QR code s'affichent.
+1. Sur la télé ou le PC, ouvrir le jeu et choisir **Héberger** dans le menu. Un code à 6 caractères et un QR code s'affichent.
 2. Chaque joueur scanne le QR code avec son téléphone (même réseau Wi-Fi), choisit un **nom** et un **avatar** parmi 10, puis rejoint la partie. Le premier arrivé devient **chef de partie** : il peut choisir les catégories et lancer la partie depuis son téléphone, sans toucher à l'écran.
 3. Chacun reçoit une carte de départ. À son tour, le joueur actif appuie sur **Écouter** : l'extrait se joue sur l'écran principal, **une seule fois**. Il place ensuite le titre à l'endroit qu'il pense juste dans **sa frise** (téléphone tenu en **paysage**), puis valide.
 4. L'écran révèle le titre, l'artiste et l'année. Bien placé, la carte rejoint la frise ; mal placé, elle est perdue.

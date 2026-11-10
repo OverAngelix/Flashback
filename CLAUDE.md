@@ -62,12 +62,17 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - Le QR code (`src/qr.ts`, bibliothèque `qrcode`) encode `joinLink(joinBase(...), code)` (`src/joinUrl.ts`) : sur `localhost`, l'adresse du réseau local donnée par `/api/network`. Ses tests le décodent avec `jsqr`.
 - Chaque manette montre la frise de son joueur (jamais celle du joueur actif, visible sur l'écran hôte) ; `RevealPanel` et `RecapPanel` prennent `viewerId`.
 - Écrans peu hauts (téléphone en paysage, environ 300 px utiles) : cartes et emplacements rétrécis par media query (`TrackCard`, `TimelineStrip`), boutons de jeu dans la colonne de gauche (`PlayTurn`).
+- Menu (`HomeView`) : quatre boîtes, dont « Multijoueur » grisé (V2). Seul « Héberger » crée une salle (`connection.createRoom()` puis `/host`) ; `HostView` sans session renvoie au menu. Tailles du menu en `dvh` : le tester à 1280x720.
+- Réglages : `src/settings.ts` (enregistrés dans `localStorage`, invalides ignorés champ par champ), page `SettingsView`. `?nosplash` coupe l'écran de démarrage.
+- Musique de menu : `src/menuScore.ts` (partition pure et testée, graine reproductible) et `src/menuMusic.ts` (Web Audio, un seul `AudioContext` fermé après un fondu). Lancée par `App.vue` seulement sur `/` et `/settings`. Pour la vérifier sans l'écouter, `renderOffline()` mesure niveau, crête et silences ; elle est exposée sur `window.__menuMusic` uniquement quand `navigator.webdriver` est vrai (navigateur piloté).
 - Commandes partagées par l'écran hôte et le téléphone du chef : `src/composables/useControls.ts` (catégories, lancement, suite, tour passé, exclusion).
 - Style : `src/styles.css` (variables `--pink`, `--violet`…, classes `.glass`, `.display`, `.grad-text`, boutons `.btn-primary|success|ghost`), polices Fredoka et Outfit embarquées. Éléments visuels : `BrandMark`, `MusicLoader` (la note qui tourne), `VinylDisc`, `Equalizer`, `Confetti`, `AppBackground`, `SplashScreen` (désactivé par `?nosplash`).
 - Les avatars sont des icônes `mdi-*` dans `src/avatars.ts` ; l'index est l'identifiant échangé avec le serveur.
 - Pendant la partie, la manette affiche `RotateOverlay` tant que le téléphone est en portrait (`useOrientation`).
 
 Pièges d'interface rencontrés (aucun n'est vu par le type-check ni le build) :
+
+- Une même classe CSS définie deux fois dans un fichier (ex. `.info` dans deux sections de `HostView`) : la seconde écrase la première. Donner un nom propre à chaque bloc.
 
 - Un style `scoped` d'une vue s'applique aussi à la **racine** des composants enfants : ne pas réutiliser le nom de classe de la racine d'un composant (`.reveal`, `.recap`) dans la vue qui l'utilise (les vues préfixent `h-` et `p-`).
 - Deux `<Transition>` ne doivent pas se retrouver sur le même élément racine (celle du routeur et celle d'une vue) : leurs classes se gênent et l'élément reste bloqué à `opacity: 0`. Chaque vue a une racine `<div>` unique. Le test de bout en bout le vérifie avec `painted()`.

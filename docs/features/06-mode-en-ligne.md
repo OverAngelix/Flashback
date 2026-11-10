@@ -6,6 +6,9 @@ Chaque joueur est sur son PC ou son téléphone, sans écran hôte commun. L'ext
 
 À ne pas démarrer avant la fin du mode local ([05-mode-local.md](05-mode-local.md)). Le moteur de jeu et les salles sont partagés ; ce mode ajoute la lecture synchronisée chez chaque joueur.
 
+- [x] Boîte « Multijoueur » dans le menu, grisée avec la mention « Bientôt »
+- [ ] Liste des parties publiques (nom, nombre de joueurs, catégories) avec rejoindre en un clic
+- [ ] Créer une partie publique ou privée
 - [ ] Interface joueur : frise, extrait, placement
 - [ ] Déclenchement synchronisé de l'extrait chez tous les joueurs
 - [ ] Déblocage de l'audio au début de la partie (un appui par joueur)
