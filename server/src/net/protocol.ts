@@ -8,6 +8,15 @@ import type { Phase } from "../game/types.js";
 
 export const ROOM_CODE_LENGTH = 6;
 
+/** Messages de contrôle de la partie : l'écran hôte ou le chef de partie peuvent les envoyer. */
+export const CONTROL_MESSAGE_TYPES = [
+  "host:setCategories",
+  "host:start",
+  "host:advance",
+  "host:skipTurn",
+  "host:kick",
+] as const;
+
 /** Messages envoyés par un client (écran hôte ou téléphone) au serveur. */
 export type ClientMessage =
   | { type: "host:create" }
@@ -75,6 +84,11 @@ export interface GameView {
   /** Nombre de titres du paquet choisi (avant le départ) ou restant (en partie). */
   trackCount: number;
   players: PlayerView[];
+  /**
+   * Chef de partie : le premier joueur à rejoindre, puis le suivant s'il se déconnecte. Il peut,
+   * depuis son téléphone, faire tout ce que fait l'écran hôte (catégories, lancement, suite…).
+   */
+  leaderId: string | null;
   activePlayerId: string | null;
   current: { audioUrl: string } | null;
   /** Le joueur actif a déjà écouté l'extrait : il ne peut plus le relancer pendant ce tour. */

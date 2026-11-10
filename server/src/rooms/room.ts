@@ -25,6 +25,8 @@ export class Room {
   lastActivity: number;
 
   private categories: string[] = [];
+  /** Chef de partie, voir updateLeader. */
+  private leaderId: string | null = null;
   private readonly playerTokens = new Map<string, string>(); // jeton -> identifiant joueur
   private hostConn?: Connection;
   private readonly playerConns = new Map<string, Connection>();
@@ -46,6 +48,26 @@ export class Room {
   /** Aucune connexion ouverte depuis plus de `ttlMs` : la salle peut être supprimée. */
   isIdle(ttlMs: number): boolean {
     return !this.hostConn && this.playerConns.size === 0 && this.clock() - this.lastActivity > ttlMs;
+  }
+
+  // --- Chef de partie -------------------------------------------------------------------------
+
+  isLeader(playerId: string): boolean {
+    this.updateLeader();
+    return this.leaderId === playerId;
+  }
+
+  /**
+   * Le chef est le premier joueur arrivé. S'il se déconnecte ou s'en va, le premier joueur encore
+   * connecté (dans l'ordre d'arrivée) le remplace et le reste, même si l'ancien chef revient :
+   * cela évite de changer de chef à chaque mise en veille d'un téléphone.
+   */
+  private updateLeader(): void {
+    const exists = (id: string) => this.game.players.some((p) => p.id === id);
+    if (this.leaderId && exists(this.leaderId) && this.playerConns.has(this.leaderId)) return;
+    const next = this.game.players.find((p) => this.playerConns.has(p.id));
+    if (next) this.leaderId = next.id;
+    else if (this.leaderId && !exists(this.leaderId)) this.leaderId = null;
   }
 
   // --- Connexions -----------------------------------------------------------------------------
@@ -92,7 +114,8 @@ export class Room {
 
   // --- Messages -------------------------------------------------------------------------------
 
-  handleHost(message: HostMessage): void {
+  /** `actorId` : joueur qui envoie le message (chef de partie), absent s'il vient de l'écran hôte. */
+  handleHost(message: HostMessage, actorId?: string): void {
     switch (message.type) {
       case "host:setCategories": {
         const known = new Set(this.catalog.categories().map((c) => c.id as string));
@@ -115,6 +138,7 @@ export class Room {
         this.game.skipTurn();
         break;
       case "host:kick":
+        if (message.playerId === actorId) throw new GameError("Vous ne pouvez pas vous exclure vous-même.");
         this.kick(message.playerId);
         break;
       case "host:create":
@@ -170,11 +194,13 @@ export class Room {
 
   /** Envoie l'état courant à l'hôte et à chaque joueur connecté. */
   broadcast(): void {
+    this.updateLeader();
     const view = buildView(this.game, {
       code: this.code,
       categories: this.categories,
       availableCategories: this.catalog.categories(),
       connectedPlayerIds: new Set(this.playerConns.keys()),
+      leaderId: this.leaderId,
     });
     this.hostConn?.send({ type: "state", view, you: null });
     for (const [playerId, conn] of this.playerConns) conn.send({ type: "state", view, you: playerId });

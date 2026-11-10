@@ -20,6 +20,7 @@ export interface ViewContext {
   categories: string[];
   availableCategories: CategorySummary[];
   connectedPlayerIds: ReadonlySet<string>;
+  leaderId: string | null;
 }
 
 /** Construit la vue publique. Le titre courant n'y apparaît que sous forme d'URL d'extrait. */
@@ -32,6 +33,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
     categories: ctx.categories,
     availableCategories: ctx.availableCategories,
     trackCount: game.remainingTracks,
+    leaderId: ctx.leaderId,
     players: game.players.map((p) => ({
       id: p.id,
       name: p.name,

@@ -1,7 +1,7 @@
 import { randomInt, timingSafeEqual } from "node:crypto";
 import type { Catalog } from "../catalog/store.js";
 import { AVATAR_COUNT, GameError, MAX_PLAYERS } from "../game/types.js";
-import { parseClientMessage, ROOM_CODE_LENGTH, type ErrorCode } from "../net/protocol.js";
+import { CONTROL_MESSAGE_TYPES, parseClientMessage, ROOM_CODE_LENGTH, type ErrorCode } from "../net/protocol.js";
 import { Room, type Connection } from "./room.js";
 
 /** Sans I, O, 0 et 1 : un code lu sur une télé ne doit pas prêter à confusion. */
@@ -171,8 +171,12 @@ export class Session {
         if (!b) throw new ProtocolError("not-allowed", "Rejoignez d'abord une salle.");
         b.room.touch();
         if (message.type.startsWith("host:")) {
-          if (b.playerId) throw new ProtocolError("not-allowed", "Réservé à l'écran hôte.");
-          b.room.handleHost(message as Parameters<Room["handleHost"]>[0]);
+          // L'écran hôte, ou le chef de partie pour les messages de contrôle (pas host:create/rejoin).
+          const control = (CONTROL_MESSAGE_TYPES as readonly string[]).includes(message.type);
+          if (b.playerId && !(control && b.room.isLeader(b.playerId))) {
+            throw new ProtocolError("not-allowed", "Réservé à l'écran hôte ou au chef de partie.");
+          }
+          b.room.handleHost(message as Parameters<Room["handleHost"]>[0], b.playerId);
         } else {
           if (!b.playerId) throw new ProtocolError("not-allowed", "Réservé aux joueurs.");
           b.room.handlePlayer(b.playerId, message as Parameters<Room["handlePlayer"]>[1]);

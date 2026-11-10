@@ -259,13 +259,23 @@ describe("droits", () => {
   });
 
   it("sépare les messages de l'hôte et des joueurs", () => {
-    const { host, ana } = started();
-    ana.send({ type: "host:advance", from: "reveal" });
-    assert.equal(ana.conn.last("error").code, "not-allowed");
-    ana.send({ type: "host:skipTurn" });
-    assert.equal(ana.conn.last("error").code, "not-allowed");
+    const { host, ben } = started(); // Ana est le chef de partie, pas Ben
+    ben.send({ type: "host:advance", from: "reveal" });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
+    ben.send({ type: "host:skipTurn" });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
+    ben.send({ type: "host:start" });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
     host.send({ type: "player:place", position: 0 });
     assert.equal(host.conn.last("error").code, "not-allowed");
+  });
+
+  it("interdit à un joueur, même chef, de créer ou reprendre une salle", () => {
+    const { ana, code } = lobby();
+    ana.send({ type: "host:create" });
+    assert.equal(ana.conn.last("error").code, "not-allowed");
+    ana.send({ type: "host:rejoin", code, token: "x" });
+    assert.equal(ana.conn.last("error").code, "not-allowed");
   });
 
   it("refuse tout avant d'avoir rejoint une salle, et un second rôle", () => {
@@ -368,6 +378,86 @@ describe("salon", () => {
     assert.match(ben.conn.last("error").message, /en cours de partie/);
     host.send({ type: "host:kick", playerId: ben.conn.last("session").playerId! });
     assert.match(host.conn.last("error").message, /avant le départ/);
+  });
+});
+
+describe("chef de partie", () => {
+  const leaderOf = (c: FakeConn) => c.view().leaderId;
+  const id = (c: { conn: FakeConn }) => c.conn.last("session").playerId!;
+
+  it("est le premier joueur arrivé", () => {
+    const { host, ana, ben } = lobby();
+    assert.equal(leaderOf(host.conn), id(ana));
+    assert.equal(leaderOf(ben.conn), id(ana));
+  });
+
+  it("règle les catégories et lance la partie depuis son téléphone", () => {
+    const { host, ana, ben } = lobby();
+    ben.send({ type: "host:setCategories", categories: ["fr"] });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
+    ana.send({ type: "host:setCategories", categories: ["fr"] });
+    assert.deepEqual(host.conn.view().categories, ["fr"]);
+    ana.send({ type: "host:start" });
+    assert.equal(host.conn.view().phase, "awaiting-placement");
+  });
+
+  it("fait avancer la partie et passe un tour", () => {
+    const { host, ana, ben } = started();
+    ana.send({ type: "player:place", position: 0 });
+    ana.send({ type: "host:advance", from: "reveal" });
+    assert.equal(host.conn.view().activePlayerId, id(ben));
+    ana.send({ type: "host:skipTurn" }); // le chef passe le tour de Ben
+    assert.equal(host.conn.view().phase, "reveal");
+    assert.equal(host.conn.view().lastResult!.position, -1);
+  });
+
+  it("passe au joueur suivant quand il se déconnecte, et le reste si l'ancien revient", () => {
+    const { host, ana, ben, code } = lobby();
+    const { token } = ana.conn.last("session");
+    ana.session.disconnect();
+    assert.equal(leaderOf(host.conn), id(ben));
+
+    const back = client();
+    back.send({ type: "player:rejoin", code, token });
+    assert.equal(leaderOf(host.conn), id(ben)); // Ben reste chef
+    back.send({ type: "host:start" });
+    assert.equal(back.conn.last("error").code, "not-allowed");
+    ben.send({ type: "host:setCategories", categories: ["fr"] });
+    assert.deepEqual(host.conn.view().categories, ["fr"]);
+  });
+
+  it("passe au suivant quand le chef quitte le salon", () => {
+    const { host, ana, ben } = lobby();
+    ana.send({ type: "player:leave" });
+    assert.equal(leaderOf(host.conn), id(ben));
+  });
+
+  it("reste désigné quand personne n'est connecté, puis revient au premier présent", () => {
+    const { host, ana, ben, code } = lobby();
+    const anaId = id(ana);
+    const benToken = ben.conn.last("session").token;
+    ben.session.disconnect();
+    ana.session.disconnect();
+    assert.equal(leaderOf(host.conn), anaId); // chef déconnecté, personne pour le remplacer
+
+    const back = client();
+    back.send({ type: "player:rejoin", code, token: benToken });
+    assert.equal(leaderOf(host.conn), id(ben)); // Ben est le premier présent
+  });
+
+  it("ne peut pas s'exclure lui-même, mais exclut un autre joueur dans le salon", () => {
+    const { host, ana, ben } = lobby();
+    ana.send({ type: "host:kick", playerId: id(ana) });
+    assert.match(ana.conn.last("error").message, /vous exclure vous-même/);
+    ana.send({ type: "host:kick", playerId: id(ben) });
+    assert.equal(ben.conn.closed, true);
+    assert.deepEqual(host.conn.view().players.map((p) => p.name), ["Ana"]);
+  });
+
+  it("n'enlève rien à l'écran hôte, qui garde ses commandes", () => {
+    const { host } = lobby();
+    host.send({ type: "host:setCategories", categories: ["international"] });
+    assert.deepEqual(host.conn.view().categories, ["international"]);
   });
 });
 
