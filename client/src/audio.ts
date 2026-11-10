@@ -12,6 +12,15 @@ export const audio = reactive({
 
 let element: HTMLAudioElement | undefined;
 let pendingUrl: string | undefined;
+let fadeTimer: ReturnType<typeof setInterval> | undefined;
+
+/** Arrête un fondu en cours et rend à l'élément le volume réglé. */
+function cancelFade(): void {
+  if (fadeTimer === undefined) return;
+  clearInterval(fadeTimer);
+  fadeTimer = undefined;
+  if (element) element.volume = useSettings().volume;
+}
 
 function ensure(): HTMLAudioElement {
   if (!element) {
@@ -38,6 +47,7 @@ export function unlockAudio(): void {
 }
 
 export function playExtract(url: string): void {
+  cancelFade();
   const el = ensure();
   el.volume = useSettings().volume;
   pendingUrl = url;
@@ -53,15 +63,35 @@ export function playExtract(url: string): void {
 }
 
 export function stopExtract(): void {
+  cancelFade();
   element?.pause();
   pendingUrl = undefined;
+}
+
+/**
+ * Baisse l'extrait jusqu'au silence en `ms` millisecondes, puis l'arrête. Sur iOS, où le volume
+ * d'un élément audio ne se règle pas, l'arrêt arrive simplement à la fin du délai.
+ */
+export function fadeOutExtract(ms = 1000): void {
+  pendingUrl = undefined;
+  const el = element;
+  if (!el || el.paused || fadeTimer !== undefined) return;
+  const from = el.volume;
+  const start = performance.now();
+  fadeTimer = setInterval(() => {
+    const k = Math.min(1, (performance.now() - start) / ms);
+    el.volume = from * (1 - k);
+    if (k < 1) return;
+    el.pause();
+    cancelFade();
+  }, 40);
 }
 
 // Le volume règle aussi un extrait en cours de lecture.
 watch(
   () => useSettings().volume,
   (v) => {
-    if (element) element.volume = v;
+    if (element && fadeTimer === undefined) element.volume = v;
   },
 );
 

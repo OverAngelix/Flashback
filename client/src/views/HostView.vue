@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { audio, playExtract, stopExtract, unlockAudio } from "@/audio";
+import { audio, fadeOutExtract, playExtract, stopExtract, unlockAudio } from "@/audio";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
@@ -42,6 +42,7 @@ onMounted(async () => {
   }
   offAudio = connection.onAudioPlay((url) => {
     lastAudioUrl.value = url;
+    extractTurn = turnKey.value;
     playExtract(url);
   });
   window.addEventListener("keydown", onKey);
@@ -96,14 +97,20 @@ function leave() {
   router.push("/");
 }
 
-// Le joueur actif est parti pendant l'écoute : son extrait ne doit pas déborder sur la suite.
-watch(
-  () => (view.value ? { phase: view.value.phase, turn: `${view.value.round}-${view.value.activePlayerId}` } : null),
-  (now, before) => {
-    if (before?.phase !== "awaiting-placement" || now?.phase === "reveal") return;
-    if (now?.phase !== "awaiting-placement" || now.turn !== before.turn) stopExtract();
-  },
-);
+/**
+ * L'extrait appartient au tour pendant lequel il a été lancé. Dès qu'on en sort (joueur suivant,
+ * récapitulatif, fin de partie, départ du joueur actif), il s'éteint en une seconde.
+ */
+const turnKey = computed(() => {
+  const v = view.value;
+  return v && (v.phase === "awaiting-placement" || v.phase === "reveal") ? `${v.round}-${v.activePlayerId}` : null;
+});
+let extractTurn: string | null = null;
+watch(turnKey, (key) => {
+  if (extractTurn === null || key === extractTurn) return;
+  extractTurn = null;
+  fadeOutExtract(1000);
+});
 </script>
 
 <template>
