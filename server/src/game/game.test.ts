@@ -305,3 +305,97 @@ describe("écoute de l'extrait", () => {
     assert.equal(game.listen(b.id).year, 1960);
   });
 });
+
+describe("départ d'un joueur en cours de partie", () => {
+  const years = [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020, 1955, 1965, 1975, 1985];
+  function threePlayers() {
+    const game = newGame(years, 10);
+    const { a, b } = twoPlayers(game);
+    const c = game.addPlayer("Cléo", 2);
+    game.start();
+    return { game, a, b, c };
+  }
+
+  it("retire un joueur qui n'a pas la main sans toucher au tour en cours", () => {
+    const { game, a, c } = threePlayers();
+    const current = game.current;
+    game.removePlayer(c.id);
+    assert.deepEqual(game.players.map((p) => p.name), ["Ana", "Ben"]);
+    assert.equal(game.activePlayer?.id, a.id);
+    assert.equal(game.current, current);
+    assert.equal(game.phase, "awaiting-placement");
+  });
+
+  it("garde le joueur actif quand un joueur placé avant lui s'en va", () => {
+    const { game, a, b } = threePlayers();
+    game.placeCard(a.id, 0);
+    game.advance();
+    game.removePlayer(a.id);
+    assert.equal(game.activePlayer?.id, b.id);
+  });
+
+  it("défausse le titre et passe au suivant quand le joueur actif s'en va", () => {
+    const { game, a, b } = threePlayers();
+    game.listen(a.id);
+    const before = game.remainingTracks;
+    game.removePlayer(a.id);
+    assert.equal(game.phase, "awaiting-placement");
+    assert.equal(game.activePlayer?.id, b.id);
+    assert.equal(game.listened, false);
+    assert.equal(game.remainingTracks, before - 1);
+  });
+
+  it("passe au suivant pendant la révélation du joueur qui s'en va", () => {
+    const { game, a, b } = threePlayers();
+    game.placeCard(a.id, 0);
+    game.removePlayer(a.id);
+    assert.equal(game.phase, "awaiting-placement");
+    assert.equal(game.activePlayer?.id, b.id);
+    assert.equal(game.lastResult, undefined);
+  });
+
+  it("termine le tour de plateau quand le dernier joueur du tour s'en va", () => {
+    const { game, a, b, c } = threePlayers();
+    game.placeCard(a.id, 0);
+    game.advance();
+    game.placeCard(b.id, 0);
+    game.advance();
+    game.removePlayer(c.id);
+    assert.equal(game.phase, "round-recap");
+    assert.equal(game.round, 2);
+    game.advance();
+    assert.equal(game.activePlayer?.id, a.id);
+  });
+
+  it("donne la main au nouveau premier joueur après le récapitulatif", () => {
+    const { game, a, b, c } = threePlayers();
+    for (const p of [a, b, c]) {
+      game.placeCard(p.id, 0);
+      game.advance();
+    }
+    assert.equal(game.phase, "round-recap");
+    game.removePlayer(a.id);
+    game.advance();
+    assert.equal(game.activePlayer?.id, b.id);
+  });
+
+  it("arrête la partie quand il ne reste qu'un joueur, qui l'emporte", () => {
+    const game = newGame(years, 10);
+    const { a, b } = twoPlayers(game);
+    game.start();
+    game.removePlayer(a.id);
+    assert.equal(game.phase, "finished");
+    assert.deepEqual(game.winnerIds, [b.id]);
+    assert.equal(game.current, undefined);
+  });
+
+  it("ne change rien à une partie terminée", () => {
+    const game = newGame(years, 10);
+    const { a, b } = twoPlayers(game);
+    game.start();
+    game.removePlayer(a.id);
+    game.removePlayer(b.id);
+    assert.deepEqual(game.players.map((p) => p.id), [b.id]);
+    assert.deepEqual(game.winnerIds, [b.id]);
+  });
+});

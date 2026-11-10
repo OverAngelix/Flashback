@@ -93,15 +93,31 @@ export class Game {
     return player;
   }
 
+  /**
+   * Retire un joueur (il quitte la partie). En cours de partie, sa frise part avec lui et les
+   * autres continuent : si c'était son tour, le titre en cours est défaussé et la main passe au
+   * suivant, ou au récapitulatif s'il fermait le tour de plateau. Sous MIN_PLAYERS joueurs, la
+   * partie s'arrête et le meilleur restant l'emporte. Une partie terminée garde son classement.
+   */
   removePlayer(playerId: string): void {
     const index = this.players.findIndex((p) => p.id === playerId);
-    if (index < 0) return;
-    if (this.phase === "lobby") {
-      this.players.splice(index, 1);
+    if (index < 0 || this.phase === "finished") return;
+    this.players.splice(index, 1);
+    if (this.phase === "lobby") return;
+
+    if (this.players.length < MIN_PLAYERS) {
+      this.current = undefined;
+      this.finishWithBest();
       return;
     }
-    // Pas de retrait en cours de partie : le joueur reste à l'écran (déconnexion gérée par la salle).
-    throw new GameError("On ne peut pas retirer un joueur en cours de partie.");
+    if (index < this.turnIndex) {
+      this.turnIndex--;
+    } else if (index === this.turnIndex && this.phase !== "round-recap") {
+      // Il plaçait son titre ou on révélait son résultat : on passe directement au suivant.
+      this.current = undefined;
+      this.lastResult = undefined;
+      this.nextTurn(index);
+    }
   }
 
   start(): void {
@@ -177,25 +193,33 @@ export class Game {
    */
   advance(): void {
     if (this.phase === "reveal") {
-      const wrapped = this.turnIndex === this.players.length - 1;
-      this.turnIndex = (this.turnIndex + 1) % this.players.length;
-      if (wrapped) {
-        const leaders = this.leadersAtGoal();
-        if (leaders.length === 1) {
-          this.winnerIds = leaders.map((p) => p.id);
-          this.phase = "finished";
-          return;
-        }
-        this.round++;
-        this.phase = "round-recap";
-        return;
-      }
-      this.draw();
+      this.nextTurn(this.turnIndex + 1);
     } else if (this.phase === "round-recap") {
       this.draw();
     } else {
       throw new GameError("Rien à faire avancer pour le moment.");
     }
+  }
+
+  /**
+   * Donne la main au joueur `index`. Au-delà du dernier, le tour de plateau est fini : victoire
+   * s'il y a un seul meilleur à l'objectif, sinon récapitulatif.
+   */
+  private nextTurn(index: number): void {
+    if (index < this.players.length) {
+      this.turnIndex = index;
+      this.draw();
+      return;
+    }
+    this.turnIndex = 0;
+    const leaders = this.leadersAtGoal();
+    if (leaders.length === 1) {
+      this.winnerIds = leaders.map((p) => p.id);
+      this.phase = "finished";
+      return;
+    }
+    this.round++;
+    this.phase = "round-recap";
   }
 
   /** Joueurs en tête de frise, seulement si la tête a atteint l'objectif (sinon aucun). */
@@ -209,7 +233,7 @@ export class Game {
   private draw(): void {
     const next = this.deck.pop();
     if (!next) {
-      this.finishOnEmptyDeck();
+      this.finishWithBest();
       return;
     }
     this.current = next;
@@ -217,7 +241,8 @@ export class Game {
     this.phase = "awaiting-placement";
   }
 
-  private finishOnEmptyDeck(): void {
+  /** Fin anticipée (paquet vide, joueurs partis) : les plus longues frises l'emportent. */
+  private finishWithBest(): void {
     const best = Math.max(...this.players.map((p) => p.timeline.length));
     this.winnerIds = this.players.filter((p) => p.timeline.length === best).map((p) => p.id);
     this.phase = "finished";

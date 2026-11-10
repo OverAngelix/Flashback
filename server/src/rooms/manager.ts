@@ -78,6 +78,12 @@ export class RoomManager {
     };
   }
 
+  /** L'hôte met fin à la partie : la salle disparaît et ses joueurs sont prévenus. */
+  close(room: Room): void {
+    if (this.rooms.get(room.code) === room) this.rooms.delete(room.code);
+    room.close();
+  }
+
   /** Supprime les salles abandonnées. À appeler régulièrement. */
   sweep(): number {
     let removed = 0;
@@ -164,6 +170,13 @@ export class Session {
         this.binding = { room, playerId };
         this.conn.send({ type: "session", role: "player", code: room.code, token: message.token, playerId });
         room.broadcast();
+        return;
+      }
+      case "host:close": {
+        const b = this.binding;
+        if (!b || b.playerId) throw new ProtocolError("not-allowed", "Réservé à l'écran hôte.");
+        this.binding = undefined;
+        this.manager.close(b.room);
         return;
       }
       default: {

@@ -29,8 +29,11 @@ export type ClientMessage =
   | { type: "host:advance"; from: Phase }
   | { type: "host:skipTurn" }
   | { type: "host:kick"; playerId: string }
+  /** L'écran hôte met fin à la partie : la salle est supprimée, les joueurs reçoivent `closed`. */
+  | { type: "host:close" }
   | { type: "player:place"; position: number }
   | { type: "player:play" }
+  /** Quitter la salle, à tout moment : en cours de partie, le joueur en est retiré avec sa frise. */
   | { type: "player:leave" };
 
 export type ErrorCode =
@@ -49,6 +52,8 @@ export type ServerMessage =
   /** À l'hôte uniquement : un joueur demande à jouer l'extrait du titre courant. */
   | { type: "audio:play"; audioUrl: string }
   | { type: "kicked" }
+  /** L'hôte a mis fin à la partie : la salle n'existe plus. */
+  | { type: "closed" }
   | { type: "error"; code: ErrorCode; message: string };
 
 /** Une carte déjà posée dans une frise : les informations sont publiques. */
@@ -119,6 +124,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case "host:create":
     case "host:start":
     case "host:skipTurn":
+    case "host:close":
     case "player:play":
     case "player:leave":
       return { type: m.type };

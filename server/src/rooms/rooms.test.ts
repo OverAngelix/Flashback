@@ -372,12 +372,59 @@ describe("salon", () => {
     assert.equal(again.conn.last("session").role, "player");
   });
 
-  it("interdit de quitter ou d'exclure en cours de partie", () => {
+  it("interdit d'exclure en cours de partie", () => {
     const { host, ben } = started();
-    ben.send({ type: "player:leave" });
-    assert.match(ben.conn.last("error").message, /en cours de partie/);
     host.send({ type: "host:kick", playerId: ben.conn.last("session").playerId! });
     assert.match(host.conn.last("error").message, /avant le départ/);
+  });
+});
+
+describe("quitter une partie en cours", () => {
+  it("retire le joueur, ferme sa connexion et invalide son jeton", () => {
+    const l = lobby();
+    const cleo = client();
+    cleo.send({ type: "player:join", code: l.code, name: "Cléo", avatar: 2 });
+    l.host.send({ type: "host:setCategories", categories: ["fr"] });
+    l.host.send({ type: "host:start" });
+    const { token } = cleo.conn.last("session");
+    cleo.send({ type: "player:leave" });
+    assert.equal(cleo.conn.closed, true);
+    assert.deepEqual(l.host.conn.view().players.map((p) => p.name), ["Ana", "Ben"]);
+    assert.equal(l.host.conn.view().phase, "awaiting-placement");
+    const back = client();
+    back.send({ type: "player:rejoin", code: l.code, token });
+    assert.equal(back.conn.last("error").code, "room-not-found");
+  });
+
+  it("termine la partie quand il ne reste qu'un joueur", () => {
+    const { host, ana, ben } = started();
+    ben.send({ type: "player:leave" });
+    assert.equal(host.conn.view().phase, "finished");
+    assert.deepEqual(ana.conn.view().winnerIds, [ana.conn.last("session").playerId]);
+  });
+});
+
+describe("fin de partie par l'hôte", () => {
+  it("prévient les joueurs, ferme les connexions et supprime la salle", () => {
+    const { host, ana, ben, code } = started();
+    const hostToken = host.conn.last("session").token;
+    host.send({ type: "host:close" });
+    for (const p of [ana, ben]) {
+      assert.equal(p.conn.sent.at(-1)?.type, "closed");
+      assert.equal(p.conn.closed, true);
+    }
+    assert.equal(host.conn.closed, true);
+    assert.equal(manager.get(code), undefined);
+    const again = client();
+    again.send({ type: "host:rejoin", code, token: hostToken });
+    assert.equal(again.conn.last("error").code, "room-not-found");
+  });
+
+  it("est réservée à l'écran hôte, pas au chef de partie", () => {
+    const { ana, code } = lobby();
+    ana.send({ type: "host:close" });
+    assert.equal(ana.conn.last("error").code, "not-allowed");
+    assert.ok(manager.get(code));
   });
 });
 

@@ -143,7 +143,8 @@ export class Room {
         break;
       case "host:create":
       case "host:rejoin":
-        return; // gérés par la session, avant l'entrée dans la salle
+      case "host:close":
+        return; // gérés par la session (la fermeture supprime la salle du gestionnaire)
     }
     this.broadcast();
   }
@@ -162,7 +163,6 @@ export class Room {
         break;
       }
       case "player:leave": {
-        if (this.game.phase !== "lobby") throw new GameError("Impossible de quitter en cours de partie.");
         const conn = this.playerConns.get(playerId);
         this.removePlayer(playerId);
         conn?.close();
@@ -182,6 +182,20 @@ export class Room {
     this.removePlayer(playerId);
     conn?.send({ type: "kicked" });
     conn?.close();
+  }
+
+  /** Fin de la salle : chaque joueur est prévenu, toutes les connexions sont fermées. */
+  close(): void {
+    const players = [...this.playerConns.values()];
+    const host = this.hostConn;
+    this.playerConns.clear();
+    this.playerTokens.clear();
+    this.hostConn = undefined;
+    for (const conn of players) {
+      conn.send({ type: "closed" });
+      conn.close();
+    }
+    host?.close();
   }
 
   private removePlayer(playerId: string): void {
