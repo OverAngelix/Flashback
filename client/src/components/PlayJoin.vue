@@ -126,7 +126,11 @@ function join() {
 }
 .join-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
+}
+.join-grid > * {
+  min-width: 0;
 }
 /* Téléphone en paysage : peu de hauteur, on met les champs et les avatars côte à côte. */
 @media (orientation: landscape) and (max-height: 520px) {
@@ -134,7 +138,7 @@ function join() {
     max-width: 900px;
   }
   .join-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
     align-items: start;
   }
@@ -146,18 +150,25 @@ function join() {
 }
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
 }
 .avatar-choice {
   position: relative;
   display: flex;
   justify-content: center;
-  padding: 6px;
+  padding: 4px;
   border: 3px solid transparent;
   border-radius: 16px;
   background: transparent;
   cursor: pointer;
+}
+/* L'avatar se réduit avec la colonne au lieu de la faire déborder (téléphones étroits). */
+.avatar-choice :deep(.v-avatar) {
+  width: 100% !important;
+  max-width: 56px;
+  height: auto !important;
+  aspect-ratio: 1;
 }
 .avatar-choice.selected {
   border-color: rgb(var(--v-theme-primary));
