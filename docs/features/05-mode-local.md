@@ -24,6 +24,8 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [ ] Avancement automatique optionnel après quelques secondes (pour une partie sans aucun pilotage)
 - [x] Code QR pour rejoindre sans taper l'adresse : il mène à `/join/CODE` (code pré-rempli) et utilise l'adresse du réseau local, jamais `localhost`
 - [ ] Empêcher la mise en veille de l'écran pendant la partie (Wake Lock)
+- [x] Quitter l'écran met fin à la partie pour tout le monde (`host:close`, confirmation s'il y a des joueurs) : la salle est supprimée et les téléphones reviennent à l'accueil avec « L'hôte a mis fin à la partie »
+- [x] L'extrait est coupé si le tour est interrompu par le départ du joueur actif
 
 ## Manette joueur (téléphone ou PC)
 
@@ -36,6 +38,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Formulaire d'entrée sans débordement de 320 à 390 px de large
 - [x] Paysage obligatoire pendant la partie : écran « Tourne ton téléphone » tant que le téléphone est en portrait (le salon et la saisie du nom restent possibles en portrait ; le formulaire passe sur deux colonnes en paysage)
 - [x] Reprise automatique après une coupure ou un rechargement, et dès le réveil du téléphone
+- [x] Bouton « Quitter » toujours visible pendant la partie (coin supérieur droit, confirmation) : le joueur est retiré avec sa frise ; si c'était son tour, le titre est défaussé et la main passe au suivant ; sous 2 joueurs, la partie se termine et le meilleur restant gagne
 - [ ] Verrouillage d'orientation en plein écran (Android seulement, optionnel)
 - [ ] Essai sur de vrais téléphones iOS et Android (testé jusqu'ici dans Chrome de bureau en émulation tactile)
 

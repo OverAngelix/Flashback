@@ -51,6 +51,7 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - Chef de partie : `Room.leaderId` (premier joueur arrivé ; remplacé par le premier joueur connecté s'il se déconnecte, et il le reste si l'ancien revient). `Session` laisse un joueur envoyer les messages de `CONTROL_MESSAGE_TYPES` (`host:setCategories|start|advance|skipTurn|kick`) seulement s'il est chef ; `host:create` et `host:rejoin` restent réservés à l'hôte. `GameView.leaderId` l'expose.
 - Une seule écoute de l'extrait par tour : `Game.listen` (drapeau `listened`, remis à zéro à chaque pioche) ; `Room` ne la consomme que si l'écran hôte est connecté.
 - `host:advance` porte la phase quittée (`from`) : un message en double ou obsolète est ignoré sans erreur, ce qui rend le double clic inoffensif.
+- Quitter : `player:leave` retire le joueur à tout moment (`Game.removePlayer` gère le tour en cours) ; `host:close` supprime la salle et envoie `closed` aux joueurs. `connection.leave()` côté client envoie le bon message selon le rôle.
 - `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
 
 ## Architecture du client
