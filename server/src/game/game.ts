@@ -45,6 +45,8 @@ export class Game {
   round = 0;
   /** Titre à placer, uniquement pendant awaiting-placement. */
   current?: GameTrack;
+  /** Le joueur actif a déjà écouté l'extrait de ce tour : une seule écoute par tour. */
+  listened = false;
   lastResult?: PlacementResult;
   winnerIds: string[] = [];
 
@@ -137,6 +139,23 @@ export class Game {
     return this.lastResult;
   }
 
+  /** Vérifie que ce joueur peut écouter l'extrait maintenant, sans rien modifier. */
+  assertCanListen(playerId: string): GameTrack {
+    if (this.phase !== "awaiting-placement" || !this.current) {
+      throw new GameError("Pas d'extrait à écouter pour le moment.");
+    }
+    if (this.players[this.turnIndex]!.id !== playerId) throw new GameError("Ce n'est pas votre tour.");
+    if (this.listened) throw new GameError("Vous avez déjà écouté l'extrait : placez-le dans votre frise.");
+    return this.current;
+  }
+
+  /** Le joueur actif écoute l'extrait : une seule fois par tour. Renvoie le titre à jouer. */
+  listen(playerId: string): GameTrack {
+    const track = this.assertCanListen(playerId);
+    this.listened = true;
+    return track;
+  }
+
   /**
    * L'hôte passe le tour du joueur actif (par exemple s'il est déconnecté) : le titre est défaussé,
    * comme un mauvais placement. `position` vaut -1 dans le résultat pour signaler le passage.
@@ -194,6 +213,7 @@ export class Game {
       return;
     }
     this.current = next;
+    this.listened = false;
     this.phase = "awaiting-placement";
   }
 

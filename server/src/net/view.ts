@@ -41,6 +41,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
     })),
     activePlayerId: game.activePlayer?.id ?? null,
     current: game.current ? { audioUrl: mediaUrl(game.current.audioFile) } : null,
+    listened: game.listened,
     lastResult:
       game.phase === "reveal" && game.lastResult
         ? {

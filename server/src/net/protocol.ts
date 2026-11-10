@@ -77,6 +77,8 @@ export interface GameView {
   players: PlayerView[];
   activePlayerId: string | null;
   current: { audioUrl: string } | null;
+  /** Le joueur actif a déjà écouté l'extrait : il ne peut plus le relancer pendant ce tour. */
+  listened: boolean;
   /** Résultat du dernier placement, uniquement pendant la phase "reveal". */
   lastResult: { playerId: string; position: number; correct: boolean; track: PublicCard } | null;
   winnerIds: string[];

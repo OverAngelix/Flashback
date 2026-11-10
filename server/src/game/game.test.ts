@@ -274,3 +274,34 @@ describe("paquet et tour passé", () => {
     assert.equal(game.activePlayer?.id, b.id);
   });
 });
+
+describe("écoute de l'extrait", () => {
+  const years = [1940, 1950, 1960, 1970, 1980, 1990];
+
+  it("n'autorise qu'une écoute par tour, au joueur actif seulement", () => {
+    const game = newGame(years, 10);
+    const { a, b } = twoPlayers(game);
+    assert.throws(() => game.listen(a.id), /Pas d'extrait/);
+    game.start();
+    assert.equal(game.listened, false);
+    assert.throws(() => game.listen(b.id), /pas votre tour/);
+    assert.equal(game.assertCanListen(a.id).year, 1970);
+    assert.equal(game.listened, false); // la vérification ne consomme rien
+
+    assert.equal(game.listen(a.id).year, 1970);
+    assert.equal(game.listened, true);
+    assert.throws(() => game.listen(a.id), /déjà écouté/);
+  });
+
+  it("rend l'écoute au joueur suivant et ne permet plus d'écouter après le placement", () => {
+    const game = newGame(years, 10);
+    const { a, b } = twoPlayers(game);
+    game.start();
+    game.listen(a.id);
+    game.placeCard(a.id, 0);
+    assert.throws(() => game.listen(a.id), /Pas d'extrait/);
+    game.advance();
+    assert.equal(game.listened, false);
+    assert.equal(game.listen(b.id).year, 1960);
+  });
+});

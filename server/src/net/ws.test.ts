@@ -125,6 +125,9 @@ describe("WebSocket de bout en bout", () => {
     ana.send({ type: "player:play" });
     const audio = await host.next("audio:play");
     assert.equal(audio.audioUrl, started.view.current!.audioUrl);
+    await ana.next("state", (m) => m.view.listened);
+    ana.send({ type: "player:play" });
+    assert.match((await ana.next("error")).message, /déjà écouté/);
 
     ana.send({ type: "player:place", position: 0 });
     const revealed = await host.next("state", (m) => m.view.phase === "reveal");

@@ -130,12 +130,12 @@ export class Room {
         this.game.placeCard(playerId, message.position);
         break;
       case "player:play": {
-        const { current, activePlayer, phase } = this.game;
-        if (phase !== "awaiting-placement" || !current) throw new GameError("Pas d'extrait à écouter pour le moment.");
-        if (activePlayer?.id !== playerId) throw new GameError("Ce n'est pas votre tour.");
+        // L'écoute n'est consommée que si l'écran peut réellement jouer le son.
+        this.game.assertCanListen(playerId);
         if (!this.hostConn) throw new GameError("L'écran n'est pas connecté.");
-        this.hostConn.send({ type: "audio:play", audioUrl: mediaUrl(current.audioFile) });
-        return; // rien ne change dans l'état de la partie
+        const track = this.game.listen(playerId);
+        this.hostConn.send({ type: "audio:play", audioUrl: mediaUrl(track.audioFile) });
+        break;
       }
       case "player:leave": {
         if (this.game.phase !== "lobby") throw new GameError("Impossible de quitter en cours de partie.");

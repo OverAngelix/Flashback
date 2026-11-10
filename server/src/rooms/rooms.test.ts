@@ -155,6 +155,37 @@ describe("partie complète", () => {
     assert.equal(host.conn.view().lastResult, null);
   });
 
+  it("n'autorise qu'une écoute par tour et l'indique dans l'état", () => {
+    const { host, ana, ben } = started();
+    assert.equal(host.conn.view().listened, false);
+    ana.send({ type: "player:play" });
+    assert.equal(host.conn.view().listened, true);
+    assert.equal(ana.conn.view().listened, true);
+    ana.send({ type: "player:play" });
+    assert.match(ana.conn.last("error").message, /déjà écouté/);
+    assert.equal(host.conn.sent.filter((m) => m.type === "audio:play").length, 1);
+
+    ana.send({ type: "player:place", position: 0 });
+    host.send({ type: "host:advance", from: "reveal" });
+    assert.equal(host.conn.view().listened, false); // nouveau tour, nouvelle écoute
+    ben.send({ type: "player:play" });
+    assert.equal(host.conn.sent.filter((m) => m.type === "audio:play").length, 2);
+  });
+
+  it("ne consomme pas l'écoute quand l'écran est absent", () => {
+    const { host, ana, code } = started();
+    const { token } = host.conn.last("session");
+    host.session.disconnect();
+    ana.send({ type: "player:play" });
+    assert.match(ana.conn.last("error").message, /écran n'est pas connecté/);
+    const back = client();
+    back.send({ type: "host:rejoin", code, token });
+    assert.equal(back.conn.view().listened, false);
+    ana.send({ type: "player:play" });
+    assert.equal(back.conn.last("audio:play").type, "audio:play");
+    assert.equal(back.conn.view().listened, true);
+  });
+
   it("ne révèle jamais le titre courant avant le placement, à aucun client", () => {
     const { host, ana, ben, code } = started();
     const secret = manager.get(code)!.game.current!;
