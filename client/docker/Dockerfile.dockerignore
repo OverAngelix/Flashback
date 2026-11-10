@@ -1,0 +1,9 @@
+# Lu par BuildKit pour client/docker/Dockerfile (contexte = racine du dépôt) :
+# on n'envoie que le client et les sources du serveur.
+*
+!client
+!server/src
+client/node_modules
+client/dist
+client/.env*
+server/src/**/*.test.ts
