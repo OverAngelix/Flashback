@@ -3,28 +3,28 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { audio, playExtract, stopExtract, unlockAudio } from "@/audio";
 import AvatarBadge from "@/components/AvatarBadge.vue";
+import BrandMark from "@/components/BrandMark.vue";
+import CategoryPicker from "@/components/CategoryPicker.vue";
+import Equalizer from "@/components/Equalizer.vue";
+import MusicLoader from "@/components/MusicLoader.vue";
 import PlayersBar from "@/components/PlayersBar.vue";
 import RecapPanel from "@/components/RecapPanel.vue";
 import RevealPanel from "@/components/RevealPanel.vue";
 import TimelineStrip from "@/components/TimelineStrip.vue";
+import VinylDisc from "@/components/VinylDisc.vue";
+import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
 import { joinBase, joinLink } from "@/joinUrl";
 import { qrDataUrl } from "@/qr";
-import { MIN_PLAYERS } from "@server/game/types";
 
 const router = useRouter();
 const { connection, view, active } = useGame();
+const { chosen, leader, canStart, startBlocker, toggleCategory, start, advance, skipTurn, kick } = useControls();
 
 const joinUrls = ref<string[]>([]);
-
 const lastAudioUrl = ref<string>();
 let offAudio: (() => void) | undefined;
 
-function advance() {
-  const phase = view.value?.phase;
-  // `from` rend un double clic (ou Entrée sur le bouton) inoffensif : le serveur ignore le second.
-  if (phase === "reveal" || phase === "round-recap") connection.send({ type: "host:advance", from: phase });
-}
 function onKey(e: KeyboardEvent) {
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
@@ -66,22 +66,15 @@ watch(
   { immediate: true },
 );
 
-const chosen = computed(() => new Set(view.value?.categories ?? []));
-function toggleCategory(id: string) {
-  const next = new Set(chosen.value);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  connection.send({ type: "host:setCategories", categories: [...next] });
-}
-
-const canStart = computed(() => (view.value?.players.length ?? 0) >= MIN_PLAYERS && chosen.value.size > 0);
-
 /** Où en est le tour : avant l'écoute, pendant l'extrait, puis pendant que le joueur place son titre. */
 const status = computed(() => {
   const name = active.value?.name ?? "";
   if (!view.value?.listened) return `${name}, lance l'extrait depuis ton téléphone`;
   return audio.playing ? "Écoute…" : `${name} place le titre dans sa frise`;
 });
+
+/** Change à chaque phase et à chaque tour : déclenche la transition entre écrans. */
+const stageKey = computed(() => (view.value ? `${view.value.phase}-${view.value.round}-${view.value.activePlayerId}` : "loading"));
 
 function reactivateSound() {
   unlockAudio();
@@ -94,137 +87,334 @@ function leave() {
 </script>
 
 <template>
-  <v-container fluid class="pa-6" @click="audio.blocked && reactivateSound()">
-    <v-alert v-if="audio.blocked" type="warning" variant="flat" icon="mdi-volume-off" class="mb-4 text-title-large">
-      Touche l'écran pour activer le son.
-    </v-alert>
-    <v-alert v-if="connection.state.status === 'reconnecting'" type="warning" variant="tonal" class="mb-4">
-      Connexion au serveur perdue, nouvelle tentative…
-    </v-alert>
+  <div class="host" @click="audio.blocked && reactivateSound()">
+    <header class="top">
+      <div class="brand"><BrandMark class="mark" /><span class="display">Flashback</span></div>
+      <v-btn v-if="view" icon="mdi-exit-to-app" class="btn-ghost" size="default" title="Quitter" @click.stop="leave" />
+    </header>
 
-    <div v-if="!view" class="d-flex justify-center pa-12">
-      <v-progress-circular indeterminate size="64" />
-    </div>
+    <v-alert v-if="audio.blocked" type="warning" variant="flat" icon="mdi-volume-off" class="mb-4 sound-alert">Touche l'écran pour activer le son.</v-alert>
+    <v-alert v-if="connection.state.status === 'reconnecting'" type="warning" variant="tonal" class="mb-4">Connexion au serveur perdue, nouvelle tentative…</v-alert>
 
-    <!-- Salon -->
-    <div v-else-if="view.phase === 'lobby'" class="d-flex flex-column ga-8">
-      <div class="d-flex flex-column flex-md-row ga-8 align-center">
-        <v-sheet rounded="xl" class="pa-8 text-center" color="primary">
-          <div class="text-title-large">Code de la partie</div>
-          <div class="code font-weight-black" data-testid="room-code">{{ view.code }}</div>
-        </v-sheet>
-        <v-sheet v-if="qr" rounded="xl" class="qr pa-2 flex-shrink-0" color="white">
-          <img :src="qr" :data-join-url="qrLink" alt="QR code pour rejoindre la partie" width="200" height="200" data-testid="qr" />
-        </v-sheet>
-        <div class="text-headline-small">
-          Scanne le QR code avec ton téléphone,
-          <div class="text-title-large text-medium-emphasis mt-2">
-            ou ouvre
-            <span class="text-primary font-weight-bold" data-testid="join-url">{{ joinUrl }}</span>
-            et entre le code.
+    <Transition name="phase" mode="out-in">
+      <div :key="stageKey" class="stage">
+        <div v-if="!view" class="loading">
+          <MusicLoader :size="110" />
+          <div class="muted">Création de la salle…</div>
+        </div>
+
+        <!-- Salon -->
+        <section v-else-if="view.phase === 'lobby'" class="h-lobby">
+          <div class="join-row">
+            <div class="code-card glass">
+              <div class="muted label">Code de la partie</div>
+              <div class="code" data-testid="room-code"><span v-for="(ch, i) in view.code.split('')" :key="i" class="tile display" :style="{ '--i': i }">{{ ch }}</span></div>
+            </div>
+            <div v-if="qr" class="qr-card">
+              <img :src="qr" :data-join-url="qrLink" alt="QR code pour rejoindre la partie" width="200" height="200" data-testid="qr" />
+              <div class="qr-label display">Scanne pour rejoindre</div>
+            </div>
+            <div class="how">
+              <div class="display t-md">Rejoins la partie</div>
+              <p class="muted">
+                Scanne le QR code avec ton téléphone, ou ouvre
+                <span class="grad-text url" data-testid="join-url">{{ joinUrl }}</span>
+                et entre le code.
+              </p>
+            </div>
           </div>
-        </div>
+
+          <div class="cols">
+            <div class="col">
+              <h2 class="display t-md">Joueurs ({{ view.players.length }})</h2>
+              <div v-if="view.players.length === 0" class="waiting glass"><MusicLoader :size="44" /><span class="muted">En attente des premiers joueurs…</span></div>
+              <TransitionGroup name="pop" tag="div" class="players">
+                <div v-for="p in view.players" :key="p.id" class="player glass" :class="{ off: !p.connected }">
+                  <AvatarBadge :avatar="p.avatar" :size="52" :leader="p.id === view.leaderId" />
+                  <span class="display pname text-truncate">{{ p.name }}</span>
+                  <v-btn icon="mdi-close" size="x-small" class="btn-ghost kick" title="Exclure" @click.stop="kick(p.id)" />
+                </div>
+              </TransitionGroup>
+              <p v-if="leader" class="muted leader-hint">
+                <v-icon icon="mdi-crown" color="warning" size="small" /> {{ leader.name }} est le chef de partie : il peut tout piloter depuis son téléphone.
+              </p>
+            </div>
+
+            <div class="col">
+              <h2 class="display t-md">Catégories</h2>
+              <CategoryPicker :categories="view.availableCategories" :chosen="chosen" @toggle="toggleCategory" />
+            </div>
+          </div>
+
+          <div class="start-row">
+            <v-btn class="btn-success" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="start" @click="start">Lancer la partie</v-btn>
+            <span class="muted">{{ startBlocker ?? `${view.trackCount} titres dans le paquet · premier à ${view.cardsToWin} cartes` }}</span>
+          </div>
+        </section>
+
+        <!-- Un joueur écoute et place son titre -->
+        <section v-else-if="view.phase === 'awaiting-placement' && active" class="turn">
+          <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" />
+          <div class="spotlight">
+            <VinylDisc :size="260" :spinning="audio.playing" />
+            <div class="info">
+              <div class="who">
+                <AvatarBadge :avatar="active.avatar" :size="84" />
+                <div>
+                  <div class="muted">Tour {{ view.round }}</div>
+                  <div class="display t-lg">{{ active.name }}</div>
+                </div>
+              </div>
+              <div class="status display t-md" data-testid="turn-status">{{ status }}</div>
+              <div class="eq-row"><Equalizer :active="audio.playing" /><span class="muted">{{ view.listened ? "Une seule écoute par tour." : "Une seule écoute : bien écouter !" }}</span></div>
+            </div>
+          </div>
+          <TimelineStrip :cards="active.timeline" />
+          <v-alert v-if="!active.connected" type="warning" variant="tonal">
+            {{ active.name }} est déconnecté.
+            <template #append><v-btn class="btn-ghost" size="small" @click="skipTurn">Passer son tour</v-btn></template>
+          </v-alert>
+        </section>
+
+        <!-- Révélation -->
+        <section v-else-if="view.phase === 'reveal'" class="h-reveal">
+          <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" />
+          <RevealPanel :view="view" />
+          <div class="next-row">
+            <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Continuer</v-btn>
+            <span class="muted">Entrée ou Espace · le chef de partie peut aussi continuer depuis son téléphone</span>
+          </div>
+        </section>
+
+        <!-- Récapitulatif de fin de tour -->
+        <section v-else-if="view.phase === 'round-recap'" class="h-recap">
+          <RecapPanel :view="view" />
+          <div class="next-row">
+            <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Tour suivant</v-btn>
+          </div>
+        </section>
+
+        <!-- Fin de partie -->
+        <section v-else-if="view.phase === 'finished'" class="h-recap">
+          <RecapPanel :view="view" final />
+          <div class="next-row"><v-btn class="btn-primary" size="x-large" prepend-icon="mdi-home" @click="leave">Nouvelle partie</v-btn></div>
+        </section>
       </div>
-
-      <div>
-        <div class="text-title-large mb-3">Catégories</div>
-        <div class="d-flex flex-wrap ga-3">
-          <v-chip
-            v-for="c in view.availableCategories"
-            :key="c.id"
-            size="x-large"
-            :variant="chosen.has(c.id) ? 'flat' : 'outlined'"
-            :prepend-icon="chosen.has(c.id) ? 'mdi-check' : undefined"
-            :color="chosen.has(c.id) ? 'primary' : undefined"
-            :data-testid="`category-${c.id}`"
-            @click="toggleCategory(c.id)"
-          >
-            {{ c.label }} · {{ c.count }}
-          </v-chip>
-        </div>
-      </div>
-
-      <div>
-        <div class="text-title-large mb-3">Joueurs ({{ view.players.length }})</div>
-        <div v-if="view.players.length === 0" class="text-medium-emphasis">En attente des premiers joueurs…</div>
-        <div class="d-flex flex-wrap ga-3">
-          <v-chip v-for="p in view.players" :key="p.id" size="x-large" closable close-icon="mdi-account-remove" :class="{ 'opacity-60': !p.connected }" @click:close="connection.send({ type: 'host:kick', playerId: p.id })">
-            <template #prepend><AvatarBadge :avatar="p.avatar" :size="36" class="mr-2" /></template>
-            {{ p.name }}
-          </v-chip>
-        </div>
-      </div>
-
-      <div class="d-flex align-center ga-4">
-        <v-btn color="success" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="start" @click="connection.send({ type: 'host:start' })">
-          Lancer la partie
-        </v-btn>
-        <span v-if="view.players.length < MIN_PLAYERS" class="text-medium-emphasis">Il faut au moins {{ MIN_PLAYERS }} joueurs.</span>
-        <span v-else-if="chosen.size === 0" class="text-medium-emphasis">Choisis au moins une catégorie.</span>
-        <span v-else class="text-medium-emphasis">{{ view.trackCount }} titres dans le paquet · premier à {{ view.cardsToWin }} cartes.</span>
-      </div>
-    </div>
-
-    <!-- Un joueur écoute et place son titre -->
-    <div v-else-if="view.phase === 'awaiting-placement' && active" class="d-flex flex-column ga-6">
-      <PlayersBar :players="view.players" :active-id="view.activePlayerId" />
-      <div class="d-flex align-center ga-4">
-        <AvatarBadge :avatar="active.avatar" :size="96" />
-        <div>
-          <div class="text-display-small font-weight-bold">{{ active.name }}</div>
-          <div class="text-title-large text-medium-emphasis">Tour {{ view.round }}</div>
-        </div>
-      </div>
-      <v-sheet rounded="xl" class="pa-8 text-center">
-        <v-icon :icon="audio.playing ? 'mdi-music-note' : view.listened ? 'mdi-gesture-tap' : 'mdi-cellphone-sound'" size="72" :color="audio.playing ? 'primary' : undefined" />
-        <div class="text-headline-large mt-2" data-testid="turn-status">{{ status }}</div>
-        <div class="text-medium-emphasis mt-1">{{ view.listened ? "Une seule écoute par tour." : "Une seule écoute : bien écouter !" }}</div>
-      </v-sheet>
-      <TimelineStrip :cards="active.timeline" />
-      <v-alert v-if="!active.connected" type="warning" variant="tonal">
-        {{ active.name }} est déconnecté.
-        <template #append>
-          <v-btn variant="flat" @click="connection.send({ type: 'host:skipTurn' })">Passer son tour</v-btn>
-        </template>
-      </v-alert>
-    </div>
-
-    <!-- Révélation -->
-    <div v-else-if="view.phase === 'reveal'" class="d-flex flex-column ga-6">
-      <PlayersBar :players="view.players" :active-id="view.activePlayerId" />
-      <RevealPanel :view="view" />
-      <v-btn color="primary" size="x-large" class="align-self-start" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Continuer</v-btn>
-    </div>
-
-    <!-- Récapitulatif de fin de tour -->
-    <div v-else-if="view.phase === 'round-recap'" class="d-flex flex-column ga-6">
-      <RecapPanel :view="view" />
-      <v-btn color="primary" size="x-large" class="align-self-start" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Tour suivant</v-btn>
-    </div>
-
-    <!-- Fin de partie -->
-    <div v-else-if="view.phase === 'finished'" class="d-flex flex-column ga-6">
-      <RecapPanel :view="view" final />
-      <v-btn color="primary" size="x-large" class="align-self-start" prepend-icon="mdi-home" @click="leave">Nouvelle partie</v-btn>
-    </div>
-
-    <v-btn v-if="view" icon="mdi-exit-to-app" variant="text" class="exit" title="Quitter" @click.stop="leave" />
-  </v-container>
+    </Transition>
+  </div>
 </template>
 
 <style scoped>
+.host {
+  min-height: 100dvh;
+  padding: 20px clamp(16px, 3vw, 44px) 40px;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+}
+.mark {
+  width: 34px;
+  height: 34px;
+}
+.sound-alert {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 12vh 0;
+}
+
+/* Salon */
+.join-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 28px;
+}
+.code-card {
+  padding: 22px 28px 26px;
+  background: linear-gradient(135deg, rgba(255, 61, 154, 0.3), rgba(124, 92, 255, 0.3));
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.label {
+  margin-bottom: 8px;
+  font-size: 1.05rem;
+}
 .code {
-  font-size: clamp(3rem, 12vw, 8rem);
-  letter-spacing: 0.15em;
-  line-height: 1.1;
+  display: flex;
+  gap: clamp(6px, 1vw, 12px);
 }
-.qr img {
+.tile {
+  display: grid;
+  place-items: center;
+  width: clamp(46px, 7vw, 92px);
+  height: clamp(60px, 9.4vw, 120px);
+  border-radius: 18px;
+  background: #fff;
+  color: #1a1340;
+  font-size: clamp(2rem, 5.6vw, 4.6rem);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  animation: drop 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+.qr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-radius: 24px;
+  background: #fff;
+  color: #1a1340;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+.qr-card img {
   display: block;
-  border-radius: 12px;
+  border-radius: 10px;
 }
-.exit {
-  position: fixed;
-  top: 8px;
-  right: 8px;
+.qr-label {
+  font-size: 1rem;
+}
+.how {
+  flex: 1;
+  min-width: 240px;
+  max-width: 440px;
+}
+.how p {
+  margin: 8px 0 0;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+.url {
+  display: block;
+  margin: 4px 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+.cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 28px;
+}
+.col h2 {
+  margin: 0 0 12px;
+}
+.players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  padding: 8px 8px 8px 12px;
+  border-radius: 999px;
+}
+.player.off {
+  opacity: 0.5;
+}
+.pname {
+  font-size: 1.2rem;
+}
+.kick {
+  opacity: 0.6;
+}
+.waiting {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+.leader-hint {
+  margin: 14px 0 20px;
+}
+.start-row,
+.next-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Tour */
+.turn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.spotlight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(24px, 5vw, 64px);
+}
+.info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 280px;
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.status {
+  line-height: 1.2;
+}
+.eq-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.h-reveal,
+.h-recap {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) rotate(-6deg);
+  }
+}
+.pop-enter-active {
+  transition: all 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.pop-enter-from {
+  opacity: 0;
+  transform: scale(0.5);
+}
+.pop-leave-active {
+  transition: all 0.25s ease;
+  position: absolute;
+}
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(0.7);
 }
 </style>
