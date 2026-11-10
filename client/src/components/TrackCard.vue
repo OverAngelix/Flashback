@@ -40,6 +40,29 @@ defineProps<{ card: PublicCard; highlight?: boolean; big?: boolean }>();
 .big .artist {
   font-size: 1rem;
 }
+/* Téléphone en paysage : peu de hauteur utile (barre du navigateur comprise). */
+@media (orientation: landscape) and (max-height: 430px) {
+  .track-card {
+    width: 104px;
+  }
+  .track-card.big {
+    width: 150px;
+  }
+  .year {
+    font-size: 1.15rem;
+  }
+  .big .year {
+    font-size: 1.6rem;
+  }
+  .title,
+  .big .title {
+    font-size: 0.72rem;
+  }
+  .artist,
+  .big .artist {
+    font-size: 0.65rem;
+  }
+}
 .highlight .artist {
   color: inherit !important;
   opacity: 0.85;

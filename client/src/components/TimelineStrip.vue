@@ -67,6 +67,18 @@ watch(
   cursor: pointer;
   transition: all 0.15s;
 }
+@media (orientation: landscape) and (max-height: 430px) {
+  .strip {
+    padding: 4px 4px 6px;
+  }
+  .slot {
+    min-height: 100px;
+    width: 36px;
+  }
+  .slot.active {
+    width: 60px;
+  }
+}
 .slot.active {
   width: 80px;
   border-style: solid;

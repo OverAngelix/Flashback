@@ -13,14 +13,18 @@ import { useGame } from "@/composables/useGame";
 import { usePortraitPhone } from "@/composables/useOrientation";
 import { onMounted } from "vue";
 
-defineProps<{ code?: string }>();
+const props = defineProps<{ code?: string }>();
 
 const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
 const portrait = usePortraitPhone();
 
 onMounted(() => {
-  if (!connection.state.session) connection.resume();
+  // Un lien /join/CODE vers une autre salle l'emporte sur une ancienne session mémorisée.
+  const wanted = props.code?.toUpperCase();
+  const current = connection.state.session;
+  if (wanted && current && current.code !== wanted) connection.leave();
+  else if (!current) connection.resume();
 });
 
 // En partie, le téléphone doit être en paysage ; le salon et la saisie du nom restent possibles en portrait.
@@ -52,29 +56,28 @@ function leave() {
   </v-container>
 
   <!-- Mon tour -->
-  <PlayTurn v-else-if="view.phase === 'awaiting-placement' && isMyTurn" :me="me" />
+  <PlayTurn v-else-if="view.phase === 'awaiting-placement' && isMyTurn" :me="me" :listened="view.listened" />
 
-  <!-- Le tour d'un autre -->
-  <v-container v-else-if="view.phase === 'awaiting-placement' && active" fluid class="d-flex flex-column ga-3">
-    <PlayersBar :players="view.players" :active-id="view.activePlayerId" compact />
+  <!-- Le tour d'un autre : l'écran principal montre sa frise, la manette montre la mienne -->
+  <v-container v-else-if="view.phase === 'awaiting-placement' && active" fluid class="d-flex flex-column ga-2">
     <div class="d-flex align-center ga-3">
-      <AvatarBadge :avatar="active.avatar" :size="48" />
+      <AvatarBadge :avatar="active.avatar" :size="40" />
       <div class="text-title-large">{{ active.name }} réfléchit…</div>
     </div>
-    <TimelineStrip :cards="active.timeline" />
+    <div class="text-label-large text-medium-emphasis">Ta frise</div>
+    <TimelineStrip :cards="me.timeline" />
   </v-container>
 
-  <v-container v-else-if="view.phase === 'reveal'" fluid class="d-flex flex-column ga-3">
-    <RevealPanel :view="view" compact />
-    <div class="text-medium-emphasis text-center">En attente de l'écran…</div>
+  <v-container v-else-if="view.phase === 'reveal'" fluid class="pa-2">
+    <RevealPanel :view="view" compact :viewer-id="me.id" note="En attente de l'écran…" />
   </v-container>
 
   <v-container v-else-if="view.phase === 'round-recap'" fluid>
-    <RecapPanel :view="view" />
+    <RecapPanel :view="view" :viewer-id="me.id" />
   </v-container>
 
   <v-container v-else-if="view.phase === 'finished'" fluid class="d-flex flex-column ga-3">
-    <RecapPanel :view="view" final />
+    <RecapPanel :view="view" final :viewer-id="me.id" />
     <v-btn color="primary" prepend-icon="mdi-home" class="align-self-start" @click="leave">Retour à l'accueil</v-btn>
   </v-container>
 </template>
