@@ -25,7 +25,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Code QR pour rejoindre sans taper l'adresse : il mène à `/join/CODE` (code pré-rempli) et utilise l'adresse du réseau local, jamais `localhost`
 - [ ] Empêcher la mise en veille de l'écran pendant la partie (Wake Lock)
 - [x] Quitter l'écran met fin à la partie pour tout le monde (`host:close`, confirmation s'il y a des joueurs) : la salle est supprimée et les téléphones reviennent à l'accueil avec « L'hôte a mis fin à la partie »
-- [x] L'extrait est coupé si le tour est interrompu par le départ du joueur actif
+- [x] L'extrait s'éteint en fondu d'une seconde dès qu'on quitte son tour (joueur suivant, récapitulatif, fin de partie, départ du joueur actif)
 
 ## Manette joueur (téléphone ou PC)
 

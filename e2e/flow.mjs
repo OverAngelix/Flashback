@@ -329,6 +329,18 @@ try {
   ok("Ben : la révélation tient à 740x300 et montre sa frise, pas celle d'Ana");
   await ben.setViewport(phone);
 
+  // Passage au joueur suivant : l'extrait d'Ana doit s'éteindre en une seconde environ, pas d'un coup.
+  // On relance l'élément s'il s'est arrêté entre-temps, et on note l'instant où il est mis en pause.
+  const fadeReady = await host.evaluate(async () => {
+    const el = window.__lastAudio;
+    window.__pausedAt = undefined;
+    const pause = HTMLMediaElement.prototype.pause;
+    HTMLMediaElement.prototype.pause = function () { if (window.__pausedAt === undefined) window.__pausedAt = performance.now(); return pause.call(this); };
+    if (el.paused) await el.play().catch(() => {});
+    window.__volumeBefore = el.volume;
+    window.__advanceAt = performance.now();
+    return !el.paused;
+  });
   // Double clic sur « Continuer » depuis le téléphone du chef : le second message doit être ignoré.
   // Deux clics dans la même tâche JS : le second part avant que l'écran ait changé (déterministe).
   await ana.evaluate((q) => {
@@ -338,6 +350,15 @@ try {
   }, sel("leader-advance"));
   await ben.waitForSelector(sel("play-extract"));
   await painted(ben, sel("play-extract"), "tour de Ben");
+  if (fadeReady) {
+    await host.waitForFunction(() => window.__pausedAt !== undefined, { timeout: 4000 });
+    const fade = await host.evaluate(() => ({ ms: window.__pausedAt - window.__advanceAt, volume: window.__lastAudio.volume, before: window.__volumeBefore }));
+    if (fade.ms < 800 || fade.ms > 2000) throw new Error(`l'extrait s'est arrêté après ${Math.round(fade.ms)} ms au lieu d'environ 1 s`);
+    if (Math.abs(fade.volume - fade.before) > 0.01) throw new Error("le volume n'est pas revenu au réglage après le fondu");
+    ok(`hôte : au joueur suivant, l'extrait s'éteint en fondu (arrêt après ${Math.round(fade.ms)} ms, volume rétabli)`);
+  } else {
+    ok("hôte : fondu non vérifié (l'extrait ne peut pas être relancé dans ce navigateur)");
+  }
   await new Promise((r) => setTimeout(r, 400));
   if (await host.$(sel("advance"))) throw new Error("le double clic a fait avancer deux fois");
   if ((await ben.$(sel("leader-advance"))) !== null) throw new Error("Ben ne devrait pas pouvoir faire avancer la partie");
