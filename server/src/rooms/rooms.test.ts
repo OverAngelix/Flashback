@@ -379,6 +379,34 @@ describe("salon", () => {
   });
 });
 
+describe("groove", () => {
+  it("accepte le placement d'un autre joueur après l'écoute, garde sa position secrète, puis le révèle", () => {
+    const { host, ana, ben } = started();
+    const benId = ben.conn.last("session").playerId!;
+    ben.send({ type: "player:groove", position: 0 });
+    assert.match(ben.conn.last("error").message, /extrait soit lancé/);
+
+    ana.send({ type: "player:play" });
+    ana.send({ type: "player:groove", position: 0 });
+    assert.match(ana.conn.last("error").message, /C'est ton tour/);
+    ben.send({ type: "player:groove", position: 0 });
+    const view = host.conn.view();
+    assert.deepEqual(view.grooveGuessIds, [benId]);
+    assert.equal(JSON.stringify(view).includes('"position"'), false);
+
+    ana.send({ type: "player:place", position: 0 });
+    const revealed = host.conn.view();
+    assert.deepEqual(revealed.grooveGuessIds, []);
+    const [guess] = revealed.lastResult!.groove;
+    assert.equal(revealed.lastResult!.groove.length, 1);
+    assert.deepEqual({ playerId: guess!.playerId, position: guess!.position }, { playerId: benId, position: 0 });
+    assert.equal(revealed.players.find((p) => p.id === benId)!.groove, guess!.correct ? 1 : 0);
+
+    ben.send({ type: "player:groove", position: 0 });
+    assert.match(ben.conn.last("error").message, /Trop tard/);
+  });
+});
+
 describe("quitter une partie en cours", () => {
   it("retire le joueur, ferme sa connexion et invalide son jeton", () => {
     const l = lobby();
@@ -528,10 +556,12 @@ describe("parseClientMessage", () => {
     assert.deepEqual(parseClientMessage('{"type":"host:create"}'), { type: "host:create" });
     assert.deepEqual(parseClientMessage('{"type":"host:advance","from":"reveal"}'), { type: "host:advance", from: "reveal" });
     assert.deepEqual(parseClientMessage('{"type":"player:place","position":2,"extra":1}'), { type: "player:place", position: 2 });
+    assert.deepEqual(parseClientMessage('{"type":"player:groove","position":0}'), { type: "player:groove", position: 0 });
     assert.deepEqual(parseClientMessage('{"type":"host:setCategories","categories":["fr"]}'), { type: "host:setCategories", categories: ["fr"] });
   });
   it("refuse les types et formes invalides", () => {
     assert.equal(parseClientMessage('{"type":"player:place","position":1.5}'), null);
+    assert.equal(parseClientMessage('{"type":"player:groove","position":"0"}'), null);
     assert.equal(parseClientMessage('{"type":"host:advance"}'), null);
     assert.equal(parseClientMessage('{"type":"host:advance","from":"nimporte"}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCategories","categories":[1]}'), null);

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { Game, isCorrectPlacement } from "./game.js";
-import { GameError, type GameTrack } from "./types.js";
+import { correctPositions, GameError, type GameTrack } from "./types.js";
 
 const track = (id: number, year: number): GameTrack => ({
   id,
@@ -46,6 +46,12 @@ describe("isCorrectPlacement", () => {
   });
   it("accepte tout dans une frise vide", () => {
     assert.equal(isCorrectPlacement([], 0, 1999), true);
+  });
+  it("liste toutes les positions justes, plusieurs en cas d'années égales", () => {
+    assert.deepEqual(correctPositions(timeline, 1970), [1]);
+    assert.deepEqual(correctPositions(timeline, 1980), [1, 2]);
+    assert.deepEqual(correctPositions(timeline, 2020), [3]);
+    assert.deepEqual(correctPositions([], 1999), [0]);
   });
 });
 
@@ -303,6 +309,78 @@ describe("écoute de l'extrait", () => {
     game.advance();
     assert.equal(game.listened, false);
     assert.equal(game.listen(b.id).year, 1960);
+  });
+});
+
+describe("groove", () => {
+  // Départ : Ana 1990, Ben 1980, Cléo 1970 ; titres suivants : 1960, puis 1950, puis 1940.
+  const years = [1940, 1950, 1960, 1970, 1980, 1990];
+  function threePlayers() {
+    const game = newGame(years, 10);
+    const { a, b } = twoPlayers(game);
+    const c = game.addPlayer("Cléo", 2);
+    game.start();
+    return { game, a, b, c };
+  }
+
+  it("rapporte un point aux placements justes dans la frise du joueur actif, rien aux faux", () => {
+    const { game, a, b, c } = threePlayers();
+    game.listen(a.id);
+    game.placeGroove(b.id, 0); // 1960 avant 1990 : juste
+    game.placeGroove(c.id, 1); // 1960 après 1990 : faux
+    const result = game.placeCard(a.id, 1); // faux pour Ana aussi
+    assert.deepEqual(result.groove, [
+      { playerId: b.id, position: 0, correct: true },
+      { playerId: c.id, position: 1, correct: false },
+    ]);
+    assert.deepEqual([a.groove, b.groove, c.groove], [0, 1, 0]);
+    // Le groove ne pose aucune carte : seule la frise du joueur actif peut changer.
+    assert.deepEqual([a, b, c].map((p) => p.timeline.map((t) => t.year)), [[1990], [1980], [1970]]);
+  });
+
+  it("corrige sur la frise d'avant le placement du joueur actif", () => {
+    const { game, a, b } = threePlayers();
+    game.listen(a.id);
+    game.placeGroove(b.id, 0);
+    game.placeCard(a.id, 0); // Ana pose 1960 en tête : la position 0 de Ben reste juste
+    assert.equal(b.groove, 1);
+    assert.deepEqual(a.timeline.map((t) => t.year), [1960, 1990]);
+  });
+
+  it("refuse avant l'écoute, au joueur actif, en double, hors frise, et après le placement", () => {
+    const { game, a, b, c } = threePlayers();
+    assert.throws(() => game.placeGroove(b.id, 0), /extrait soit lancé/);
+    game.listen(a.id);
+    assert.throws(() => game.placeGroove(a.id, 0), /C'est ton tour/);
+    assert.throws(() => game.placeGroove(b.id, 2), /Position invalide/);
+    assert.throws(() => game.placeGroove("p99", 0), /Joueur inconnu/);
+    game.placeGroove(b.id, 0);
+    assert.throws(() => game.placeGroove(b.id, 1), /déjà placé/);
+    game.placeCard(a.id, 0);
+    assert.throws(() => game.placeGroove(c.id, 0), /Trop tard/);
+  });
+
+  it("corrige aussi les placements d'un tour passé, puis repart de zéro au tour suivant", () => {
+    const { game, a, b, c } = threePlayers();
+    game.listen(a.id);
+    game.placeGroove(b.id, 0);
+    assert.deepEqual(game.skipTurn().groove, [{ playerId: b.id, position: 0, correct: true }]);
+    assert.equal(b.groove, 1);
+    game.advance();
+    assert.equal(game.grooveGuesses.size, 0);
+    game.listen(b.id);
+    game.placeGroove(a.id, 1); // 1950 après 1980 : faux
+    game.placeGroove(c.id, 0);
+    assert.deepEqual(game.placeCard(b.id, 0).groove.map((g) => g.correct), [false, true]);
+    assert.deepEqual([a.groove, b.groove, c.groove], [0, 1, 1]);
+  });
+
+  it("oublie le placement d'un joueur qui s'en va", () => {
+    const { game, a, c } = threePlayers();
+    game.listen(a.id);
+    game.placeGroove(c.id, 0);
+    game.removePlayer(c.id);
+    assert.deepEqual(game.placeCard(a.id, 0).groove, []);
   });
 });
 
