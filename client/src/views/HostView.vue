@@ -33,8 +33,12 @@ function onKey(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
-  // Arrivée directe (rechargement) sans session : on en crée une, ou on reprend celle mémorisée.
-  if (!connection.state.session && !connection.resume()) connection.createRoom();
+  // Une salle se crée depuis le menu (« Héberger »), dont le clic débloque aussi le son. Un rechargement
+  // reprend la partie mémorisée ; sans rien de tout cela, on revient au menu.
+  if (!connection.state.session && connection.state.status === "idle" && !connection.resume()) {
+    await router.replace("/");
+    return;
+  }
   offAudio = connection.onAudioPlay((url) => {
     lastAudioUrl.value = url;
     playExtract(url);
@@ -105,13 +109,13 @@ function leave() {
 
         <!-- Salon -->
         <section v-else-if="view.phase === 'lobby'" class="h-lobby">
-          <div class="join-row">
-            <div class="code-card glass">
+          <div class="join-panel glass">
+            <div class="code-block">
               <div class="muted label">Code de la partie</div>
               <div class="code" data-testid="room-code"><span v-for="(ch, i) in view.code.split('')" :key="i" class="tile display" :style="{ '--i': i }">{{ ch }}</span></div>
             </div>
             <div v-if="qr" class="qr-card">
-              <img :src="qr" :data-join-url="qrLink" alt="QR code pour rejoindre la partie" width="200" height="200" data-testid="qr" />
+              <img :src="qr" :data-join-url="qrLink" alt="QR code pour rejoindre la partie" width="176" height="176" data-testid="qr" />
               <div class="qr-label display">Scanne pour rejoindre</div>
             </div>
             <div class="how">
@@ -125,11 +129,11 @@ function leave() {
           </div>
 
           <div class="cols">
-            <div class="col">
+            <div class="panel glass">
               <h2 class="display t-md">Joueurs ({{ view.players.length }})</h2>
-              <div v-if="view.players.length === 0" class="waiting glass"><MusicLoader :size="44" /><span class="muted">En attente des premiers joueurs…</span></div>
+              <div v-if="view.players.length === 0" class="waiting"><MusicLoader :size="44" /><span class="muted">En attente des premiers joueurs…</span></div>
               <TransitionGroup name="pop" tag="div" class="players">
-                <div v-for="p in view.players" :key="p.id" class="player glass" :class="{ off: !p.connected }">
+                <div v-for="p in view.players" :key="p.id" class="player" :class="{ off: !p.connected }">
                   <AvatarBadge :avatar="p.avatar" :size="52" :leader="p.id === view.leaderId" />
                   <span class="display pname text-truncate">{{ p.name }}</span>
                   <v-btn icon="mdi-close" size="x-small" class="btn-ghost kick" title="Exclure" @click.stop="kick(p.id)" />
@@ -140,13 +144,13 @@ function leave() {
               </p>
             </div>
 
-            <div class="col">
+            <div class="panel glass">
               <h2 class="display t-md">Catégories</h2>
               <CategoryPicker :categories="view.availableCategories" :chosen="chosen" @toggle="toggleCategory" />
             </div>
           </div>
 
-          <div class="start-row">
+          <div class="start-row glass">
             <v-btn class="btn-success" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="start" @click="start">Lancer la partie</v-btn>
             <span class="muted">{{ startBlocker ?? `${view.trackCount} titres dans le paquet · premier à ${view.cardsToWin} cartes` }}</span>
           </div>
@@ -213,7 +217,7 @@ function leave() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 .brand {
   display: flex;
@@ -242,21 +246,24 @@ function leave() {
   padding: 12vh 0;
 }
 
-/* Salon */
-.join-row {
+/* Salon : informations de la partie, puis deux panneaux séparés, puis le lancement. */
+.h-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 4dvh, 40px);
+}
+.join-panel {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 28px;
-}
-.code-card {
-  padding: 22px 28px 26px;
-  background: linear-gradient(135deg, rgba(255, 61, 154, 0.3), rgba(124, 92, 255, 0.3));
-  border-color: rgba(255, 255, 255, 0.25);
+  gap: 20px clamp(24px, 3vw, 44px);
+  padding: clamp(16px, 2.2vw, 26px) clamp(18px, 2.6vw, 34px);
+  background: linear-gradient(135deg, rgba(255, 61, 154, 0.22), rgba(124, 92, 255, 0.22));
+  border-color: rgba(255, 255, 255, 0.22);
 }
 .label {
   margin-bottom: 8px;
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 .code {
   display: flex;
@@ -265,12 +272,12 @@ function leave() {
 .tile {
   display: grid;
   place-items: center;
-  width: clamp(46px, 7vw, 92px);
-  height: clamp(60px, 9.4vw, 120px);
+  width: clamp(40px, 5.2vw, 76px);
+  height: clamp(54px, 6.8vw, 100px);
   border-radius: 18px;
   background: #fff;
   color: #1a1340;
-  font-size: clamp(2rem, 5.6vw, 4.6rem);
+  font-size: clamp(1.8rem, 4.2vw, 3.6rem);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
   animation: drop 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
   animation-delay: calc(var(--i) * 70ms);
@@ -296,29 +303,34 @@ function leave() {
 .how {
   flex: 1;
   min-width: 240px;
-  max-width: 440px;
+  max-width: 460px;
 }
 .how p {
-  margin: 8px 0 0;
-  font-size: 1.15rem;
+  margin: 6px 0 0;
+  font-size: 1.05rem;
   line-height: 1.5;
 }
 .url {
   display: block;
-  margin: 4px 0;
+  margin: 2px 0;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
 }
 .cols {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-  gap: 28px;
+  gap: clamp(18px, 3vw, 32px);
+  align-items: start;
 }
-.col h2 {
-  margin: 0 0 12px;
+.panel {
+  padding: clamp(18px, 2.4vw, 28px);
+}
+.panel h2 {
+  margin: 0 0 16px;
 }
 .players {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -330,6 +342,8 @@ function leave() {
   max-width: 100%;
   padding: 8px 8px 8px 12px;
   border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
 }
 .player.off {
   opacity: 0.5;
@@ -344,12 +358,18 @@ function leave() {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 18px;
+  padding: 4px 0 8px;
 }
 .leader-hint {
-  margin: 14px 0 20px;
+  margin: 18px 0 0;
 }
-.start-row,
+.start-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 24px;
+}
 .next-row {
   display: flex;
   flex-wrap: wrap;

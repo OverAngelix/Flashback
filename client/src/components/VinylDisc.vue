@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import BrandMark from "./BrandMark.vue";
 
-withDefaults(defineProps<{ size?: number; spinning?: boolean }>(), { size: 200, spinning: false });
+/** `size` : un nombre de pixels, ou une expression CSS (par exemple `min(210px, 22dvh)`). */
+withDefaults(defineProps<{ size?: number | string; spinning?: boolean }>(), { size: 200, spinning: false });
 </script>
 
 <!-- Un disque vinyle en CSS. `spinning` le fait tourner (l'animation se met en pause sans revenir à zéro). -->
 <template>
-  <div class="disc" :class="{ spinning }" :style="{ '--s': `${size}px` }">
+  <div class="disc" :class="{ spinning }" :style="{ '--s': typeof size === 'number' ? `${size}px` : size }">
     <div class="grooves" />
     <div class="shine" />
     <div class="label"><BrandMark class="mark" /></div>

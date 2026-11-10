@@ -62,6 +62,7 @@ const emit = defineEmits<{ toggle: [id: string] }>();
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding-right: 26px;
 }
 .label {
   font-size: 1.15rem;
