@@ -237,9 +237,16 @@ try {
   await host.waitForFunction(() => document.body.innerText.includes("Joueurs (2)"));
   // Le chef de partie (Ana) règle les catégories et lance depuis son téléphone ; Ben n'a pas ces commandes.
   if (await ben.$(sel("leader-start"))) throw new Error("Ben ne devrait pas voir les commandes du chef");
-  await shot(ana, "02c-ana-leader-lobby");
   await ana.click(sel("leader-category-fr"));
   await host.waitForFunction(() => document.querySelector('[data-testid="category-fr"]')?.getAttribute("aria-pressed") === "true");
+  // Objectif : 10 cartes par défaut, Ana le passe à 5 ; l'écran hôte et Ben suivent.
+  if ((await ana.$eval(sel("leader-goal-10"), (e) => e.getAttribute("aria-checked"))) !== "true") throw new Error("l'objectif par défaut devrait être 10 cartes");
+  await ana.click(sel("leader-goal-5"));
+  await host.waitForFunction(() => document.querySelector('[data-testid="goal-5"]')?.getAttribute("aria-checked") === "true");
+  await ben.waitForFunction(() => document.querySelector('[data-testid="goal-info"]')?.innerText.includes("5 cartes"));
+  await painted(ana, sel("leader-goal-5"), "objectif du chef");
+  await shot(ana, "02c-ana-leader-lobby");
+  ok("Ana (chef) : règle l'objectif à 5 cartes ; l'écran hôte et Ben l'affichent");
   await shot(host, "03-host-lobby");
   await ana.waitForFunction(() => !document.querySelector('[data-testid="leader-start"]').disabled);
   await ana.click(sel("leader-start"));
