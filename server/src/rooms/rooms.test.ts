@@ -476,6 +476,24 @@ describe("chef de partie", () => {
     assert.equal(host.conn.view().phase, "awaiting-placement");
   });
 
+  it("règle le nombre de cartes pour gagner, comme l'écran hôte, seulement dans le salon", () => {
+    const { host, ana, ben } = lobby();
+    assert.equal(host.conn.view().cardsToWin, 10);
+    ben.send({ type: "host:setCardsToWin", cardsToWin: 5 });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
+    ana.send({ type: "host:setCardsToWin", cardsToWin: 5 });
+    assert.equal(ben.conn.view().cardsToWin, 5);
+    host.send({ type: "host:setCardsToWin", cardsToWin: 11 });
+    assert.equal(host.conn.last("error").code, "rule");
+    host.send({ type: "host:setCardsToWin", cardsToWin: 3 });
+    assert.equal(host.conn.view().cardsToWin, 3);
+    ana.send({ type: "host:setCategories", categories: ["fr"] });
+    ana.send({ type: "host:start" });
+    ana.send({ type: "host:setCardsToWin", cardsToWin: 7 });
+    assert.match(ana.conn.last("error").message, /déjà commencé/);
+    assert.equal(host.conn.view().cardsToWin, 3);
+  });
+
   it("fait avancer la partie et passe un tour", () => {
     const { host, ana, ben } = started();
     ana.send({ type: "player:place", position: 0 });
@@ -558,6 +576,7 @@ describe("parseClientMessage", () => {
     assert.deepEqual(parseClientMessage('{"type":"player:place","position":2,"extra":1}'), { type: "player:place", position: 2 });
     assert.deepEqual(parseClientMessage('{"type":"player:groove","position":0}'), { type: "player:groove", position: 0 });
     assert.deepEqual(parseClientMessage('{"type":"host:setCategories","categories":["fr"]}'), { type: "host:setCategories", categories: ["fr"] });
+    assert.deepEqual(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":5}'), { type: "host:setCardsToWin", cardsToWin: 5 });
   });
   it("refuse les types et formes invalides", () => {
     assert.equal(parseClientMessage('{"type":"player:place","position":1.5}'), null);
@@ -565,6 +584,8 @@ describe("parseClientMessage", () => {
     assert.equal(parseClientMessage('{"type":"host:advance"}'), null);
     assert.equal(parseClientMessage('{"type":"host:advance","from":"nimporte"}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCategories","categories":[1]}'), null);
+    assert.equal(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":"5"}'), null);
+    assert.equal(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":4.5}'), null);
     assert.equal(parseClientMessage('{"type":"player:join","code":"A","name":"x".repeat(100),"avatar":0}'), null);
     assert.equal(parseClientMessage(`{"type":"player:join","code":"ABCDEF","name":"${"x".repeat(65)}","avatar":0}`), null);
   });

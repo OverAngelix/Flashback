@@ -173,6 +173,45 @@ describe("tours", () => {
   });
 });
 
+describe("objectif", () => {
+  it("vaut 10 cartes par défaut", () => {
+    assert.equal(new Game({}).cardsToWin, 10);
+  });
+  it("se règle de 3 à 10 cartes, uniquement dans le salon", () => {
+    const game = newGame([1, 2, 3, 4, 5]);
+    game.setCardsToWin(3);
+    assert.equal(game.cardsToWin, 3);
+    game.setCardsToWin(10);
+    assert.equal(game.cardsToWin, 10);
+    for (const bad of [2, 11, 5.5, Number.NaN]) {
+      assert.throws(() => game.setCardsToWin(bad), /entre 3 et 10 cartes/);
+    }
+    assert.equal(game.cardsToWin, 10);
+    twoPlayers(game);
+    game.start();
+    assert.throws(() => game.setCardsToWin(5), /déjà commencé/);
+  });
+  it("décide de la victoire à la fin du tour de plateau", () => {
+    // Objectif réglé à 3. Pioche : 1980 (Ana), 1970 (Ben), puis 1960, 1950, 1940, 1930.
+    const game = newGame([1920, 1930, 1940, 1950, 1960, 1970, 1980], 10);
+    const { a, b } = twoPlayers(game);
+    game.setCardsToWin(3);
+    game.start();
+    game.placeCard(a.id, 0); // 1960 : Ana a 2 cartes
+    game.advance();
+    game.placeCard(b.id, 1); // 1950 après 1970 : faux
+    game.advance();
+    assert.equal(game.phase, "round-recap"); // 2 cartes < 3
+    game.advance();
+    game.placeCard(a.id, 0); // 1940 : Ana a 3 cartes
+    game.advance();
+    game.placeCard(b.id, 1); // 1930 après 1970 : faux
+    game.advance();
+    assert.equal(game.phase, "finished");
+    assert.deepEqual(game.winnerIds, [a.id]);
+  });
+});
+
 describe("fin de partie", () => {
   it("attend la fin du tour de plateau, même si un joueur a déjà atteint l'objectif", () => {
     // Objectif 2 cartes. Pioche : 1980 (Ana), 1970 (Ben), puis 1960 et 1950.
