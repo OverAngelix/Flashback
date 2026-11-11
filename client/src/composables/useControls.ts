@@ -3,7 +3,7 @@ import { MIN_PLAYERS } from "@server/game/types";
 import { useGame } from "./useGame";
 
 /**
- * Commandes de la partie : catégories, lancement, suite, tour passé. Elles sont partagées par
+ * Commandes de la partie : catégories, objectif, lancement, suite, tour passé. Elles sont partagées par
  * l'écran hôte et par le téléphone du chef de partie (le serveur accepte les mêmes messages des deux).
  */
 export function useControls() {
@@ -28,6 +28,7 @@ export function useControls() {
     else next.add(id);
     connection.send({ type: "host:setCategories", categories: [...next] });
   }
+  const setCardsToWin = (cardsToWin: number) => connection.send({ type: "host:setCardsToWin", cardsToWin });
   const start = () => connection.send({ type: "host:start" });
   /** `from` rend un double clic (ou Entrée sur le bouton) inoffensif : le serveur ignore le second. */
   function advance() {
@@ -37,5 +38,5 @@ export function useControls() {
   const skipTurn = () => connection.send({ type: "host:skipTurn" });
   const kick = (playerId: string) => connection.send({ type: "host:kick", playerId });
 
-  return { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, start, advance, skipTurn, kick };
+  return { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, setCardsToWin, start, advance, skipTurn, kick };
 }

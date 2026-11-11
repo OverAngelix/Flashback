@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
+import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
 import PlayGroove from "@/components/PlayGroove.vue";
@@ -20,7 +21,7 @@ const props = defineProps<{ code?: string }>();
 
 const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
-const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, start, advance, skipTurn } = useControls();
+const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, setCardsToWin, start, advance, skipTurn } = useControls();
 const portrait = usePortraitPhone();
 
 onMounted(() => {
@@ -87,10 +88,12 @@ function leave() {
               <v-icon icon="mdi-crown" color="warning" size="28" />
               <div>
                 <div class="display">Tu es le chef de partie</div>
-                <div class="muted small">Choisis les catégories et lance la partie quand tout le monde est là.</div>
+                <div class="muted small">Choisis les catégories et le nombre de cartes, puis lance la partie quand tout le monde est là.</div>
               </div>
             </div>
             <CategoryPicker :categories="view.availableCategories" :chosen="chosen" testid-prefix="leader-category" @toggle="toggleCategory" />
+            <div class="muted label">Cartes pour gagner</div>
+            <GoalPicker :value="view.cardsToWin" testid-prefix="leader-goal" @pick="setCardsToWin" />
             <v-btn class="btn-success w-100" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="leader-start" @click="start">Lancer la partie</v-btn>
             <div v-if="startBlocker" class="muted small text-center">{{ startBlocker }}</div>
           </template>
@@ -99,6 +102,7 @@ function leave() {
             <div>
               <div class="display">En attente du lancement…</div>
               <div v-if="leader" class="muted small">{{ leader.name }} lance la partie.</div>
+              <div class="muted small" data-testid="goal-info">Premier à {{ view.cardsToWin }} cartes</div>
             </div>
           </div>
 

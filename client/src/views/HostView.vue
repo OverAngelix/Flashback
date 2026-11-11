@@ -6,6 +6,7 @@ import DiscoBall from "@/components/DiscoBall.vue";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
+import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import Equalizer from "@/components/Equalizer.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
@@ -21,7 +22,7 @@ import { qrDataUrl } from "@/qr";
 
 const router = useRouter();
 const { connection, view, active } = useGame();
-const { chosen, leader, canStart, startBlocker, toggleCategory, start, advance, skipTurn, kick } = useControls();
+const { chosen, leader, canStart, startBlocker, toggleCategory, setCardsToWin, start, advance, skipTurn, kick } = useControls();
 
 const joinUrls = ref<string[]>([]);
 const lastAudioUrl = ref<string>();
@@ -184,7 +185,12 @@ watch(turnKey, (key) => {
 
           <div class="start-row glass">
             <v-btn class="btn-success" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="start" @click="start">Lancer la partie</v-btn>
-            <span class="muted">{{ startBlocker ?? `${view.trackCount} titres dans le paquet · premier à ${view.cardsToWin} cartes` }}</span>
+            <!-- Dans la ligne de lancement plutôt que sous les catégories : le bouton reste visible en 1280x720. -->
+            <div class="h-goal">
+              <span class="display">Cartes pour gagner</span>
+              <GoalPicker :value="view.cardsToWin" @pick="setCardsToWin" />
+            </div>
+            <span class="muted">{{ startBlocker ?? `${view.trackCount} titres dans le paquet` }}</span>
           </div>
         </section>
 
@@ -408,6 +414,19 @@ watch(turnKey, (key) => {
   align-items: center;
   gap: 18px;
   padding: 18px 24px;
+}
+.h-goal {
+  display: flex;
+  flex: 0 1 560px;
+  align-items: center;
+  gap: 14px;
+}
+.h-goal > span {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+.h-goal > :last-child {
+  flex: 1;
 }
 .next-row {
   display: flex;
