@@ -3,7 +3,9 @@ import {
   DEFAULT_CARDS_TO_WIN,
   GameError,
   isCorrectPlacement,
+  MAX_CARDS_TO_WIN,
   MAX_NAME_LENGTH,
+  MIN_CARDS_TO_WIN,
   MAX_PLAYERS,
   MIN_PLAYERS,
   type GameTrack,
@@ -28,7 +30,8 @@ export interface GameOptions {
  *
  * Fin de partie : le tour de plateau est toujours terminé, pour que tous les joueurs aient joué
  * autant de fois. À la fin d'un tour, si un seul joueur a le plus de cartes et au moins
- * `cardsToWin`, il gagne. En cas d'égalité en tête, on rejoue un tour (l'objectif monte à 11, 12…).
+ * `cardsToWin` (10 par défaut, de 3 à 10 dans le salon), il gagne. En cas d'égalité en tête, on
+ * rejoue un tour (l'objectif monte d'une carte à chaque fois).
  *
  * Groove : pendant le tour d'un joueur, une fois l'extrait lancé, chacun des autres peut placer le
  * titre dans la frise du joueur actif (une fois, sans retour). Il doit le faire avant lui : dès que
@@ -41,7 +44,7 @@ export interface GameOptions {
 export { isCorrectPlacement };
 
 export class Game {
-  readonly cardsToWin: number;
+  private goal: number;
   private readonly rng: () => number;
   private deck: GameTrack[];
   private nextPlayerId = 1;
@@ -62,9 +65,23 @@ export class Game {
   winnerIds: string[] = [];
 
   constructor(options: GameOptions) {
-    this.cardsToWin = options.cardsToWin ?? DEFAULT_CARDS_TO_WIN;
+    this.goal = options.cardsToWin ?? DEFAULT_CARDS_TO_WIN;
     this.rng = options.rng ?? Math.random;
     this.deck = shuffle([...(options.tracks ?? [])], this.rng);
+  }
+
+  /** Nombre de cartes à atteindre pour gagner. */
+  get cardsToWin(): number {
+    return this.goal;
+  }
+
+  /** Change l'objectif (de MIN_CARDS_TO_WIN à MAX_CARDS_TO_WIN cartes) ; uniquement avant le départ. */
+  setCardsToWin(count: number): void {
+    if (this.phase !== "lobby") throw new GameError("La partie a déjà commencé.");
+    if (!Number.isInteger(count) || count < MIN_CARDS_TO_WIN || count > MAX_CARDS_TO_WIN) {
+      throw new GameError(`Choisissez entre ${MIN_CARDS_TO_WIN} et ${MAX_CARDS_TO_WIN} cartes.`);
+    }
+    this.goal = count;
   }
 
   /** Nombre de titres encore dans le paquet (avant le départ : taille du paquet choisi). */

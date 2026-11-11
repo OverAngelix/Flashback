@@ -125,6 +125,9 @@ export class Room {
         this.categories = chosen;
         break;
       }
+      case "host:setCardsToWin":
+        this.game.setCardsToWin(message.cardsToWin);
+        break;
       case "host:start":
         if (this.categories.length === 0) throw new GameError("Choisissez au moins une catégorie.");
         this.game.start();

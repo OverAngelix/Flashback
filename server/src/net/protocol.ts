@@ -11,6 +11,7 @@ export const ROOM_CODE_LENGTH = 6;
 /** Messages de contrôle de la partie : l'écran hôte ou le chef de partie peuvent les envoyer. */
 export const CONTROL_MESSAGE_TYPES = [
   "host:setCategories",
+  "host:setCardsToWin",
   "host:start",
   "host:advance",
   "host:skipTurn",
@@ -24,6 +25,8 @@ export type ClientMessage =
   | { type: "player:join"; code: string; name: string; avatar: number }
   | { type: "player:rejoin"; code: string; token: string }
   | { type: "host:setCategories"; categories: string[] }
+  /** Nombre de cartes pour gagner (bornes MIN_CARDS_TO_WIN et MAX_CARDS_TO_WIN, vérifiées par le moteur). */
+  | { type: "host:setCardsToWin"; cardsToWin: number }
   | { type: "host:start" }
   /** `from` = phase que l'hôte croit quitter : un message en double (double clic) est ignoré. */
   | { type: "host:advance"; from: Phase }
@@ -157,6 +160,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return Array.isArray(m.categories) && m.categories.length <= 20 && m.categories.every((c) => isString(c, 32))
         ? { type: "host:setCategories", categories: m.categories as string[] }
         : null;
+    case "host:setCardsToWin":
+      return Number.isInteger(m.cardsToWin) ? { type: "host:setCardsToWin", cardsToWin: m.cardsToWin as number } : null;
     case "host:kick":
       return isString(m.playerId, 16) ? { type: "host:kick", playerId: m.playerId } : null;
     case "player:place":

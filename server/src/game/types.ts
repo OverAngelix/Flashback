@@ -48,6 +48,9 @@ export const AVATAR_COUNT = 10;
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 10;
 export const DEFAULT_CARDS_TO_WIN = 10;
+/** Bornes du nombre de cartes pour gagner, réglable dans le salon. */
+export const MIN_CARDS_TO_WIN = 3;
+export const MAX_CARDS_TO_WIN = 10;
 export const MAX_NAME_LENGTH = 16;
 
 /**
