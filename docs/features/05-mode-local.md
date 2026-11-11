@@ -10,6 +10,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 
 - [x] Création de la partie et affichage du code de salle (6 caractères) et de l'adresse à taper sur le téléphone
 - [x] Sélection des catégories avant le lancement (voir [02-categories.md](02-categories.md))
+- [x] Choix du nombre de cartes pour gagner (de 3 à 10, 10 par défaut), dans la ligne du bouton de lancement pour qu'il reste visible en 1280x720
 - [x] Salle d'attente : joueurs connectés avec leur nom et leur avatar, exclusion d'un joueur, bouton de lancement
 - [x] Lecture de l'extrait sur l'écran hôte (le clic de création débloque l'audio ; bandeau « Touche l'écran » si le navigateur bloque quand même)
 - [x] Plateau : joueur actif, frise du joueur actif, barre des joueurs avec leur nombre de cartes
@@ -19,7 +20,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Passer le tour d'un joueur déconnecté
 - [x] Reprise de l'écran après un rechargement de la page (code et jeton mémorisés)
 - [ ] Vérifier la lisibilité sur une vraie télé (tailles de texte, distance)
-- [x] Piloter la partie sans toucher à l'écran : le chef de partie (premier joueur arrivé, puis le suivant s'il se déconnecte) choisit les catégories, lance la partie, fait avancer et passe un tour depuis son téléphone ; l'écran hôte garde ses propres commandes
+- [x] Piloter la partie sans toucher à l'écran : le chef de partie (premier joueur arrivé, puis le suivant s'il se déconnecte) choisit les catégories et le nombre de cartes pour gagner, lance la partie, fait avancer et passe un tour depuis son téléphone ; l'écran hôte garde ses propres commandes
 - [x] L'écran hôte montre le chef de partie (couronne) et le dit dans le salon
 - [ ] Avancement automatique optionnel après quelques secondes (pour une partie sans aucun pilotage)
 - [x] Code QR pour rejoindre sans taper l'adresse : il mène à `/join/CODE` (code pré-rempli) et utilise l'adresse du réseau local, jamais `localhost`
@@ -31,7 +32,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 
 - [x] Saisie du code de salle, ou lien direct `/join/CODE` (QR code) : dans ce cas le champ code disparaît, il ne reste que le nom et l'avatar (bouton « Changer » pour corriger)
 - [x] Choix du nom et d'un avatar parmi 10 avant de rejoindre ; les avatars déjà pris sont grisés en direct
-- [x] Salon du chef de partie : catégories et bouton de lancement ; « Continuer », « Tour suivant » et « Passer son tour » aux bons moments
+- [x] Salon du chef de partie : catégories, nombre de cartes pour gagner (`GoalPicker`) et bouton de lancement ; les autres joueurs voient « Premier à N cartes » ; « Continuer », « Tour suivant » et « Passer son tour » aux bons moments
 - [x] Pendant le tour d'un autre, la manette montre la frise du joueur en cours (et non plus la sienne) ; au récapitulatif, chacun voit sa propre frise
 - [x] Groove pendant le tour des autres (placement, points, écrans) : voir [09-groove.md](09-groove.md)
 - [x] Révélation sur tous les écrans : frise du joueur avec la carte à l'endroit choisi, en vert si juste, en rouge sinon (carte fausse affichée puis défaussée, et tous les emplacements qui étaient justes marqués d'une pastille verte) ; verdict avec le nom (« Dark a trouvé ! », « Dark n'a pas trouvé… », « Dark passe ce tour » ; « Bien joué ! » ou « Raté… » sur le téléphone de Dark) ; révélation centrée sur la manette (PC compris, la frise ne défile que si la carte jouée est cachée), « En attente de la suite… » ou « Continuer » en bas au centre ; résultat groove : voir [09-groove.md](09-groove.md)

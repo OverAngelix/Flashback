@@ -4,7 +4,7 @@ Ce que fait Flashback, du point de vue de ceux qui y jouent, et où en est chaqu
 
 ## Le concept
 
-Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un extrait de 30 s d'un titre inconnu et le place dans sa frise chronologique, entre les cartes qu'il a déjà, d'après l'année de sortie. S'il a vu juste, il garde la carte ; sinon, elle est défaussée. Le premier à construire une frise de 10 cartes gagne.
+Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un extrait de 30 s d'un titre inconnu et le place dans sa frise chronologique, entre les cartes qu'il a déjà, d'après l'année de sortie. S'il a vu juste, il garde la carte ; sinon, elle est défaussée. Le premier à construire une frise de 10 cartes gagne (objectif réglable de 3 à 10 cartes dans le salon).
 
 ## Les rôles
 
@@ -12,13 +12,13 @@ Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un ext
 |------|----------|---------------|
 | **Écran hôte** | PC ou télé | Crée la salle, affiche le code et le QR code, joue le son, montre le plateau, les révélations et les récapitulatifs. **Il ne joue pas.** |
 | **Joueur** | Téléphone (en paysage) ou navigateur | Rejoint avec un nom et un avatar, écoute l'extrait et place sa carte à son tour. Pendant le tour des autres, voit la frise du joueur en cours et peut y placer le titre pour un point groove. |
-| **Chef de partie** | Le téléphone du premier joueur arrivé | Un joueur qui pilote aussi la partie (catégories, lancement, « Continuer », passer un tour, exclure) pour qu'on n'ait pas à toucher l'écran hôte. Remplacé par le joueur connecté suivant s'il se déconnecte. |
+| **Chef de partie** | Le téléphone du premier joueur arrivé | Un joueur qui pilote aussi la partie (catégories, nombre de cartes pour gagner, lancement, « Continuer », passer un tour, exclure) pour qu'on n'ait pas à toucher l'écran hôte. Remplacé par le joueur connecté suivant s'il se déconnecte. |
 
 ## Déroulement d'une partie
 
 1. **Menu** (`/`) : Héberger, Rejoindre, Multijoueur (grisé, V2), Paramètres. Musique d'ambiance générée par le navigateur.
 2. **Création** : « Héberger » crée une salle (code de 6 caractères) et débloque l'audio de l'écran hôte.
-3. **Salon** (`lobby`) : les joueurs rejoignent en tapant le code ou en scannant le QR code (`/join/CODE`), choisissent un nom (16 caractères, unique) et un avatar parmi 10 (les avatars pris sont grisés). Le chef ou l'hôte choisit les catégories et lance la partie (2 à 10 joueurs).
+3. **Salon** (`lobby`) : les joueurs rejoignent en tapant le code ou en scannant le QR code (`/join/CODE`), choisissent un nom (16 caractères, unique) et un avatar parmi 10 (les avatars pris sont grisés). Le chef ou l'hôte choisit les catégories et le nombre de cartes pour gagner (de 3 à 10, 10 par défaut ; les autres joueurs le voient sur leur téléphone), puis lance la partie (2 à 10 joueurs).
 4. **Départ** : chaque joueur reçoit une carte de départ, déjà révélée, dans sa frise.
 5. **Tour d'un joueur** (`awaiting-placement`) : il appuie sur « Écouter » (une seule écoute par tour), l'écran hôte joue l'extrait, puis il fait défiler sa frise et choisit l'emplacement (« Placer ici »). Pendant ce temps, les autres voient sa frise sur leur écran et peuvent y placer le titre eux aussi (**groove**), une fois, et avant lui : dès qu'il a placé, c'est trop tard. L'écran montre qui a déjà placé, jamais où.
 6. **Révélation** (`reveal`) : titre, artiste, année et pochette apparaissent ; confettis si c'est bon, secousse sinon. Tous les écrans montrent la frise du joueur avec sa carte à l'endroit choisi, en vert si c'est juste, en rouge sinon (avec, dans ce cas, tous les emplacements qui étaient justes en vert), et le verdict porte le nom du joueur (« Dark a trouvé ! », « Dark n'a pas trouvé… ») ; l'écran hôte dit qui a trouvé le groove (« Ben et Cléo ont aussi trouvé », « Personne n'a trouvé ») ; chaque téléphone ne donne que le résultat de son joueur (« Toi non plus… »). Détail : [09-groove.md](09-groove.md).
@@ -30,8 +30,8 @@ Les titres, artistes et années du titre en cours ne quittent jamais le serveur 
 ## Règles de victoire
 
 - On finit toujours le tour de plateau : tous les joueurs jouent le même nombre de fois.
-- À la fin d'un tour de plateau, un **seul** joueur en tête avec au moins 10 cartes gagne.
-- Égalité en tête : on rejoue un tour, l'objectif passe à 11, puis 12…
+- À la fin d'un tour de plateau, un **seul** joueur en tête avec au moins l'objectif (10 cartes par défaut, de 3 à 10 au choix dans le salon) gagne.
+- Égalité en tête : on rejoue un tour, l'objectif monte d'une carte à chaque fois (11, puis 12… pour un objectif de 10).
 - Deux années égales sont acceptées dans n'importe quel ordre.
 - **Points groove** (logo : boule disco) : un titre bien placé dans la frise d'un autre, pendant son tour, rapporte 1 point groove. Ils s'affichent à côté du nombre de cartes (barre des joueurs, récapitulatif, téléphone) et départagent l'ordre d'affichage du récapitulatif, mais sont uniquement pour le style : ils ne comptent pas pour la victoire, qui ne dépend que des frises.
 - Paquet épuisé : la partie s'arrête aussitôt, victoire partagée possible.

@@ -33,6 +33,7 @@ Statuts : À faire · En cours · Terminé · V2 (reporté).
 - Le mode en ligne est reporté à la V2.
 - Chef de partie : le premier joueur à rejoindre (puis le suivant s'il se déconnecte) pilote la partie depuis son téléphone, pour ne pas avoir à toucher le PC ou la télé.
 - Une seule écoute de l'extrait par tour.
+- Nombre de cartes pour gagner : 10 par défaut, réglable de 3 à 10 dans le salon par l'hôte ou le chef de partie.
 - Un joueur peut quitter à tout moment : en cours de partie, il est retiré avec sa frise et les autres continuent. L'hôte qui quitte met fin à la partie pour tous.
 - Front : Vite, Vue 3, Vuetify 4 et TypeScript.
 - Sur téléphone, le jeu se joue en paysage (obligatoire pendant la partie) pour faire glisser la frise.
