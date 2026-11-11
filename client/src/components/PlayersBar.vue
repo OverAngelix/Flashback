@@ -3,12 +3,13 @@ import type { PlayerView } from "@server/net/protocol";
 import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 
-/** `groove` : affiche les points groove ; `guessedIds` : joueurs qui ont déjà placé le titre en cours. */
+/** `noCount` : sans le nombre de cartes (salon, avant la distribution) ; `groove` : affiche les points groove ; `guessedIds` : joueurs qui ont déjà placé le titre en cours. */
 defineProps<{
   players: PlayerView[];
   activeId?: string | null;
   leaderId?: string | null;
   compact?: boolean;
+  noCount?: boolean;
   groove?: boolean;
   guessedIds?: string[];
 }>();
@@ -20,7 +21,7 @@ defineProps<{
     <div v-for="p in players" :key="p.id" class="pill glass" :class="{ active: p.id === activeId, off: !p.connected, compact }">
       <AvatarBadge :avatar="p.avatar" :size="compact ? 28 : 40" :leader="p.id === leaderId" />
       <span class="name text-truncate">{{ p.name }}</span>
-      <span class="count display" title="Cartes">{{ p.timeline.length }}</span>
+      <span v-if="!noCount" class="count display" title="Cartes">{{ p.timeline.length }}</span>
       <span v-if="groove" class="gv display" title="Points groove"><DiscoBall :size="18" class="mr-1" />{{ p.groove }}</span>
       <v-icon v-if="guessedIds?.includes(p.id)" icon="mdi-check-decagram" color="success" size="small" title="A placé le titre" data-testid="guessed" />
       <v-icon v-if="!p.connected" icon="mdi-wifi-off" size="small" title="Déconnecté" />

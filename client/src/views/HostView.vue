@@ -77,7 +77,7 @@ watch(
 /** Où en est le tour : avant l'écoute, pendant l'extrait, puis pendant que le joueur place son titre. */
 const status = computed(() => {
   const name = active.value?.name ?? "";
-  if (!view.value?.listened) return `${name}, lance l'extrait depuis ton téléphone`;
+  if (!view.value?.listened) return `${name}, lance l'extrait depuis ton écran`;
   return audio.playing ? "Écoute…" : `${name} place le titre dans sa frise`;
 });
 
@@ -124,7 +124,7 @@ watch(turnKey, (key) => {
     <ConfirmDialog
       v-model="askLeave"
       title="Mettre fin à la partie ?"
-      text="La partie s'arrête pour tout le monde : les téléphones reviennent à l'accueil."
+      text="La partie s'arrête pour tout le monde : les joueurs reviennent à l'accueil."
       confirm-label="Mettre fin"
       testid="host-leave-confirm"
       @confirm="leave"
@@ -173,7 +173,7 @@ watch(turnKey, (key) => {
                 </div>
               </TransitionGroup>
               <p v-if="leader" class="muted leader-hint">
-                <v-icon icon="mdi-crown" color="warning" size="small" /> {{ leader.name }} est le chef de partie : il peut tout piloter depuis son téléphone.
+                <v-icon icon="mdi-crown" color="warning" size="small" /> {{ leader.name }} est le chef de partie : il peut tout piloter depuis son écran.
               </p>
             </div>
 
@@ -231,7 +231,7 @@ watch(turnKey, (key) => {
           <RevealPanel :view="view" />
           <div class="next-row">
             <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Continuer</v-btn>
-            <span class="muted">Entrée ou Espace · le chef de partie peut aussi continuer depuis son téléphone</span>
+            <span class="muted">Entrée ou Espace · le chef de partie peut aussi continuer depuis son écran</span>
           </div>
         </section>
 

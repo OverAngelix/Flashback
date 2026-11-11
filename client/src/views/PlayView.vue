@@ -107,7 +107,7 @@ function leave() {
           </div>
 
           <div class="muted label">Joueurs ({{ view.players.length }})</div>
-          <PlayersBar :players="view.players" :leader-id="view.leaderId" compact />
+          <PlayersBar :players="view.players" :leader-id="view.leaderId" compact no-count />
           <v-btn class="btn-ghost" size="default" prepend-icon="mdi-exit-to-app" @click="leave">Quitter</v-btn>
         </section>
 

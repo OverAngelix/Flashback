@@ -46,9 +46,9 @@ function hostGame() {
       </button>
 
       <router-link to="/play" class="tile glass join" data-testid="menu-join">
-        <span class="ico"><v-icon icon="mdi-cellphone" size="40" /></span>
+        <span class="ico"><v-icon icon="mdi-devices" size="40" /></span>
         <span class="display name">Rejoindre</span>
-        <span class="muted sub">Avec ton téléphone</span>
+        <span class="muted sub">Avec ton téléphone ou ton PC</span>
       </router-link>
 
       <!-- Prévu pour la V2 : liste des parties publiques, création de parties en ligne. -->
