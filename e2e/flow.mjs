@@ -293,18 +293,18 @@ try {
 
   if (!(await host.evaluate(() => document.querySelector('[data-testid="turn-status"]').textContent.includes("lance l'extrait")))) throw new Error("l'hôte devrait attendre l'écoute");
   await ana.click(sel("play-extract"));
-  await host.waitForFunction(() => window.__plays.some((u) => u.includes("/media/audio/")));
-  const played = await host.evaluate(() => window.__plays.filter((u) => u.includes("/media/audio/")).at(-1));
-  ok(`hôte : joue l'extrait ${played.replace(BASE, "")}`);
+  await host.waitForFunction(() => window.__plays.some((u) => u.includes("itunes.apple.com/")));
+  const played = await host.evaluate(() => window.__plays.filter((u) => u.includes("itunes.apple.com/")).at(-1));
+  ok(`hôte : joue l'extrait chez Apple ${played.split("/").at(-1)}`);
   const audioRes = await fetch(played);
   if (audioRes.status !== 200) throw new Error("extrait introuvable " + audioRes.status);
-  ok("l'extrait est bien servi (200)");
+  ok("l'extrait répond chez Apple (200)");
 
   // Une seule écoute par tour : le bouton se désactive et le son n'est joué qu'une fois.
   await ana.waitForFunction(() => document.querySelector('[data-testid="play-extract"]').disabled);
   await ana.click(sel("play-extract")).catch(() => {});
   await sleep(300);
-  const playsCount = await host.evaluate(() => window.__plays.filter((u) => u.includes("/media/audio/")).length);
+  const playsCount = await host.evaluate(() => window.__plays.filter((u) => u.includes("itunes.apple.com/")).length);
   if (playsCount !== 1) throw new Error(`l'extrait a été joué ${playsCount} fois`);
   ok("Ana : « Écouter » est désactivé après l'écoute, l'extrait n'est joué qu'une fois");
 
@@ -343,6 +343,11 @@ try {
   await ana.click(sel("place"));
   await host.waitForSelector(sel("advance"));
   await painted(host, sel("advance"), "bouton Continuer de l'hôte");
+  // Pochettes lues chez Apple : chaque image de la frise doit s'être chargée.
+  await host.waitForFunction(() => [...document.querySelectorAll("img")].filter((i) => i.src.includes("mzstatic.com")).every((i) => i.complete && i.naturalWidth > 0), { timeout: 10_000 });
+  const covers = await host.$$eval("img", (imgs) => imgs.filter((i) => i.src.includes("mzstatic.com") && i.naturalWidth > 0).length);
+  if (covers === 0) throw new Error("aucune pochette Apple affichée à la révélation");
+  ok(`hôte : ${covers} pochettes chargées chez Apple`);
   await shot(host, "07-host-reveal");
   const revealText = await host.evaluate(() => document.body.innerText);
   if (!/a trouvé|n'a pas trouvé/.test(revealText)) throw new Error("pas de résultat");

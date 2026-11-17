@@ -248,10 +248,10 @@ describe("connexion", () => {
     const off = c.onAudioPlay((u) => heard.push(u));
     c.createRoom();
     last().open();
-    last().receive({ type: "audio:play", audioUrl: "/media/audio/1.m4a" });
+    last().receive({ type: "audio:play", audioUrl: "https://audio.test/1.m4a" });
     off();
-    last().receive({ type: "audio:play", audioUrl: "/media/audio/2.m4a" });
-    expect(heard).toEqual(["/media/audio/1.m4a"]);
+    last().receive({ type: "audio:play", audioUrl: "https://audio.test/2.m4a" });
+    expect(heard).toEqual(["https://audio.test/1.m4a"]);
   });
 
   it("ignore les messages d'une ancienne socket", () => {

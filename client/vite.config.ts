@@ -19,7 +19,6 @@ export default defineConfig({
     host: true, // joignable depuis un téléphone du réseau local
     proxy: {
       "/api": server,
-      "/media": server,
       "/ws": { target: server, ws: true },
     },
   },
