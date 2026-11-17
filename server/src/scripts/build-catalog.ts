@@ -10,6 +10,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { largeArtwork } from "../catalog/links.js";
 import { SOURCE_TRACKS } from "../catalog/source-tracks.js";
 import {
   CATEGORIES,
@@ -190,7 +191,7 @@ async function main() {
         releaseDate: best.releaseDate,
         category,
         previewUrl: best.previewUrl!,
-        artworkUrl: (best.artworkUrl100 ?? "").replace("100x100bb", "600x600bb"),
+        artworkUrl: largeArtwork(best.artworkUrl100 ?? ""),
         appleUrl: best.trackViewUrl,
         query: line,
         match: {

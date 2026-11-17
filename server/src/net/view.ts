@@ -3,15 +3,13 @@ import type { Game } from "../game/game.js";
 import type { GameTrack } from "../game/types.js";
 import type { GameView, PublicCard } from "./protocol.js";
 
-export const mediaUrl = (file: string) => `/media/${file}`;
-
 export function publicCard(track: GameTrack): PublicCard {
   return {
     id: track.id,
     title: track.title,
     artist: track.artist,
     year: track.year,
-    imageUrl: mediaUrl(track.imageFile),
+    imageUrl: track.artworkUrl,
   };
 }
 
@@ -23,7 +21,10 @@ export interface ViewContext {
   leaderId: string | null;
 }
 
-/** Construit la vue publique. Le titre courant n'y apparaît que sous forme d'URL d'extrait. */
+/**
+ * Construit la vue publique. Le titre courant n'y apparaît que sous forme d'adresse d'extrait chez
+ * Apple, opaque : ni l'identifiant iTunes ni l'année ne s'y lisent.
+ */
 export function buildView(game: Game, ctx: ViewContext): GameView {
   return {
     code: ctx.code,
@@ -43,7 +44,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
       groove: p.groove,
     })),
     activePlayerId: game.activePlayer?.id ?? null,
-    current: game.current ? { audioUrl: mediaUrl(game.current.audioFile) } : null,
+    current: game.current ? { audioUrl: game.current.previewUrl } : null,
     listened: game.listened,
     grooveGuessIds: game.phase === "awaiting-placement" ? [...game.grooveGuesses.keys()] : [],
     lastResult:

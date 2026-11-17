@@ -8,8 +8,8 @@ const track = (id: number, year: number): GameTrack => ({
   title: `Titre ${id}`,
   artist: `Artiste ${id}`,
   year,
-  audioFile: `audio/${id}.m4a`,
-  imageFile: `images/${id}.jpg`,
+  previewUrl: `https://audio.test/${id}.m4a`,
+  artworkUrl: `https://img.test/${id}.jpg`,
 });
 
 /** Générateur qui laisse le paquet dans l'ordre d'origine (le mélange est neutralisé). */

@@ -29,8 +29,8 @@ const entry = (id: number, category: "fr" | "international", year: number): Cata
   title: `TITRE-SECRET-${id}`,
   artist: `ARTISTE-SECRET-${id}`,
   year,
-  audioFile: `audio/${id}.m4a`,
-  imageFile: `images/${id}.jpg`,
+  previewUrl: `https://audio.test/${id}.m4a`,
+  artworkUrl: `https://img.test/${id}.jpg`,
   category,
 });
 
@@ -193,7 +193,7 @@ describe("partie complète", () => {
       const json = JSON.stringify(c.sent.filter((m) => m.type === "state").at(-1));
       assert.equal(json.includes(secret.title), false);
       assert.equal(json.includes(secret.artist), false);
-      assert.equal(json.includes(secret.imageFile), false);
+      assert.equal(json.includes(secret.artworkUrl), false);
       assert.deepEqual(Object.keys(c.view().current!), ["audioUrl"]);
     }
   });

@@ -3,7 +3,7 @@ import type { Catalog } from "../catalog/store.js";
 import { Game } from "../game/game.js";
 import { GameError } from "../game/types.js";
 import type { ClientMessage, ServerMessage } from "../net/protocol.js";
-import { buildView, mediaUrl } from "../net/view.js";
+import { buildView } from "../net/view.js";
 
 /** Un canal vers un client (WebSocket en production, faux canal dans les tests). */
 export interface Connection {
@@ -165,7 +165,7 @@ export class Room {
         this.game.assertCanListen(playerId);
         if (!this.hostConn) throw new GameError("L'écran n'est pas connecté.");
         const track = this.game.listen(playerId);
-        this.hostConn.send({ type: "audio:play", audioUrl: mediaUrl(track.audioFile) });
+        this.hostConn.send({ type: "audio:play", audioUrl: track.previewUrl });
         break;
       }
       case "player:leave": {

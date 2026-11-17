@@ -18,8 +18,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
-# Le catalogue (titres, années, corrections manuelles) vient du dépôt. Les extraits et pochettes
-# (data/media/) n'y sont pas : ils sont montés depuis le VPS (voir DEPLOY.md).
+# Le catalogue (titres, années, corrections manuelles, liens Apple) vient du dépôt. Extraits et
+# pochettes sont lus chez Apple par les navigateurs ; le serveur en vérifie les liens chaque jour.
 COPY data/catalog.json ./data/catalog.json
 
 USER node

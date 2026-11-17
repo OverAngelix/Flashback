@@ -34,12 +34,12 @@ export interface CatalogTrack {
   /** Date brute iTunes (la plus ancienne parmi les résultats retenus), jamais modifiée. */
   releaseDate: string;
   category: CategoryId;
-  /** URL d'origine (iTunes) : sert uniquement à télécharger, jamais au jeu. */
+  /**
+   * Extrait et pochette chez Apple, lus directement par les navigateurs. Apple change parfois ces
+   * adresses : le serveur les vérifie chaque jour et les renouvelle via l'API lookup (catalog/links.ts).
+   */
   previewUrl: string;
   artworkUrl: string;
-  /** Fichiers stockés par le serveur, relatifs à server/data/media/ (voir catalog:download). */
-  audioFile?: string;
-  imageFile?: string;
   appleUrl: string;
   /** Requête d'origine, sert de clé pour ne pas retélécharger. */
   query: string;

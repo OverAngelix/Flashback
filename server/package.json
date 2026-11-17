@@ -7,7 +7,7 @@
     "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc --noEmit",
     "catalog:build": "tsx src/scripts/build-catalog.ts",
-    "catalog:download": "tsx src/scripts/download-media.ts",
+    "catalog:check": "tsx src/scripts/check-links.ts",
     "catalog:verify": "tsx src/scripts/verify-years.ts",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "dev": "tsx watch src/index.ts",

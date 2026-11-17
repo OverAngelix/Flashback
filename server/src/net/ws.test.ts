@@ -1,7 +1,4 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import WebSocket from "ws";
@@ -15,13 +12,12 @@ const entry = (id: number, year: number): CatalogEntry => ({
   title: `Titre ${id}`,
   artist: "Artiste",
   year,
-  audioFile: `audio/${id}.m4a`,
-  imageFile: `images/${id}.jpg`,
+  previewUrl: `https://audio.test/${id}.m4a`,
+  artworkUrl: `https://img.test/${id}.jpg`,
   category: "fr",
 });
 
 let app: FastifyInstance;
-let dir: string;
 let base: string;
 let wsUrl: string;
 const sockets: TestSocket[] = [];
@@ -83,9 +79,8 @@ class TestSocket {
 }
 
 before(async () => {
-  dir = await mkdtemp(join(tmpdir(), "flashback-ws-"));
   const catalog = new Catalog(Array.from({ length: 10 }, (_, i) => entry(i + 1, 1950 + i * 5)));
-  app = buildApp({ catalog, rooms: new RoomManager({ catalog }), dataDir: dir, heartbeatMs: 150 });
+  app = buildApp({ catalog, rooms: new RoomManager({ catalog }), heartbeatMs: 150 });
   await app.listen({ port: 0, host: "127.0.0.1" });
   const { port } = app.server.address() as { port: number };
   base = `http://127.0.0.1:${port}`;
@@ -95,7 +90,6 @@ before(async () => {
 after(async () => {
   for (const s of sockets) s.ws.terminate();
   await app.close();
-  await rm(dir, { recursive: true, force: true });
 });
 
 describe("WebSocket de bout en bout", () => {

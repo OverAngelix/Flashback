@@ -4,8 +4,10 @@ export interface GameTrack {
   title: string;
   artist: string;
   year: number;
-  audioFile: string;
-  imageFile: string;
+  /** Extrait de 30 s, lu directement chez Apple par l'écran hôte. */
+  previewUrl: string;
+  /** Pochette, chez Apple aussi. */
+  artworkUrl: string;
 }
 
 export interface Player {
