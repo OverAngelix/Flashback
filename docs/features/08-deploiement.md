@@ -20,8 +20,8 @@ Déployer le mode local sur le VPS, de la même façon que SDPC : deux images Do
 - [ ] Secrets du dépôt : `REGISTRY_URL`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`
 - [ ] Domaine choisi, DNS vers le VPS
 - [ ] Dossiers `flashback-client/` et `flashback-server/` dans `/home/deploy/apps-k3s/`, `kubectl apply -f .`
-- [ ] `/api/health` renvoie le bon nombre de titres et une date de vérification des liens (`linksCheckedAt`)
-- [ ] Si les médias avaient déjà été déployés : retirer le montage `media` du Deployment et supprimer `/home/deploy/apps-k3s/flashback-server/media/`
+- [x] `/api/health` renvoie le bon nombre de titres et une date de vérification des liens (94 titres, vérifiés le 17/11/2026)
+- [x] Médias retirés du VPS : montage `media` supprimé du Deployment, `/media` retiré de l'IngressRoute, dossier supprimé
 - [ ] Partie complète en HTTPS : écran hôte sur un PC, deux téléphones en 4G (son, WebSocket, reconnexion)
 
 ## Décisions
