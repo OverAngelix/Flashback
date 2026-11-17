@@ -23,8 +23,8 @@ Secrets du dépôt GitHub : `REGISTRY_URL`, `REGISTRY_USERNAME`, `REGISTRY_PASSW
 Différences avec SDPC :
 
 - **L'image client se construit depuis la racine du dépôt** (`docker build -f client/docker/Dockerfile .`) : le client importe les types du protocole depuis `server/src` (alias `@server`). Les exclusions sont dans `client/docker/Dockerfile.dockerignore`.
-- **Trois chemins vont au serveur** : `/api`, `/media` (extraits, pochettes) et `/ws` (WebSocket). Traefik relaie le WebSocket sans réglage ; le client passe en `wss://` de lui-même en HTTPS. nginx répond 502 sur ces chemins si la route manque.
-- **Pas de base de données, mais des médias** : `data/media/` (environ 100 Mo, ignoré par git) est copié à la main sur le VPS et monté en lecture seule sur `/app/data/media`. `catalog.json` est dans l'image.
+- **Deux chemins vont au serveur** : `/api` et `/ws` (WebSocket). Traefik relaie le WebSocket sans réglage ; le client passe en `wss://` de lui-même en HTTPS. nginx répond 502 sur ces chemins si la route manque.
+- **Ni base de données, ni médias** : `catalog.json` est dans l'image. Extraits et pochettes sont lus par les navigateurs directement chez Apple ; le serveur doit pouvoir joindre `itunes.apple.com` et le CDN d'Apple pour vérifier les liens.
 - **Pas de sous-domaine d'API** : seule l'`IngressRoute` du client existe.
 
 ## Sur le VPS
@@ -36,11 +36,10 @@ Modèles dans [`docs/deploy/`](docs/deploy/), à copier en remplaçant `<REGISTR
 ├── flashback-client/
 │   ├── deployment.yaml
 │   ├── service.yaml
-│   └── ingressroute.yaml      ← /api, /media, /ws vers le serveur ; le reste vers nginx
+│   └── ingressroute.yaml      ← /api et /ws vers le serveur ; le reste vers nginx
 └── flashback-server/
     ├── deployment.yaml
-    ├── service.yaml
-    └── media/                 ← audio/ et images/, copiés depuis server/data/media/
+    └── service.yaml
 ```
 
 Le middleware `https-redirect` du namespace `dev` existe déjà (créé pour SDPC) : ne pas le recréer.
@@ -50,19 +49,28 @@ cd /home/deploy/apps-k3s/flashback-server && kubectl apply -f .
 cd /home/deploy/apps-k3s/flashback-client && kubectl apply -f .
 ```
 
-## Médias
+## Catalogue et liens Apple
 
-Le catalogue est lu **au démarrage** : un titre sans son audio ou sa pochette est ignoré. Après chaque envoi de médias, redémarrer le serveur.
+Le catalogue est lu **au démarrage**, depuis l'image : ajouter des titres, c'est `catalog:build` en local puis push de `catalog.json`.
+
+Apple change parfois les adresses des extraits. Le serveur vérifie tous les liens au démarrage puis toutes les 24 heures : un lien mort est renouvelé via l'API `lookup` (en mémoire), un titre qu'Apple ne fournit plus est écarté jusqu'à la vérification suivante. Le journal le signale (`Liens Apple vérifiés : …`) et `/api/health` en donne l'état :
 
 ```bash
-# depuis le Mac, dans le dépôt
-rsync -av --delete server/data/media/ deploy@<vps>:/home/deploy/apps-k3s/flashback-server/media/
-# sur le VPS
-kubectl -n dev rollout restart deployment/flashback-server
-curl https://<DOMAINE>/api/health      # {"status":"ok","tracks":<nombre de titres>}
+curl https://<DOMAINE>/api/health
+# {"status":"ok","tracks":94,"unavailable":0,"linksCheckedAt":"2026-11-17T13:30:00.000Z"}
 ```
 
-Ordre à respecter quand on ajoute des titres : `catalog:build` puis `catalog:download` en local, rsync des médias, puis push de `catalog.json`. Dans l'autre ordre, les nouveaux titres sont simplement ignorés jusqu'au redémarrage suivant.
+Pour enregistrer les liens renouvelés dans le dépôt : `npm run catalog:check` dans `server/`, puis push de `catalog.json`.
+
+### Migration depuis les médias stockés
+
+Si une version précédente a été déployée avec `data/media/` monté : appliquer le nouveau `deployment.yaml` et l'`ingressroute.yaml` (sans `/media`), puis supprimer le dossier.
+
+```bash
+cd /home/deploy/apps-k3s/flashback-server && kubectl apply -f deployment.yaml
+cd /home/deploy/apps-k3s/flashback-client && kubectl apply -f ingressroute.yaml
+rm -rf /home/deploy/apps-k3s/flashback-server/media
+```
 
 ## Points d'attention
 

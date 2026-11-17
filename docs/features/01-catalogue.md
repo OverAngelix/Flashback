@@ -5,10 +5,10 @@ Statut : En cours
 Le catalogue est construit par des scripts (dans `server/`) à partir de `server/src/catalog/source-tracks.ts` :
 
 1. `npm run catalog:build` : cherche chaque titre sur iTunes et écrit `server/data/catalog.json`.
-2. `npm run catalog:download` : télécharge les extraits de 30 s et les pochettes dans `server/data/media/` (ignoré par git, à regénérer).
+2. `npm run catalog:check` : vérifie que les liens Apple (extrait, pochette) répondent, renouvelle les liens morts via l'API `lookup` et les enregistre dans `catalog.json`.
 3. `npm run catalog:verify` : recoupe les années avec MusicBrainz (`server/data/year-report.json`, ignoré par git).
 
-Le serveur sert ses propres fichiers : aucun appel à iTunes pendant une partie.
+Extraits et pochettes sont lus directement chez Apple par les navigateurs (rien n'est stocké sur le serveur). Le serveur vérifie leurs liens au démarrage puis chaque jour (`server/src/catalog/links.ts`) : un lien mort est renouvelé via `lookup?id=`, et un titre qu'Apple ne fournit plus est mis de côté jusqu'à la vérification suivante.
 
 ## Version 100 titres
 
@@ -16,7 +16,7 @@ Le serveur sert ses propres fichiers : aucun appel à iTunes pendant une partie.
 - [x] Liste source (94 titres uniques : 45 FR, 49 internationaux)
 - [x] Script de récupération iTunes (cache incrémental, limite de débit, reprise après erreur, repli sur plusieurs boutiques)
 - [x] Filtrage des versions parasites (live, remix, karaoké, hommage, commentaires…) et choix de la sortie la plus ancienne
-- [x] Téléchargement local des extraits et pochettes (94 titres, 30 s chacun vérifiés)
+- [x] ~~Téléchargement local des extraits et pochettes~~ remplacé par la lecture directe chez Apple (voir Décisions)
 - [x] Années corrigeables à la main dans `catalog.json` (`yearSource: "manual"`)
 - [~] Vérification des années, titre par titre (13 titres tranchés, 27 non concluants à relire)
 - [x] « Formidable » de Stromae retiré (iTunes ne propose que des reprises karaoké)
@@ -39,6 +39,11 @@ La date iTunes est celle de la sortie du fichier trouvé : réédition, compilat
 ## Version finale (environ 1000 titres)
 
 - [ ] Compléter `source-tracks.ts` (nouvelles catégories, voir [02-categories.md](02-categories.md))
-- [ ] Rafraîchissement des extraits via `lookup?id=` si une URL iTunes change
+- [x] Vérification quotidienne des liens Apple par le serveur, renouvellement via `lookup?id=`, titres injouables écartés (`/api/health`)
+- [x] `npm run catalog:check` : même vérification, nouvelles adresses enregistrées dans `catalog.json` (94/94 valides au 17/11/2026)
 - [ ] Contrôle qualité sur l'ensemble (doublons, versions, années)
-- [ ] Prévoir la taille du stockage : 94 titres = environ 100 Mo, soit environ 1 Go pour 1000 titres
+- [ ] Surveiller les titres retirés par la vérification quotidienne (journal du serveur, `/api/health`) et les remplacer
+
+## Décisions
+
+- **Lecture directe chez Apple, plus de médias sur le serveur** (17/11/2026) : le site est en ligne, un mode hors ligne n'a pas de sens. Plus de stockage (environ 1 Mo par titre), plus de rsync, et les conditions d'Apple demandent de diffuser les extraits depuis chez eux. Contrepartie : les adresses peuvent changer, d'où la vérification quotidienne.

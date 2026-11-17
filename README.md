@@ -18,11 +18,10 @@ Le fonctionnement est celui des jeux **Jackbox** : un écran (télé ou PC) héb
 Prérequis : **Node.js 24** (testé avec 24.11) et npm. Le serveur et les téléphones doivent être sur le même réseau.
 
 ```bash
-# 1. Serveur : dépendances, compilation, extraits audio et pochettes (une seule fois, environ 100 Mo)
+# 1. Serveur : dépendances et compilation
 cd server
 npm install
 npm run build
-npm run catalog:download
 
 # 2. Client
 cd ../client
@@ -36,13 +35,13 @@ npm start
 
 Le serveur écoute sur le port 3000 (variable `PORT`) et affiche son adresse sur le réseau local. Ouvrez-la sur la télé ou le PC.
 
-Sans `npm run catalog:download`, le serveur démarre mais ignore tous les titres dont les fichiers sont absents.
+Les extraits et les pochettes sont lus directement chez Apple : l'écran hôte et les téléphones ont besoin d'Internet.
 
 ## Développement
 
 ```bash
 cd server && npm run dev       # serveur avec rechargement
-cd client && npm run dev       # client Vite (relaie /api, /media et /ws vers le serveur sur le port 3000)
+cd client && npm run dev       # client Vite (relaie /api et /ws vers le serveur sur le port 3000)
 ```
 
 | Où | Commande | Ce que ça fait |
@@ -57,7 +56,7 @@ Le test de bout en bout (`e2e/`) exige Chrome et que `server/` et `client/` soie
 
 ## Fonctionnement
 
-- **`server/`** : Node, TypeScript, Fastify et WebSocket. Le moteur de règles (`src/game/`) est pur et sans réseau. Les salles (`src/rooms/`) gèrent l'hôte, les joueurs, le chef de partie et les reconnexions. Le serveur ne révèle jamais le titre, l'artiste ni l'année d'un extrait avant son placement, et il ne rappelle jamais iTunes pendant une partie : il sert ses propres fichiers.
+- **`server/`** : Node, TypeScript, Fastify et WebSocket. Le moteur de règles (`src/game/`) est pur et sans réseau. Les salles (`src/rooms/`) gèrent l'hôte, les joueurs, le chef de partie et les reconnexions. Le serveur ne révèle jamais le titre, l'artiste ni l'année d'un extrait avant son placement : les adresses d'extraits envoyées aux clients sont celles d'Apple, opaques.
 - **`client/`** : Vite, Vue 3, Vuetify 4 et TypeScript. Un seul client pour l'écran hôte et la manette des joueurs.
 - **`e2e/`** : le test de bout en bout.
 - **`docs/features/`** : le suivi des fonctionnalités, avec leurs sous-tâches et les décisions prises.
@@ -65,9 +64,9 @@ Le test de bout en bout (`e2e/`) exige Chrome et que `server/` et `client/` soie
 
 ## Le catalogue musical
 
-Le catalogue (`server/data/catalog.json`) compte 94 titres, en chanson française et en musique internationale. Les extraits de 30 secondes et les pochettes viennent de l'API de recherche d'iTunes, puis sont stockés sur le serveur.
+Le catalogue (`server/data/catalog.json`) compte 94 titres, en chanson française et en musique internationale. Les extraits de 30 secondes et les pochettes viennent de l'API de recherche d'iTunes et sont lus directement chez Apple. Apple change parfois ces adresses : le serveur les vérifie au démarrage puis chaque jour, renouvelle un lien mort grâce à l'API `lookup` et met de côté un titre qu'Apple ne fournit plus (`/api/health` en donne le nombre). `npm run catalog:check` fait la même vérification et enregistre les nouvelles adresses dans `catalog.json`.
 
-Pour ajouter des titres : ajouter une ligne `"Titre - Artiste"` dans `server/src/catalog/source-tracks.ts`, puis lancer `npm run catalog:build` et `npm run catalog:download` dans `server/`.
+Pour ajouter des titres : ajouter une ligne `"Titre - Artiste"` dans `server/src/catalog/source-tracks.ts`, puis lancer `npm run catalog:build` dans `server/`.
 
 La date renvoyée par iTunes est celle du fichier trouvé (réédition, compilation, remaster) et pas toujours celle de la sortie originale. **Vérifiez les années.** Pour en corriger une, modifiez `year` dans `catalog.json` et passez `yearSource` à `"manual"` : les scripts n'y touchent plus. `npm run catalog:verify` recoupe les années avec MusicBrainz et signale les doutes.
 

@@ -1,4 +1,4 @@
-# Le client porte le domaine. /api, /media et /ws (WebSocket) partent vers le serveur :
+# Le client porte le domaine. /api et /ws (WebSocket) partent vers le serveur :
 # règle plus longue donc prioritaire, sans stripPrefix (le serveur attend ces chemins).
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`<DOMAINE>`) && (PathPrefix(`/api`) || PathPrefix(`/media`) || Path(`/ws`))
+    - match: Host(`<DOMAINE>`) && (PathPrefix(`/api`) || Path(`/ws`))
       kind: Rule
       services:
         - name: flashback-server

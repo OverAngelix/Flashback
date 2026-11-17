@@ -25,7 +25,7 @@ Statuts : À faire · En cours · Terminé · V2 (reporté).
 - TypeScript partout (serveur et client).
 - Règles Hitster de base : frise chronologique, on place le titre au bon endroit selon l'année de sortie.
 - Usage entre amis pour le moment (pas de contrainte d'hébergement public).
-- Extraits audio de 30 s via l'API de recherche iTunes ; le catalogue est figé côté serveur (pas d'appel iTunes pendant une partie).
+- Extraits audio de 30 s et pochettes via l'API iTunes, lus directement chez Apple (pas de mode hors ligne : le site est en ligne). Le catalogue (titres, années) est figé côté serveur ; seuls les liens sont vérifiés et renouvelés chaque jour.
 - Mode local style Jackbox : l'hôte (PC ou télé) affiche le plateau et joue le son, mais n'est pas un joueur. Les joueurs rejoignent avec un code depuis un téléphone ou un navigateur de PC.
 - Avant de rejoindre, chaque joueur choisit un nom et un avatar parmi 10.
 - Le code de salle fait 6 caractères.

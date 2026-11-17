@@ -26,14 +26,14 @@ npm run type-check          # tsc --noEmit (tests compris)
 npm run build               # tsc vers dist/ (sans les tests), puis npm start
 npm test                    # node:test via tsx ; un seul fichier : npx tsx --test src/game/game.test.ts
 npm run catalog:build       # iTunes -> data/catalog.json (incrémental ; -- --refresh pour tout refaire)
-npm run catalog:download    # extraits 30 s + pochettes -> data/media/ (incrémental ; -- --refresh)
+npm run catalog:check       # vérifie les liens Apple (HEAD), renouvelle les morts via lookup -> data/catalog.json
 npm run catalog:verify      # recoupe les années avec MusicBrainz -> data/year-report.json
 ```
 
 Depuis `client/` (Vite, Vue 3, Vuetify 4) :
 
 ```
-npm run dev          # serveur de dev Vite (relaie /api, /media et /ws vers le serveur sur le port 3000)
+npm run dev          # serveur de dev Vite (relaie /api et /ws vers le serveur sur le port 3000)
 npm run type-check   # vue-tsc, sur le code puis sur vite.config.ts
 npm run build        # type-check puis vite build -> client/dist, que le serveur sert ensuite sur /
 npm test             # vitest (connexion, avatars, QR code, adresse de jonction) ; un seul fichier : npx vitest run src/net/connection.test.ts
@@ -46,7 +46,8 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 ## Architecture du serveur
 
 - `src/game/` : le moteur Hitster (`Game`), pur et sans réseau, c'est la seule source des règles. La règle de placement (`isCorrectPlacement`, `correctPositions`) est dans `types.ts`, partagé avec le client. Il manipule des `GameTrack` qui contiennent l'année : toute vue envoyée à un client devra masquer titre, artiste et année du titre courant jusqu'à la phase `reveal`.
-- `src/catalog/store.ts` : `loadCatalog` ne garde que les titres dont l'audio et la pochette existent sur disque ; `Catalog.select(categories)` fournit le paquet au moteur.
+- `src/catalog/store.ts` : `loadCatalog` ne garde que les titres qui ont `previewUrl` et `artworkUrl` ; `Catalog.select(categories)` fournit au moteur les entrées elles-mêmes (pas des copies : un lien renouvelé profite aux parties en cours), sans celles marquées `unavailable`.
+- `src/catalog/links.ts` : extraits et pochettes sont lus chez Apple par les navigateurs. `watchLinks` (lancé par `index.ts`) vérifie au démarrage puis toutes les 24 h chaque lien (HEAD) ; un 4xx déclenche `lookup?id=` (boutique de la catégorie, puis US, FR), sinon le titre passe `unavailable` jusqu'à la vérification suivante. 429, 5xx et erreurs réseau ne concluent rien. Corrections en mémoire seulement (`catalog.json` est dans l'image) ; `npm run catalog:check` les écrit dans le fichier. `/api/health` donne `tracks` (jouables), `unavailable` et `linksCheckedAt`.
 - `src/net/protocol.ts` : le protocole WebSocket (messages client → serveur validés par `parseClientMessage`, messages serveur, `GameView`). `src/net/view.ts` construit la vue envoyée à tous les clients ; `src/net/ws.ts` branche `/ws` sur le serveur HTTP avec un ping de 20 s.
 - `src/rooms/` : `Room` (une partie, l'hôte, les joueurs, la diffusion de l'état) et `RoomManager`/`Session` (code de 6 caractères, routage des messages, nettoyage). Ils ne connaissent que l'interface `Connection`, donc se testent sans réseau. Hôte et joueurs se reconnectent avec un jeton reçu dans le message `session`.
 - Le serveur sert aussi `client/dist` sur `/` (repli vers `index.html` pour `/host`, `/play`, `/join/CODE`). Fichiers lus à la demande : pas besoin de redémarrer après un `npm run build` du client.
@@ -56,7 +57,7 @@ Versions : le serveur est en TypeScript 7 (`tsconfig.json` doit déclarer `"type
 - Objectif : `Game.setCardsToWin` (salon uniquement, de `MIN_CARDS_TO_WIN` à `MAX_CARDS_TO_WIN`, soit 3 à 10), via `host:setCardsToWin` ; exposé par `GameView.cardsToWin`.
 - `host:advance` porte la phase quittée (`from`) : un message en double ou obsolète est ignoré sans erreur, ce qui rend le double clic inoffensif.
 - Quitter : `player:leave` retire le joueur à tout moment (`Game.removePlayer` gère le tour en cours) ; `host:close` supprime la salle et envoie `closed` aux joueurs. `connection.leave()` côté client envoie le bon message selon le rôle.
-- `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée ; `/media/` sert les fichiers nommés par identifiant iTunes, avec les requêtes Range.
+- `src/http/app.ts` : Fastify. Volontairement aucune route ne renvoie les titres ou les années (un test le vérifie) ; `/api/rooms/:code` renseigne le formulaire d'entrée. Plus de route `/media` : les clients reçoivent les adresses Apple (`previewUrl` comme `audioUrl`, `artworkUrl` comme `imageUrl`).
 
 ## Architecture du client
 
@@ -96,7 +97,7 @@ La chaîne complète se lit en croisant plusieurs fichiers :
 - `server/src/catalog/source-tracks.ts` : la liste d'origine, une ligne `"Titre - Artiste"` par morceau, par catégorie. C'est la seule entrée à modifier pour ajouter des titres.
 - `server/src/catalog/types.ts` : `CatalogTrack`, et les catégories avec la boutique iTunes interrogée en premier.
 - `server/data/catalog.json` : généré, mais **modifiable à la main pour corriger une année** : changer `year` et mettre `yearSource` à `"manual"`. Les scripts ne la touchent plus ensuite, même avec `--refresh`. Ne pas supprimer ce fichier sans le sauvegarder (les corrections n'existent que là).
-- `server/data/media/` : audio et images, ignoré par git, regénérable. Le jeu ne doit jamais appeler iTunes pendant une partie : le serveur sert ses propres fichiers (`audioFile`, `imageFile`).
+- Pas de médias stockés : `previewUrl` et `artworkUrl` (600x600) de `catalog.json` sont lus chez Apple, qui demande de diffuser les extraits plutôt que de les héberger. Le jeu a donc besoin d'Internet.
 
 Pièges connus :
 
@@ -107,7 +108,7 @@ Pièges connus :
 
 ## Déploiement
 
-Sur le VPS, comme SDPC (GitHub Actions, registre privé, K3s, Keel, Traefik) : voir [DEPLOY.md](DEPLOY.md). L'image client se construit depuis la racine du dépôt (alias `@server`), et Traefik envoie `/api`, `/media` et `/ws` au serveur. Les médias ne sont pas dans l'image : rsync vers le VPS, puis redémarrage du serveur.
+Sur le VPS, comme SDPC (GitHub Actions, registre privé, K3s, Keel, Traefik) : voir [DEPLOY.md](DEPLOY.md). L'image client se construit depuis la racine du dépôt (alias `@server`), et Traefik envoie `/api` et `/ws` au serveur. Aucun média à envoyer : seul `catalog.json`, dans l'image.
 
 ## Conventions de commit
 

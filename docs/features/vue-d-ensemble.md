@@ -48,7 +48,7 @@ Les titres, artistes et années du titre en cours ne quittent jamais le serveur 
 
 ## Le catalogue
 
-Environ 100 titres aujourd'hui (objectif : environ 1000), en deux catégories : Chanson française et International. Extraits et pochettes viennent d'iTunes, mais sont téléchargés à l'avance et servis par le serveur : aucune requête vers iTunes pendant une partie. L'année d'iTunes est souvent fausse (rééditions, compilations), d'où un travail de vérification titre par titre (voir [01-catalogue.md](01-catalogue.md)).
+Environ 100 titres aujourd'hui (objectif : environ 1000), en deux catégories : Chanson française et International. Extraits et pochettes sont lus directement chez Apple ; le serveur vérifie chaque jour que leurs liens répondent, les renouvelle au besoin et écarte un titre qu'Apple ne fournit plus. L'année d'iTunes est souvent fausse (rééditions, compilations), d'où un travail de vérification titre par titre (voir [01-catalogue.md](01-catalogue.md)).
 
 ## Paramètres (par navigateur)
 
@@ -65,5 +65,5 @@ Volume des extraits, musique de menu (activée, volume), animations réduites, �
 | Interface | Terminé | Sons d'interface, icône et manifeste web, validation sur appareils |
 | Catalogue | 94 titres en jeu | Vérifier les années restantes, passer à environ 1000 titres |
 | Catégories | 2 catégories | Décennies, genres, message quand la sélection est trop petite |
-| Déploiement | Préparé dans le dépôt | Première image, secrets, domaine, médias sur le VPS |
+| Déploiement | Préparé dans le dépôt | Première image, secrets, domaine |
 | Mode en ligne | V2 | Tout (lecture synchronisée chez chaque joueur, parties publiques) |
