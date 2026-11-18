@@ -11,12 +11,13 @@ import { buildApp } from "./app.js";
 let dir: string;
 let app: FastifyInstance;
 
-const entry = (id: number, category: string, withLinks: boolean) => ({
+const entry = (id: number, origin: string, withLinks: boolean) => ({
   id,
   title: `Titre ${id}`,
   artist: "Artiste",
   year: 1970 + id,
-  category,
+  origin,
+  genres: id === 1 ? ["rock", "pop"] : ["pop"],
   query: `Titre ${id} - Artiste`,
   ...(withLinks ? { previewUrl: `https://audio.test/${id}.m4a`, artworkUrl: `https://img.test/${id}.jpg` } : {}),
 });
@@ -44,7 +45,9 @@ describe("catalogue", () => {
     assert.equal(catalog.tracks.length, 3);
     assert.deepEqual(catalog.select(["international"]).map((t) => t.id), [3]);
     assert.equal(catalog.select(["fr", "international"]).length, 3);
-    assert.deepEqual(catalog.select(["inconnue"]), []);
+    assert.deepEqual(catalog.select(["inconnue"]).length, 3); // une catégorie inconnue ne filtre rien
+    assert.deepEqual(catalog.select([]).length, 3);
+    assert.deepEqual(catalog.select(["fr", "rock"]).map((t) => t.id), [1]);
     // Les entrées elles-mêmes : un lien renouvelé profite aux parties en cours.
     assert.equal(catalog.select(["international"])[0], catalog.tracks[2]);
   });
@@ -53,7 +56,8 @@ describe("catalogue", () => {
     const { catalog } = await loadCatalog(dir);
     catalog.tracks[0]!.unavailable = true;
     assert.deepEqual(catalog.select(["fr"]).map((t) => t.id), [2]);
-    assert.deepEqual(catalog.categories().map((c) => c.count), [1, 1]);
+    const counts = Object.fromEntries(catalog.categories().map((c) => [c.id, c.count]));
+    assert.deepEqual([counts.fr, counts.international, counts.pop, counts.rock], [1, 1, 2, 0]);
   });
 });
 
@@ -66,10 +70,15 @@ describe("API HTTP", () => {
 
   it("liste les catégories avec leur nombre de titres, sans rien révéler d'autre", async () => {
     const res = await app.inject("/api/categories");
-    assert.deepEqual(res.json(), [
-      { id: "fr", label: "Chanson française", count: 2 },
-      { id: "international", label: "International", count: 1 },
+    const categories = res.json() as { id: string; axis: string; label: string; count: number }[];
+    assert.deepEqual(categories.slice(0, 3), [
+      { id: "fr", axis: "origin", label: "Français", count: 2 },
+      { id: "international", axis: "origin", label: "International", count: 1 },
+      { id: "europe-latino", axis: "origin", label: "Europe & Latino", count: 0 },
     ]);
+    assert.deepEqual(categories.find((c) => c.id === "era-1970"), { id: "era-1970", axis: "era", label: "Années 70", count: 3 });
+    assert.deepEqual(categories.find((c) => c.id === "rock")?.count, 1);
+    assert.equal(categories.every((c) => Object.keys(c).length === 4), true);
   });
 
   it("n'expose aucune route qui renvoie les titres", async () => {

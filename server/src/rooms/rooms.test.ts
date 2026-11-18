@@ -24,14 +24,15 @@ class FakeConn implements Connection {
   }
 }
 
-const entry = (id: number, category: "fr" | "international", year: number): CatalogEntry => ({
+const entry = (id: number, origin: "fr" | "international", year: number): CatalogEntry => ({
   id,
   title: `TITRE-SECRET-${id}`,
   artist: `ARTISTE-SECRET-${id}`,
   year,
   previewUrl: `https://audio.test/${id}.m4a`,
   artworkUrl: `https://img.test/${id}.jpg`,
-  category,
+  origin,
+  genres: ["pop"],
 });
 
 const catalog = new Catalog([
@@ -223,10 +224,13 @@ describe("partie complète", () => {
 
   it("n'accepte la sélection de catégories qu'avant le départ, et exige un choix valide", () => {
     const { host } = lobby();
-    host.send({ type: "host:setCategories", categories: ["rock"] });
+    // Rien de choisi : tout le catalogue.
+    assert.deepEqual(host.conn.view().categories, []);
+    assert.equal(host.conn.view().trackCount, 18);
+    host.send({ type: "host:setCategories", categories: ["opera"] });
     assert.match(host.conn.last("error").message, /Catégorie inconnue/);
-    host.send({ type: "host:start" });
-    assert.match(host.conn.last("error").message, /au moins une catégorie/);
+    host.send({ type: "host:setCategories", categories: ["international", "era-1960"] });
+    assert.equal(host.conn.view().trackCount, 2); // 1960 et 1967
     host.send({ type: "host:setCategories", categories: ["fr", "fr", "international"] });
     assert.deepEqual(host.conn.view().categories, ["fr", "international"]);
     assert.equal(host.conn.view().trackCount, 18);

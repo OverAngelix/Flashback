@@ -5,7 +5,7 @@
  * fournit plus rien, le titre est mis de côté (`unavailable`) jusqu'à la vérification suivante.
  */
 import type { Catalog, CatalogEntry } from "./store.js";
-import { CATEGORIES } from "./types.js";
+import { ORIGINS } from "./types.js";
 
 export const LINK_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -51,7 +51,7 @@ async function checkLink(url: string, fetcher: typeof fetch, timeoutMs: number):
 }
 
 /**
- * Adresses actuelles d'un titre d'après l'API lookup, en essayant la boutique de sa catégorie puis
+ * Adresses actuelles d'un titre d'après l'API lookup, en essayant la boutique de son origine puis
  * les autres. `null` : Apple ne connaît plus le titre ou n'en donne plus d'extrait. `undefined` :
  * pas de réponse exploitable.
  */
@@ -60,7 +60,7 @@ async function lookupLinks(
   fetcher: typeof fetch,
   timeoutMs: number,
 ): Promise<{ previewUrl: string; artworkUrl: string } | null | undefined> {
-  const stores = [...new Set([CATEGORIES[entry.category].store, "US", "FR"])];
+  const stores = [...new Set([ORIGINS[entry.origin].store, "US", "FR"])];
   for (const store of stores) {
     try {
       const res = await fetcher(`https://itunes.apple.com/lookup?id=${entry.id}&country=${store}&entity=song`, {

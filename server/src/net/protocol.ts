@@ -96,7 +96,7 @@ export interface GameView {
   phase: Phase;
   round: number;
   cardsToWin: number;
-  /** Catégories choisies par l'hôte. */
+  /** Catégories choisies par l'hôte (aucune : tout le catalogue). */
   categories: string[];
   /** Toutes les catégories avec leur nombre de titres (pour l'écran de sélection). */
   availableCategories: CategorySummary[];
@@ -157,7 +157,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         ? { type: "player:join", code: m.code, name: m.name, avatar: m.avatar as number }
         : null;
     case "host:setCategories":
-      return Array.isArray(m.categories) && m.categories.length <= 20 && m.categories.every((c) => isString(c, 32))
+      return Array.isArray(m.categories) && m.categories.length <= 40 && m.categories.every((c) => isString(c, 32))
         ? { type: "host:setCategories", categories: m.categories as string[] }
         : null;
     case "host:setCardsToWin":

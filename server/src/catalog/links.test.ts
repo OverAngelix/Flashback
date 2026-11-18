@@ -3,14 +3,15 @@ import { describe, it } from "node:test";
 import { verifyLinks, watchLinks } from "./links.js";
 import { Catalog, type CatalogEntry } from "./store.js";
 
-const entry = (id: number, category: CatalogEntry["category"] = "fr"): CatalogEntry => ({
+const entry = (id: number, origin: CatalogEntry["origin"] = "fr"): CatalogEntry => ({
   id,
   title: `Titre ${id}`,
   artist: "Artiste",
   year: 1970 + id,
   previewUrl: `https://audio.test/${id}.m4a`,
   artworkUrl: `https://img.test/${id}/600x600bb.jpg`,
-  category,
+  origin,
+  genres: ["pop"],
 });
 
 interface FakeApple {

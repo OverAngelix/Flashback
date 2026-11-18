@@ -37,7 +37,8 @@ export class Room {
     private readonly clock: () => number,
     rng?: () => number,
   ) {
-    this.game = new Game({ rng });
+    // Aucune catégorie choisie : tout le catalogue.
+    this.game = new Game({ rng, tracks: catalog.select([]) });
     this.lastActivity = clock();
   }
 
@@ -129,7 +130,6 @@ export class Room {
         this.game.setCardsToWin(message.cardsToWin);
         break;
       case "host:start":
-        if (this.categories.length === 0) throw new GameError("Choisissez au moins une catégorie.");
         this.game.start();
         break;
       case "host:advance":

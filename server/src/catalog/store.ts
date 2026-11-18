@@ -2,13 +2,22 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { GameTrack } from "../game/types.js";
-import { CATEGORIES, type CatalogTrack, type CategoryId, type CategorySummary } from "./types.js";
+import {
+  CATEGORIES,
+  type CatalogTrack,
+  type CategorySummary,
+  type GenreId,
+  type OriginId,
+  categoriesOf,
+  matchesSelection,
+} from "./types.js";
 
 /** server/data, que le code tourne depuis src/ (tsx) ou dist/ (tsc). */
 export const DEFAULT_DATA_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../data");
 
 export interface CatalogEntry extends GameTrack {
-  category: CategoryId;
+  origin: OriginId;
+  genres: GenreId[];
   /** Extrait ou pochette introuvable chez Apple à la dernière vérification : le titre n'est plus tiré. */
   unavailable?: boolean;
 }
@@ -21,23 +30,21 @@ export class Catalog {
     return this.tracks.filter((t) => !t.unavailable);
   }
 
+  /** Toutes les catégories avec leur nombre de titres jouables (un titre compte dans plusieurs). */
   categories(): CategorySummary[] {
-    const available = this.available;
-    return (Object.keys(CATEGORIES) as CategoryId[]).map((id) => ({
-      id,
-      label: CATEGORIES[id].label,
-      count: available.filter((t) => t.category === id).length,
-    }));
+    const counts = new Map<string, number>();
+    for (const t of this.available) for (const id of categoriesOf(t)) counts.set(id, (counts.get(id) ?? 0) + 1);
+    return CATEGORIES.map((c) => ({ ...c, count: counts.get(c.id) ?? 0 }));
   }
 
   /**
-   * Titres des catégories choisies, pour le moteur de jeu. Ce sont les entrées du catalogue
+   * Titres de la sélection (voir matchesSelection : OU dans un axe, ET entre axes, rien de choisi =
+   * tout le catalogue), pour le moteur de jeu. Ce sont les entrées du catalogue
    * elles-mêmes, pas des copies : une adresse renouvelée par la vérification quotidienne profite
    * aussi aux parties en cours. Les vues n'en recopient que les champs publics (net/view.ts).
    */
   select(categoryIds: readonly string[]): GameTrack[] {
-    const wanted = new Set(categoryIds);
-    return this.available.filter((t) => wanted.has(t.category));
+    return this.available.filter((t) => matchesSelection(t, categoryIds));
   }
 }
 
@@ -59,7 +66,8 @@ export async function loadCatalog(dataDir = DEFAULT_DATA_DIR): Promise<{ catalog
       year: t.year,
       previewUrl: t.previewUrl,
       artworkUrl: t.artworkUrl,
-      category: t.category,
+      origin: t.origin,
+      genres: t.genres ?? [],
     });
   }
   return { catalog: new Catalog(entries), skipped };

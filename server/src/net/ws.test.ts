@@ -14,7 +14,8 @@ const entry = (id: number, year: number): CatalogEntry => ({
   year,
   previewUrl: `https://audio.test/${id}.m4a`,
   artworkUrl: `https://img.test/${id}.jpg`,
-  category: "fr",
+  origin: "fr",
+  genres: ["pop"],
 });
 
 let app: FastifyInstance;
