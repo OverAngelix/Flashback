@@ -38,5 +38,7 @@ Statuts : À faire · En cours · Terminé · V2 (reporté).
 - Front : Vite, Vue 3, Vuetify 4 et TypeScript.
 - Sur téléphone, le jeu se joue en paysage (obligatoire pendant la partie) pour faire glisser la frise.
 - Le joueur doit toucher l'écran pour lancer la musique (restriction d'autoplay des navigateurs mobiles).
-- Version actuelle : 100 titres. Version finale : environ 1000.
+- Version actuelle : 1214 titres jouables, uniquement des titres connus.
+- L'année d'un titre est celle de sa sortie originale, pas celle où il a cartonné ni celle d'une réédition.
+- Catégories sur trois axes : origine (Français, International, Europe & Latino), époque (déduite de l'année) et genre (12 genres, sans « Variété française », qui va dans Pop). OU dans un axe, ET entre les axes, rien de coché = tout le catalogue.
 - Groove : pendant le tour d'un autre, chacun voit sa frise sur son écran et peut y placer le titre, une fois, avant lui ; un placement juste rapporte un point groove (logo : boule disco). Les points groove sont uniquement pour le style : ils ne comptent ni pour la victoire ni pour départager une égalité.

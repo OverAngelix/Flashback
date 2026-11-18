@@ -48,7 +48,7 @@ Les titres, artistes et années du titre en cours ne quittent jamais le serveur 
 
 ## Le catalogue
 
-Environ 100 titres aujourd'hui (objectif : environ 1000), en deux catégories : Chanson française et International. Extraits et pochettes sont lus directement chez Apple ; le serveur vérifie chaque jour que leurs liens répondent, les renouvelle au besoin et écarte un titre qu'Apple ne fournit plus. L'année d'iTunes est souvent fausse (rééditions, compilations), d'où un travail de vérification titre par titre (voir [01-catalogue.md](01-catalogue.md)).
+1214 titres jouables, de 1950 à 2026 (objectif atteint : au moins 1000 titres connus). Chaque titre a une origine (Français, International, Europe & Latino), une époque déduite de son année et un à trois genres ; on coche ce qu'on veut sur chaque axe (OU dans un axe, ET entre les axes, rien de coché = tout le catalogue). Extraits et pochettes sont lus directement chez Apple ; le serveur vérifie chaque jour que leurs liens répondent, les renouvelle au besoin et écarte un titre qu'Apple ne fournit plus. L'année d'iTunes est souvent fausse (rééditions, compilations), d'où un travail de vérification titre par titre (voir [01-catalogue.md](01-catalogue.md)).
 
 ## Paramètres (par navigateur)
 
@@ -63,7 +63,7 @@ Volume des extraits, musique de menu (activée, volume), animations réduites, �
 | Groove | Terminé | — |
 | Mode local (hôte + manettes) | Jouable de bout en bout | Essais sur vrais téléphones et vraie télé, Wake Lock, avancement automatique, mise en évidence des cartes gagnées |
 | Interface | Terminé | Sons d'interface, icône et manifeste web, validation sur appareils |
-| Catalogue | 94 titres en jeu | Vérifier les années restantes, passer à environ 1000 titres |
-| Catégories | 2 catégories | Décennies, genres, message quand la sélection est trop petite |
+| Catalogue | 1214 titres en jeu | Remplacer les titres introuvables, relire les années restantes |
+| Catégories | Origines, époques et genres en place | Remplir chaque genre et chaque époque |
 | Déploiement | Préparé dans le dépôt | Première image, secrets, domaine |
 | Mode en ligne | V2 | Tout (lecture synchronisée chez chaque joueur, parties publiques) |

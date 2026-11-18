@@ -38,9 +38,19 @@ La date iTunes est celle de la sortie du fichier trouvé : réédition, compilat
 
 ## Version finale (environ 1000 titres)
 
-- [ ] Compléter `source-tracks.ts` (nouvelles catégories, voir [02-categories.md](02-categories.md))
+- [x] Format de la liste source : une ligne `"Titre - Artiste | genre, genre"` par titre, rangée par origine ; la clé de cache reste « Titre - Artiste »
+- [x] Compléter `source-tracks.ts` : 1226 tubes connus, avec leurs genres (voir [02-categories.md](02-categories.md))
+- [x] `npm run catalog:build` : 1214 titres jouables (441 français, 638 internationaux, 135 Europe & Latino) au 18/11/2026
+- [ ] Remplacer les 52 titres de `catalog-misses.json` (souvent absents de l'API iTunes ou seulement en remix et reprises : Bad Bunny, NTM, Booba, PNL, Ricchi e Poveri…)
+- [x] Filtre des versions renforcé : mots français (instrumentale, a capella, acoustique), réenregistrements, versions accélérées, autres langues, maquettes ; une parenthèse qui parle de version, mix ou edit n'est acceptée que si elle est sans danger (« Single Version », « Radio Edit », « Mono »…) ; 50 résultats par recherche au lieu de 15 ; reprise automatique après une coupure réseau
+- [x] 80 années fausses corrigées à la main (116 années vérifiées au total) (compilations datées de 1900 ou 1949, rééditions), repérées en comparant iTunes à une estimation titre par titre
+- [x] Écoutés et validés : « One Love » (enregistrement de 1965), « Tom's Diner » (version de 1984) ; « Dragostea din tei » fixé sur la version de l'album *DiscO-Zone* (`| itunes:1573309498`)
+- [ ] Relire : « It Must Have Been Love », « Ya Rayah », « Doudou », « Popcorn salé », « Victoire » de Shy'm, « So Easy (To Fall In Love) » (2026 d'après iTunes)
+- [x] Une ligne de la liste source peut imposer son titre iTunes (`| itunes:<trackId>`) quand la recherche choisit une mauvaise version ; une variante demandée dans le titre (« (CYRIL Remix) ») doit figurer dans le titre trouvé
 - [x] Vérification quotidienne des liens Apple par le serveur, renouvellement via `lookup?id=`, titres injouables écartés (`/api/health`)
 - [x] `npm run catalog:check` : même vérification, nouvelles adresses enregistrées dans `catalog.json` (94/94 valides au 17/11/2026)
+- [x] Tubes 2023 à 2026 : 41 titres ajoutés depuis votre liste (19 y étaient déjà) ; « Petit génie » et « Kongolese sous BBL » n'existent chez iTunes qu'en remix ; « Boy's a liar Pt. 2 » remplacé par l'original de PinkPantheress (2022)
+- [x] Règle confirmée : l'année est celle de la sortie, pas celle où le titre a cartonné (« Makeba » 2015, « Kill Bill » 2022) ; 22 années récentes confirmées à la main
 - [ ] Contrôle qualité sur l'ensemble (doublons, versions, années)
 - [ ] Surveiller les titres retirés par la vérification quotidienne (journal du serveur, `/api/health`) et les remplacer
 

@@ -12,7 +12,7 @@ Direction : « néon sur fond de nuit », disques vinyle et notes de musique. Th
 - [x] Page Paramètres : volume des extraits, musique de menu (activer, volume), animations réduites, écran de démarrage, nom par défaut proposé pour rejoindre, quitter la partie mémorisée ; réglages enregistrés dans le navigateur (`client/src/settings.ts`)
 - [x] Musique de menu « ascenseur » générée par l'API Web Audio (`menuScore.ts` pour la partition, `menuMusic.ts` pour le son) : piano électrique, basse, balais, vibraphone, grille de 8 accords qui boucle ; aucun fichier audio ni droit musical ; elle démarre au premier toucher (les navigateurs l'imposent), s'arrête en entrant dans une partie, se coupe avec le bouton du menu
 - [x] Salon de l'écran hôte en trois zones séparées : informations de la partie (code, QR code, adresse), joueurs et catégories dans deux panneaux, barre de lancement
-- [x] Salon de l'écran hôte : code en grosses tuiles, QR code, joueurs qui apparaissent avec une animation, catégories en cartes
+- [x] Salon de l'écran hôte : code en grosses tuiles, QR code, joueurs qui apparaissent avec une animation, catégories en pastilles groupées par axe (origine, époque, genre)
 - [x] Tour : disque vinyle qui tourne pendant l'extrait, égaliseur, tableau des joueurs avec le joueur actif en lumière
 - [x] Cartes en pochettes (année en pastille sur l'image), frise posée sur un fil chronologique, emplacements qui pulsent
 - [x] Révélation : confettis si bon placement, secousse sinon ; fin de partie : trophée et confettis
