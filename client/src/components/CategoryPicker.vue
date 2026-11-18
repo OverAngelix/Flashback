@@ -28,7 +28,7 @@ const prefix = computed(() => props.testidPrefix ?? "category");
           v-for="c in g.items"
           :key="c.id"
           type="button"
-          class="cat glass"
+          class="cat"
           :class="{ on: chosen.has(c.id) }"
           :aria-pressed="chosen.has(c.id)"
           :disabled="c.count === 0 && !chosen.has(c.id)"
@@ -68,16 +68,22 @@ const prefix = computed(() => props.testidPrefix ?? "category");
   flex-wrap: wrap;
   gap: 6px;
 }
+/*
+ * Pas de .glass ici : son flou d'arrière-plan, recalculé à chaque image au-dessus du fond animé,
+ * faisait ramer les téléphones avec une vingtaine de pastilles. Un fond translucide suffit.
+ */
 .cat {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
+  border: 1px solid var(--border);
   border-radius: 999px;
+  background: var(--glass);
   color: inherit;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
 }
 .cat:active {
   transform: scale(0.96);

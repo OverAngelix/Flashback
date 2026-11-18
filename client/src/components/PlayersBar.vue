@@ -18,7 +18,7 @@ defineProps<{
 <!-- Les joueurs avec leur nombre de cartes ; le joueur actif est mis en lumière. -->
 <template>
   <div class="bar">
-    <div v-for="p in players" :key="p.id" class="pill glass" :class="{ active: p.id === activeId, off: !p.connected, compact }">
+    <div v-for="p in players" :key="p.id" class="pill" :class="{ active: p.id === activeId, off: !p.connected, compact }">
       <AvatarBadge :avatar="p.avatar" :size="compact ? 28 : 40" :leader="p.id === leaderId" />
       <span class="name text-truncate">{{ p.name }}</span>
       <span v-if="!noCount" class="count display" title="Cartes">{{ p.timeline.length }}</span>
@@ -35,13 +35,16 @@ defineProps<{
   flex-wrap: wrap;
   gap: 10px;
 }
+/* Sans .glass : son flou d'arrière-plan coûte cher sur téléphone (voir CategoryPicker). */
 .pill {
   display: flex;
   align-items: center;
   gap: 10px;
   max-width: 240px;
   padding: 6px 14px 6px 8px;
+  border: 1px solid var(--border);
   border-radius: 999px;
+  background: var(--glass);
   transition: all 0.25s ease;
 }
 .pill.compact {

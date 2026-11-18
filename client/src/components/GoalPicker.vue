@@ -15,7 +15,7 @@ const counts = Array.from({ length: MAX_CARDS_TO_WIN - MIN_CARDS_TO_WIN + 1 }, (
       :key="n"
       type="button"
       role="radio"
-      class="goal glass display"
+      class="goal display"
       :class="{ on: n === value }"
       :aria-checked="n === value"
       :data-testid="`${testidPrefix ?? 'goal'}-${n}`"
@@ -32,15 +32,19 @@ const counts = Array.from({ length: MAX_CARDS_TO_WIN - MIN_CARDS_TO_WIN + 1 }, (
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
 }
+/* Sans .glass : son flou d'arrière-plan coûte cher sur téléphone (voir CategoryPicker). */
 .goal {
   height: 48px;
   min-width: 0;
   padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--glass);
   color: inherit;
   font-size: 1.3rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
 }
 .goal:active {
   transform: scale(0.95);

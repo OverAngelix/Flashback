@@ -83,6 +83,7 @@ Pièges d'interface rencontrés (aucun n'est vu par le type-check ni le build) :
 - Une même classe CSS définie deux fois dans un fichier (ex. `.info` dans deux sections de `HostView`) : la seconde écrase la première. Donner un nom propre à chaque bloc.
 
 - Un style `scoped` d'une vue s'applique aussi à la **racine** des composants enfants : ne pas réutiliser le nom de classe de la racine d'un composant (`.reveal`, `.recap`) dans la vue qui l'utilise (les vues préfixent `h-` et `p-`).
+- `.glass` applique un flou d'arrière-plan (`backdrop-filter`) recalculé à chaque image au-dessus du fond animé (`AppBackground`) : sur téléphone, une vingtaine d'éléments flous suffisent à faire ramer la page. Le réserver aux grands panneaux ; pour les pastilles et boutons répétés (`CategoryPicker`, `GoalPicker`, `PlayersBar`), un fond `var(--glass)` avec bordure `var(--border)`.
 - Deux `<Transition>` ne doivent pas se retrouver sur le même élément racine (celle du routeur et celle d'une vue) : leurs classes se gênent et l'élément reste bloqué à `opacity: 0`. Chaque vue a une racine `<div>` unique. Le test de bout en bout le vérifie avec `painted()`.
 
 Pièges de Vuetify 4 rencontrés :
