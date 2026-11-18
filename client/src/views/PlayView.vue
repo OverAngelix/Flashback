@@ -21,7 +21,7 @@ const props = defineProps<{ code?: string }>();
 
 const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
-const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, setCardsToWin, start, advance, skipTurn } = useControls();
+const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn } = useControls();
 const portrait = usePortraitPhone();
 
 onMounted(() => {
@@ -91,11 +91,11 @@ function leave() {
                 <div class="muted small">Choisis les catégories et le nombre de cartes, puis lance la partie quand tout le monde est là.</div>
               </div>
             </div>
-            <CategoryPicker :categories="view.availableCategories" :chosen="chosen" testid-prefix="leader-category" @toggle="toggleCategory" />
+            <CategoryPicker :categories="view.availableCategories" :chosen="chosen" testid-prefix="leader-category" @toggle="toggleCategory" @clear="clearCategories" />
             <div class="muted label">Cartes pour gagner</div>
             <GoalPicker :value="view.cardsToWin" testid-prefix="leader-goal" @pick="setCardsToWin" />
             <v-btn class="btn-success w-100" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="leader-start" @click="start">Lancer la partie</v-btn>
-            <div v-if="startBlocker" class="muted small text-center">{{ startBlocker }}</div>
+            <div class="muted small text-center" data-testid="leader-track-count">{{ startBlocker ?? `${view.trackCount} titres dans le paquet` }}</div>
           </template>
           <div v-else class="wait glass" data-testid="wait">
             <MusicLoader :size="56" />

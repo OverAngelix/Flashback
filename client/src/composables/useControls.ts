@@ -3,7 +3,7 @@ import { MIN_PLAYERS } from "@server/game/types";
 import { useGame } from "./useGame";
 
 /**
- * Commandes de la partie : catégories, objectif, lancement, suite, tour passé. Elles sont partagées par
+ * Commandes de la partie : catégories (aucune cochée = tout le catalogue), objectif, lancement, suite, tour passé. Elles sont partagées par
  * l'écran hôte et par le téléphone du chef de partie (le serveur accepte les mêmes messages des deux).
  */
 export function useControls() {
@@ -13,12 +13,15 @@ export function useControls() {
   const isLeader = computed(() => !!me.value && view.value?.leaderId === me.value.id);
   const leader = computed(() => view.value?.players.find((p) => p.id === view.value?.leaderId) ?? null);
 
-  const enoughPlayers = computed(() => (view.value?.players.length ?? 0) >= MIN_PLAYERS);
-  const canStart = computed(() => enoughPlayers.value && chosen.value.size > 0);
+  const playerCount = computed(() => view.value?.players.length ?? 0);
+  const enoughPlayers = computed(() => playerCount.value >= MIN_PLAYERS);
+  /** Une carte de départ par joueur, plus au moins une à placer (même règle que Game.start). */
+  const enoughTracks = computed(() => (view.value?.trackCount ?? 0) >= playerCount.value + 1);
+  const canStart = computed(() => enoughPlayers.value && enoughTracks.value);
   /** Pourquoi on ne peut pas encore lancer ; null quand tout est prêt. */
   const startBlocker = computed(() => {
     if (!enoughPlayers.value) return `Il faut au moins ${MIN_PLAYERS} joueurs.`;
-    if (chosen.value.size === 0) return "Choisissez au moins une catégorie.";
+    if (!enoughTracks.value) return "Pas assez de titres pour cette sélection : décochez une catégorie.";
     return null;
   });
 
@@ -28,6 +31,7 @@ export function useControls() {
     else next.add(id);
     connection.send({ type: "host:setCategories", categories: [...next] });
   }
+  const clearCategories = () => connection.send({ type: "host:setCategories", categories: [] });
   const setCardsToWin = (cardsToWin: number) => connection.send({ type: "host:setCardsToWin", cardsToWin });
   const start = () => connection.send({ type: "host:start" });
   /** `from` rend un double clic (ou Entrée sur le bouton) inoffensif : le serveur ignore le second. */
@@ -38,5 +42,5 @@ export function useControls() {
   const skipTurn = () => connection.send({ type: "host:skipTurn" });
   const kick = (playerId: string) => connection.send({ type: "host:kick", playerId });
 
-  return { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, setCardsToWin, start, advance, skipTurn, kick };
+  return { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick };
 }

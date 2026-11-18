@@ -22,7 +22,7 @@ import { qrDataUrl } from "@/qr";
 
 const router = useRouter();
 const { connection, view, active } = useGame();
-const { chosen, leader, canStart, startBlocker, toggleCategory, setCardsToWin, start, advance, skipTurn, kick } = useControls();
+const { chosen, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick } = useControls();
 
 const joinUrls = ref<string[]>([]);
 const lastAudioUrl = ref<string>();
@@ -179,7 +179,7 @@ watch(turnKey, (key) => {
 
             <div class="panel glass">
               <h2 class="display t-md">Catégories</h2>
-              <CategoryPicker :categories="view.availableCategories" :chosen="chosen" @toggle="toggleCategory" />
+              <CategoryPicker :categories="view.availableCategories" :chosen="chosen" @toggle="toggleCategory" @clear="clearCategories" />
             </div>
           </div>
 
@@ -408,12 +408,18 @@ watch(turnKey, (key) => {
 .leader-hint {
   margin: 18px 0 0;
 }
+/* Collée en bas de l'écran : avec trois groupes de catégories, le salon dépasse 720 px de haut. */
 .start-row {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 18px;
   padding: 18px 24px;
+  background: rgba(20, 12, 40, 0.82);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
 }
 .h-goal {
   display: flex;
