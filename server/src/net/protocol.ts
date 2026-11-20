@@ -16,6 +16,7 @@ export const CONTROL_MESSAGE_TYPES = [
   "host:advance",
   "host:skipTurn",
   "host:kick",
+  "host:replay",
 ] as const;
 
 /** Messages envoyés par un client (écran hôte ou téléphone) au serveur. */
@@ -38,6 +39,8 @@ export type ClientMessage =
   | { type: "host:advance"; from: Phase }
   | { type: "host:skipTurn" }
   | { type: "host:kick"; playerId: string }
+  /** Partie terminée : retour au salon de la même salle avec les mêmes joueurs, pour en refaire une. */
+  | { type: "host:replay" }
   /** L'écran hôte met fin à la partie : la salle est supprimée, les joueurs reçoivent `closed`. */
   | { type: "host:close" }
   | { type: "player:place"; position: number }
@@ -157,6 +160,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case "host:start":
     case "host:skipTurn":
     case "host:close":
+    case "host:replay":
     case "player:play":
     case "player:leave":
       return { type: m.type };

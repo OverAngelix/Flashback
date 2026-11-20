@@ -164,6 +164,11 @@ export class Room {
         if (message.playerId === actorId) throw new GameError("Vous ne pouvez pas vous exclure vous-même.");
         this.kick(message.playerId);
         break;
+      case "host:replay":
+        // Double clic, ou partie déjà relancée depuis l'autre écran : ignoré sans erreur.
+        if (this.game.phase !== "finished") return;
+        this.replay();
+        break;
       case "host:create":
       case "host:rejoin":
       case "host:close":
@@ -213,6 +218,18 @@ export class Room {
     this.removePlayer(playerId);
     conn?.send({ type: "kicked" });
     conn?.close();
+  }
+
+  /**
+   * Après la fin, retour au salon de la même salle (même code) avec les mêmes joueurs, chef compris,
+   * pour choisir de nouvelles catégories et un nouvel objectif. Une partie terminée garde ses joueurs
+   * pour le classement : ceux qui sont partis depuis (plus de jeton) ne sont pas repris. Les joueurs
+   * déconnectés restent, comme dans tout salon.
+   */
+  private replay(): void {
+    this.game.reset(this.catalog.select(this.categories));
+    const remaining = new Set(this.playerTokens.values());
+    for (const player of [...this.game.players]) if (!remaining.has(player.id)) this.game.removePlayer(player.id);
   }
 
   /** Fin de la salle : chaque joueur est prévenu, toutes les connexions sont fermées. */

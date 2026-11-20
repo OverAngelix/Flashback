@@ -558,6 +558,73 @@ describe("chef de partie", () => {
   });
 });
 
+describe("rejouer avec les mêmes joueurs", () => {
+  /** Joue jusqu'à la fin : chaque joueur place en tête de frise, l'hôte fait avancer. */
+  function playToEnd(host: ReturnType<typeof client>, players: ReturnType<typeof client>[]) {
+    for (let i = 0; i < 100 && host.conn.view().phase !== "finished"; i++) {
+      const v = host.conn.view();
+      if (v.phase === "awaiting-placement") {
+        players.find((p) => p.conn.last("session").playerId === v.activePlayerId)!.send({ type: "player:place", position: 0 });
+      } else host.send({ type: "host:advance", from: v.phase });
+    }
+    assert.equal(host.conn.view().phase, "finished");
+  }
+
+  it("ramène tout le monde au salon de la même salle, réglages gardés, frises vidées", () => {
+    const { host, ana, ben, code } = lobby();
+    host.send({ type: "host:setCategories", categories: ["fr"] });
+    host.send({ type: "host:setCardsToWin", cardsToWin: 3 });
+    host.send({ type: "host:start" });
+    playToEnd(host, [ana, ben]);
+
+    ana.send({ type: "host:replay" }); // depuis le téléphone du chef
+    const view = ben.conn.view();
+    assert.equal(view.phase, "lobby");
+    assert.equal(view.code, code);
+    assert.deepEqual(view.players.map((p) => [p.name, p.timeline.length, p.groove]), [["Ana", 0, 0], ["Ben", 0, 0]]);
+    assert.deepEqual(view.categories, ["fr"]);
+    assert.equal(view.cardsToWin, 3);
+    assert.equal(view.trackCount, 12);
+    assert.deepEqual(view.winnerIds, []);
+    assert.equal(view.leaderId, ana.conn.last("session").playerId);
+    assert.equal(manager.info(code)?.joinable, true, "d'autres peuvent rejoindre le nouveau salon");
+
+    host.send({ type: "host:replay" }); // double clic : ignoré sans erreur
+    assert.equal(host.conn.sent.some((m) => m.type === "error"), false);
+    host.send({ type: "host:start" });
+    assert.equal(host.conn.view().phase, "awaiting-placement");
+  });
+
+  it("est ignoré avant la fin, interdit aux joueurs qui ne sont pas chef", () => {
+    const { host, ana, ben } = started();
+    host.send({ type: "host:replay" });
+    assert.equal(host.conn.view().phase, "awaiting-placement");
+    assert.equal(host.conn.sent.some((m) => m.type === "error"), false);
+    playToEnd(host, [ana, ben]);
+    ben.send({ type: "host:replay" });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
+    assert.equal(host.conn.view().phase, "finished");
+  });
+
+  it("ne reprend pas les joueurs partis après la fin, mais garde les déconnectés", () => {
+    const l = lobby();
+    const cleo = client();
+    cleo.send({ type: "player:join", code: l.code, name: "Cléo", avatar: 2 });
+    l.host.send({ type: "host:setCategories", categories: ["fr"] });
+    l.host.send({ type: "host:setCardsToWin", cardsToWin: 3 });
+    l.host.send({ type: "host:start" });
+    playToEnd(l.host, [l.ana, l.ben, cleo]);
+    cleo.send({ type: "player:leave" }); // retour à l'accueil depuis l'écran de fin
+    assert.equal(l.host.conn.view().players.length, 3, "le classement final garde Cléo");
+    l.ben.session.disconnect(); // téléphone en veille
+
+    l.host.send({ type: "host:replay" });
+    const view = l.host.conn.view();
+    assert.deepEqual(view.players.map((p) => [p.name, p.connected]), [["Ana", true], ["Ben", false]]);
+    assert.deepEqual(manager.info(l.code)?.takenAvatars, [0, 1], "l'avatar de Cléo est libéré");
+  });
+});
+
 describe("nettoyage des salles", () => {
   it("supprime les salles sans connexion après le délai, jamais celles qui sont occupées", () => {
     const { host, ana, ben, code } = lobby();
@@ -639,6 +706,7 @@ describe("solo", () => {
 describe("parseClientMessage", () => {
   it("accepte les messages bien formés", () => {
     assert.deepEqual(parseClientMessage('{"type":"host:create"}'), { type: "host:create" });
+    assert.deepEqual(parseClientMessage('{"type":"host:replay"}'), { type: "host:replay" });
     assert.deepEqual(parseClientMessage('{"type":"host:advance","from":"reveal"}'), { type: "host:advance", from: "reveal" });
     assert.deepEqual(parseClientMessage('{"type":"player:place","position":2,"extra":1}'), { type: "player:place", position: 2 });
     assert.deepEqual(parseClientMessage('{"type":"player:groove","position":0}'), { type: "player:groove", position: 0 });

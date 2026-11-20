@@ -293,6 +293,47 @@ describe("fin de partie", () => {
   });
 });
 
+describe("nouvelle partie avec les mêmes joueurs", () => {
+  it("revient au salon avec des frises vides, sans points groove, avec le nouveau paquet et le même objectif", () => {
+    const game = newGame([1950, 1960, 1970, 1980], 5);
+    const { a, b } = twoPlayers(game);
+    assert.throws(() => game.reset([]), GameError, "pas avant la fin");
+    game.start();
+    game.placeCard(a.id, 0);
+    game.advance();
+    game.placeCard(b.id, 0);
+    game.advance();
+    game.advance(); // paquet vide : fin
+    assert.equal(game.phase, "finished");
+    a.groove = 2;
+
+    game.reset([1990, 2000, 2010, 2020].map((y, i) => track(10 + i, y)));
+    assert.equal(game.phase, "lobby");
+    assert.equal(game.round, 0);
+    assert.equal(game.cardsToWin, 5);
+    assert.equal(game.remainingTracks, 4);
+    assert.deepEqual(game.winnerIds, []);
+    assert.equal(game.lastResult, undefined);
+    assert.deepEqual(game.players.map((p) => [p.id, p.timeline.length, p.groove]), [[a.id, 0, 0], [b.id, 0, 0]]);
+    // Le salon fonctionne comme d'habitude : nouveau joueur, nouvel objectif, départ.
+    game.addPlayer("Cléo", 2);
+    game.setCardsToWin(3);
+    game.start();
+    assert.equal(game.phase, "awaiting-placement");
+    assert.equal(game.activePlayer?.id, a.id);
+  });
+
+  it("n'existe pas en solo", () => {
+    const game = new Game({ tracks: [track(1, 1950), track(2, 1960)], rng: noShuffle, solo: { lives: 1 } });
+    const a = game.addPlayer("Ana", 0);
+    game.start();
+    game.placeCard(a.id, 1); // 1950 après 1960 : faux, plus de vie
+    game.advance();
+    assert.equal(game.phase, "finished");
+    assert.throws(() => game.reset([]), GameError);
+  });
+});
+
 describe("paquet et tour passé", () => {
   it("permet de changer le paquet avant le départ seulement", () => {
     const game = new Game({ rng: noShuffle });

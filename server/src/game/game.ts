@@ -43,7 +43,8 @@ export interface GameOptions {
  * ne compte pas pour la victoire, qui ne dépend que des frises.
  *
  * Déroulement : lobby → awaiting-placement → reveal → (fin de tour de plateau : round-recap)
- * → awaiting-placement … → finished. Le moteur est indépendant du réseau et du mode de jeu.
+ * → awaiting-placement … → finished (→ lobby avec `reset` pour rejouer avec les mêmes joueurs). Le
+ * moteur est indépendant du réseau et du mode de jeu.
  *
  * Solo (option `solo`) : un seul joueur, sans récapitulatif ni groove. Chaque erreur (ou tour passé)
  * coûte une vie ; `round` compte les titres joués. Après la révélation, la partie s'arrête s'il n'a
@@ -175,6 +176,29 @@ export class Game {
     this.round = 1;
     this.turnIndex = 0;
     this.draw();
+  }
+
+  /**
+   * Nouvelle partie avec les mêmes joueurs, une fois la précédente terminée : retour au salon avec
+   * des frises vides, des points groove à zéro et un nouveau paquet (`tracks`). L'objectif est gardé.
+   * Pas en solo, où l'on recrée une partie.
+   */
+  reset(tracks: GameTrack[]): void {
+    if (this.solo) throw new GameError("Pas de nouvelle partie en solo.");
+    if (this.phase !== "finished") throw new GameError("La partie n'est pas terminée.");
+    for (const player of this.players) {
+      player.timeline = [];
+      player.groove = 0;
+    }
+    this.phase = "lobby";
+    this.round = 0;
+    this.turnIndex = 0;
+    this.current = undefined;
+    this.listened = false;
+    this.grooveGuesses.clear();
+    this.lastResult = undefined;
+    this.winnerIds = [];
+    this.setTracks(tracks);
   }
 
   /** Le joueur actif place le titre courant dans sa frise (position 0 à timeline.length). */
