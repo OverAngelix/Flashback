@@ -214,6 +214,16 @@ export function createConnection(deps: ConnectionDeps) {
       send({ type: "host:create" });
     },
 
+    /**
+     * Crée une partie solo (cet appareil est écran et manette) : un niveau de campagne, lancé tout de
+     * suite, ou une partie libre (`level` null) qui commence par le choix des catégories.
+     */
+    createSolo(level: string | null, name: string, avatar: number) {
+      reset();
+      clearNotices();
+      send({ type: "solo:create", name, avatar, level });
+    },
+
     join(code: string, name: string, avatar: number) {
       reset();
       clearNotices();

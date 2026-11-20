@@ -26,8 +26,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Écran de démarrage : visible au moins un instant, le temps de charger les polices. */
 const booting = ref(settings.splash && !new URLSearchParams(location.search).has("nosplash"));
 
-// La musique accompagne le menu et les paramètres ; elle s'arrête en entrant dans une partie.
-const inMenu = computed(() => route.path === "/" || route.path === "/settings");
+// La musique accompagne les menus et les paramètres ; elle s'arrête en entrant dans une partie.
+const inMenu = computed(() => ["/", "/settings", "/solo"].includes(route.path));
 watchEffect(() => {
   if (settings.music && inMenu.value) menuMusic.start(settings.musicVolume);
   else menuMusic.stop();

@@ -5,10 +5,15 @@ import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 import Equalizer from "./Equalizer.vue";
 import TimelineStrip from "./TimelineStrip.vue";
+import { playExtract } from "@/audio";
 import { useConnection } from "@/net/connection";
 
-/** `grooveCount` : nombre d'autres joueurs qui ont déjà placé ce titre dans ma frise (point groove). */
-const props = defineProps<{ me: PlayerView; listened: boolean; leader?: boolean; grooveCount?: number }>();
+/**
+ * `grooveCount` : nombre d'autres joueurs qui ont déjà placé ce titre dans ma frise (point groove).
+ * `audioUrl` (solo) : cet appareil joue lui-même l'extrait, pendant le geste (lecture autorisée sur
+ * mobile) ; sinon c'est l'écran hôte. Le haut de la colonne (slot `head`) est remplaçable.
+ */
+const props = defineProps<{ me: PlayerView; listened: boolean; leader?: boolean; grooveCount?: number; audioUrl?: string }>();
 const connection = useConnection();
 const selected = ref<number | null>(null);
 
@@ -17,6 +22,11 @@ const hint = computed(() => {
   if (selected.value === null) return "Touche un emplacement de ta frise.";
   return "Valide ton choix.";
 });
+
+function listen() {
+  if (props.audioUrl) playExtract(props.audioUrl);
+  connection.send({ type: "player:play" });
+}
 
 function place() {
   if (selected.value === null) return;
@@ -29,12 +39,14 @@ function place() {
   <div class="turn">
     <!-- Les deux boutons sont dans la colonne de gauche : toujours visibles, même sur un écran peu haut. -->
     <div class="side">
-      <div class="me">
-        <AvatarBadge :avatar="me.avatar" :size="34" :leader="leader" />
-        <span class="display">À toi de jouer !</span>
-      </div>
+      <slot name="head">
+        <div class="me">
+          <AvatarBadge :avatar="me.avatar" :size="34" :leader="leader" />
+          <span class="display">À toi de jouer !</span>
+        </div>
+      </slot>
       <div class="listen">
-        <button type="button" class="play" :class="{ done: listened }" :disabled="listened" data-testid="play-extract" aria-label="Écouter l'extrait" @click="connection.send({ type: 'player:play' })">
+        <button type="button" class="play" :class="{ done: listened }" :disabled="listened" data-testid="play-extract" aria-label="Écouter l'extrait" @click="listen">
           <v-icon :icon="listened ? 'mdi-check' : 'mdi-play'" size="34" />
         </button>
         <div class="listen-text">

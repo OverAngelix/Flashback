@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
@@ -31,6 +31,9 @@ onMounted(() => {
   if (wanted && current && current.code !== wanted) connection.leave();
   else if (!current) connection.resume();
 });
+
+// Une partie solo reprise depuis le menu (rechargement) a son propre écran.
+watch(view, (v) => v?.solo && void router.replace("/solo/play"), { immediate: true });
 
 // En partie, le téléphone doit être en paysage ; le salon et la saisie du nom restent possibles en portrait.
 const inGame = computed(() => !!view.value && view.value.phase !== "lobby");

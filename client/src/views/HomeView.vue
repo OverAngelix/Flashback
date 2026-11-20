@@ -51,6 +51,12 @@ function hostGame() {
         <span class="muted sub">Avec ton téléphone ou ton PC</span>
       </router-link>
 
+      <router-link to="/solo" class="tile glass solo" data-testid="menu-solo">
+        <span class="ico"><v-icon icon="mdi-account-music" size="40" /></span>
+        <span class="display name">Solo</span>
+        <span class="muted sub">Partie libre et campagne</span>
+      </router-link>
+
       <!-- Prévu pour la V2 : liste des parties publiques, création de parties en ligne. -->
       <button type="button" class="tile glass multi" disabled aria-disabled="true" title="Bientôt disponible" data-testid="menu-multi">
         <span class="soon display">Bientôt</span>
@@ -108,18 +114,19 @@ function hostGame() {
   align-self: center;
   max-width: 520px;
 }
-/* Grille de 2 par 2, sur tous les écrans. */
+/* Deux rangées : les trois façons de jouer, puis le multijoueur à venir et les paramètres. */
 .tiles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: clamp(14px, 2vw, 22px);
   width: 100%;
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
 .tile {
   position: relative;
+  grid-column: span 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -132,6 +139,21 @@ function hostGame() {
   text-decoration: none;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.25s ease, border-color 0.2s;
+}
+/* Après .tile, pour l'emporter sur sa largeur. */
+.multi,
+.settings {
+  grid-column: span 3;
+}
+/* Écran étroit (téléphone en portrait) : deux colonnes, les paramètres sur toute la largeur. */
+@media (max-width: 600px) {
+  .tile,
+  .multi {
+    grid-column: span 3;
+  }
+  .settings {
+    grid-column: span 6;
+  }
 }
 .tile:hover:not(:disabled) {
   transform: translateY(-4px);
@@ -157,6 +179,11 @@ function hostGame() {
 .join .ico {
   background: linear-gradient(135deg, var(--violet), var(--cyan));
   box-shadow: 0 8px 26px rgba(39, 217, 255, 0.3);
+}
+.solo .ico {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #032a22;
+  box-shadow: 0 8px 26px rgba(46, 229, 157, 0.3);
 }
 .settings .ico {
   background: linear-gradient(135deg, #ffb347, var(--gold));
