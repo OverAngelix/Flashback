@@ -24,7 +24,7 @@ const props = defineProps<{ code?: string }>();
 
 const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
-const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn } = useControls();
+const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, replay } = useControls();
 const revealReady = useRevealDelay();
 /** Le téléphone a déjà ouvert la page sur une adresse joignable par les autres (réseau local ou domaine). */
 const origin = location.origin;
@@ -152,7 +152,11 @@ function leave() {
 
         <section v-else-if="view.phase === 'finished'" class="p-recap">
           <RecapPanel :view="view" final :viewer-id="me.id" />
-          <v-btn class="btn-primary" prepend-icon="mdi-home" @click="leave">Retour à l'accueil</v-btn>
+          <div class="p-end">
+            <v-btn v-if="isLeader" class="btn-primary" prepend-icon="mdi-replay" data-testid="leader-replay" @click="replay">Rejouer avec les mêmes joueurs</v-btn>
+            <v-btn :class="isLeader ? 'btn-ghost' : 'btn-primary'" prepend-icon="mdi-home" data-testid="player-home" @click="leave">Retour à l'accueil</v-btn>
+          </div>
+          <div v-if="!isLeader && leader" class="muted text-center small" data-testid="replay-wait">{{ leader.name }} peut relancer une partie avec les mêmes joueurs.</div>
         </section>
       </div>
     </Transition>
@@ -243,6 +247,12 @@ function leave() {
 }
 .small {
   font-size: 0.9rem;
+}
+.p-end {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 .label {
   margin-top: 4px;

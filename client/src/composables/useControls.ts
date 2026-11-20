@@ -3,7 +3,7 @@ import { MIN_PLAYERS } from "@server/game/types";
 import { useGame } from "./useGame";
 
 /**
- * Commandes de la partie : catégories (aucune cochée = tout le catalogue), objectif, lancement, suite, tour passé. Elles sont partagées par
+ * Commandes de la partie : catégories (aucune cochée = tout le catalogue), objectif, lancement, suite, tour passé, nouvelle partie. Elles sont partagées par
  * l'écran hôte et par le téléphone du chef de partie (le serveur accepte les mêmes messages des deux).
  */
 export function useControls() {
@@ -41,6 +41,8 @@ export function useControls() {
   }
   const skipTurn = () => connection.send({ type: "host:skipTurn" });
   const kick = (playerId: string) => connection.send({ type: "host:kick", playerId });
+  /** Partie terminée : retour au salon de la même salle, avec les mêmes joueurs. */
+  const replay = () => connection.send({ type: "host:replay" });
 
-  return { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick };
+  return { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick, replay };
 }

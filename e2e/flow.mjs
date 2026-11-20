@@ -492,15 +492,30 @@ try {
   await shot(ben, "14-ben-leave-confirm");
   await ben.click(sel("leave-confirm-ok"));
   await ben.waitForSelector(sel("menu-host"));
-  await host.waitForFunction(() => document.body.innerText.includes("Nouvelle partie"));
+  await host.waitForSelector(sel("replay"));
   if ((await host.evaluate(() => document.body.innerText)).includes("Ben")) throw new Error("Ben est encore affiché sur l'écran hôte");
   await shot(host, "15-host-finished-after-leave");
   ok("Ben quitte en pleine partie après confirmation : retour à l'accueil, la partie se termine sans lui");
 
-  // Fin de partie par l'hôte : retour à l'accueil sans confirmation (la partie est finie)
+  // Rejouer : retour au salon de la même salle, avec les joueurs restants (Ana, déconnectée) et les
+  // mêmes réglages ; Ben, parti, n'y est plus.
+  await host.click(sel("replay"));
+  await host.waitForSelector(sel("start"));
+  await painted(host, sel("room-code"), "salon après « Rejouer »");
+  if ((await text(host, sel("room-code"))) !== code) throw new Error("« Rejouer » devrait garder le code de la salle");
+  const replayText = await host.evaluate(() => document.body.innerText);
+  if (!replayText.includes("Joueurs (1)") || !replayText.includes("Ana") || replayText.includes("Ben")) throw new Error("le salon après « Rejouer » devrait contenir Ana seule");
+  if ((await host.$eval(sel("goal-5"), (e) => e.getAttribute("aria-checked"))) !== "true") throw new Error("l'objectif de 5 cartes devrait être gardé");
+  await shot(host, "15b-host-replay-lobby");
+  ok("hôte : « Rejouer avec les mêmes joueurs » ramène au salon de la même salle, réglages gardés, sans Ben");
+
+  // Fin de partie par l'hôte depuis le salon : confirmation, puisqu'il reste un joueur.
   await host.click(sel("host-leave"));
+  await host.waitForSelector(sel("host-leave-confirm-ok"));
+  await sleep(300);
+  await host.click(sel("host-leave-confirm-ok"));
   await host.waitForSelector(sel("menu-host"));
-  ok("hôte : quitter une partie terminée ramène à l'accueil");
+  ok("hôte : quitter le salon (après confirmation) ramène à l'accueil");
 
   // --- Solo ---------------------------------------------------------------------------------------
   // L'année du titre en cours n'est jamais envoyée : le test la retrouve dans le catalogue à partir

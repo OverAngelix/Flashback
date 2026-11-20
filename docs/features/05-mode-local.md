@@ -17,6 +17,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Révélation du titre, de l'artiste et de l'année après chaque placement ; « Continuer » reste grisé 3 s (écran hôte, Entrée et Espace compris, et téléphone du chef) pour laisser le temps de voir le résultat (`useRevealDelay`, pas en solo)
 - [x] Récapitulatif des frises de tous les joueurs après chaque tour de plateau
 - [x] Écran de fin avec le ou les gagnants
+- [x] « Rejouer avec les mêmes joueurs » (écran hôte ou chef de partie) : retour au salon de la même salle (même code, même chef, catégories et objectif gardés, frises et points groove remis à zéro) pour choisir de nouveaux réglages ; les joueurs n'ont rien à retaper, ceux qui sont partis entre-temps ne sont pas repris et d'autres peuvent rejoindre (`host:replay`, `Game.reset`). « Retour au menu » ferme la salle comme avant ; sur le téléphone, les autres joueurs voient que le chef peut relancer
 - [x] Passer le tour d'un joueur déconnecté
 - [x] Reprise de l'écran après un rechargement de la page (code et jeton mémorisés)
 - [ ] Vérifier la lisibilité sur une vraie télé (tailles de texte, distance)

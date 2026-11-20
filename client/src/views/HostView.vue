@@ -24,7 +24,7 @@ import { qrDataUrl } from "@/qr";
 
 const router = useRouter();
 const { connection, view, active } = useGame();
-const { chosen, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick } = useControls();
+const { chosen, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick, replay } = useControls();
 const revealReady = useRevealDelay();
 
 const joinUrls = ref<string[]>([]);
@@ -250,7 +250,10 @@ watch(turnKey, (key) => {
         <!-- Fin de partie -->
         <section v-else-if="view.phase === 'finished'" class="h-recap">
           <RecapPanel :view="view" final />
-          <div class="next-row"><v-btn class="btn-primary" size="x-large" prepend-icon="mdi-home" @click="leave">Nouvelle partie</v-btn></div>
+          <div class="next-row">
+            <v-btn class="btn-primary" size="x-large" prepend-icon="mdi-replay" data-testid="replay" @click="replay">Rejouer avec les mêmes joueurs</v-btn>
+            <v-btn class="btn-ghost" size="x-large" prepend-icon="mdi-home" data-testid="host-home" @click="leave">Retour au menu</v-btn>
+          </div>
         </section>
       </div>
     </Transition>
