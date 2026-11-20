@@ -7,7 +7,7 @@
  * Les captures d'écran sont écrites dans e2e/shots/ (ignoré par git).
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import jsQR from "jsqr";
 import { PNG } from "pngjs";
 import puppeteer from "puppeteer-core";
@@ -104,22 +104,22 @@ try {
   await shot(host, "01-home");
   await host.waitForSelector(sel("menu-host"));
 
-  // Menu : quatre boîtes en grille 2x2, « Multijoueur » est grisé et ne mène nulle part.
+  // Menu : Héberger, Rejoindre et Solo sur une rangée, puis Multijoueur (grisé) et Paramètres.
   const tiles = await host.evaluate(() =>
-    ["menu-host", "menu-join", "menu-multi", "menu-settings"].map((id) => {
+    ["menu-host", "menu-join", "menu-solo", "menu-multi", "menu-settings"].map((id) => {
       const r = document.querySelector(`[data-testid="${id}"]`).getBoundingClientRect();
       return { id, x: Math.round(r.left), y: Math.round(r.top), bottom: Math.round(r.bottom) };
     }),
   );
-  const [h, j, m, st] = tiles;
-  if (!(h.y === j.y && m.y === st.y && h.x === m.x && j.x === st.x && h.y < m.y && h.x < j.x)) {
-    throw new Error("le menu n'est pas une grille 2x2 : " + JSON.stringify(tiles));
+  const [h, j, so, m, st] = tiles;
+  if (!(h.y === j.y && j.y === so.y && m.y === st.y && h.y < m.y && h.x < j.x && j.x < so.x && h.x === m.x && m.x < st.x)) {
+    throw new Error("le menu n'est pas en deux rangées (3 puis 2) : " + JSON.stringify(tiles));
   }
   if (m.bottom > 720 - 40) throw new Error("le menu est collé au bas de l'écran : " + JSON.stringify(m));
   if (!(await host.$eval(sel("menu-multi"), (e) => e.disabled))) throw new Error("Multijoueur devrait être grisé");
   await host.click(sel("menu-multi")).catch(() => {});
   if (new URL(host.url()).pathname !== "/") throw new Error("Multijoueur ne devrait mener nulle part");
-  ok("menu : grille 2x2 sous le titre, pas collée au bas ; Multijoueur est grisé et inactif");
+  ok("menu : deux rangées sous le titre (3 puis 2), pas collées au bas ; Multijoueur est grisé et inactif");
 
   // /host sans partie en cours renvoie au menu (une salle se crée avec « Héberger »).
   const direct = await newPage("direct-host", { width: 1280, height: 720 });
@@ -483,6 +483,135 @@ try {
   await host.click(sel("host-leave"));
   await host.waitForSelector(sel("menu-host"));
   ok("hôte : quitter une partie terminée ramène à l'accueil");
+
+  // --- Solo ---------------------------------------------------------------------------------------
+  // L'année du titre en cours n'est jamais envoyée : le test la retrouve dans le catalogue à partir
+  // de l'adresse de l'extrait que l'appareil vient de jouer.
+  const yearOf = new Map(JSON.parse(readFileSync(ROOT + "server/data/catalog.json", "utf8")).map((t) => [t.previewUrl, t.year]));
+  /** Écoute le titre puis le place, juste ou faux (si une position fausse existe). Renvoie le verdict. */
+  async function soloPlace(page, { wrong = false } = {}) {
+    await painted(page, sel("play-extract"), "tour solo");
+    const before = await page.evaluate(() => window.__plays.length);
+    await page.click(sel("play-extract"));
+    await page.waitForFunction((n) => window.__plays.length > n, { timeout: 3000 }, before);
+    const url = await page.evaluate(() => window.__plays.at(-1));
+    const year = yearOf.get(url);
+    if (year === undefined) throw new Error("solo : l'appareil n'a pas joué un extrait du catalogue : " + url);
+    const years = await page.$$eval(".track-card .year", (els) => els.map((e) => Number(e.textContent)));
+    const all = [...Array(years.length + 1).keys()];
+    const good = all.filter((i) => (i === 0 || years[i - 1] <= year) && (i === years.length || year <= years[i]));
+    const bad = all.filter((i) => !good.includes(i));
+    const pos = wrong && bad.length ? bad[0] : good[0];
+    await (await page.$$(".slot"))[pos].click();
+    await page.click(sel("place"));
+    await painted(page, sel("solo-advance"), "révélation solo");
+    return good.includes(pos);
+  }
+  /** Après la révélation : titre suivant ou fin de partie. Renvoie vrai si la partie est finie. */
+  async function soloNext(page) {
+    await page.click(sel("solo-advance"));
+    await page.waitForFunction(() => document.querySelector('[data-testid="play-extract"]') || document.querySelector('[data-testid="solo-end-title"]'));
+    await sleep(500);
+    return !!(await page.$(sel("solo-end-title")));
+  }
+
+  const solo = await newPage("solo", { width: 1280, height: 720 });
+  await go(solo, BASE);
+  await solo.waitForSelector(sel("menu-solo"));
+  await solo.click(sel("menu-solo"));
+  await painted(solo, sel("level-premiers-pas"), "menu solo");
+  if (await solo.$eval(sel("level-premiers-pas"), (e) => e.disabled)) throw new Error("le premier niveau devrait être ouvert");
+  if (!(await solo.$eval(sel("level-tour-du-monde"), (e) => e.disabled))) throw new Error("le deuxième niveau devrait être fermé");
+  if ((await text(solo, sel("campaign-total"))) !== "0/36") throw new Error("total d'étoiles inattendu : " + (await text(solo, sel("campaign-total"))));
+  await assertFits(solo, "menu solo à 1280x720");
+  await shot(solo, "16-solo-menu");
+  ok("solo : menu avec la partie libre et la campagne, seul le premier niveau est ouvert");
+
+  // Campagne, niveau 1 (5 cartes) : une erreur volontaire, puis sans faute. Passer en mobile
+  // recharge la page : on la rouvre explicitement avant de cliquer.
+  await solo.setViewport(phone);
+  await go(solo, BASE + "/solo");
+  await painted(solo, sel("level-premiers-pas"), "menu solo sur téléphone");
+  await assertFits(solo, "menu solo en paysage");
+  await solo.click(sel("level-premiers-pas"));
+  await painted(solo, sel("play-extract"), "niveau 1");
+  if ((await text(solo, sel("solo-progress"))) !== "1/5cartes") throw new Error("progression inattendue : " + (await text(solo, sel("solo-progress"))));
+  await shot(solo, "17-solo-turn");
+  const firstOk = await soloPlace(solo, { wrong: true });
+  await shot(solo, "18-solo-reveal");
+  const hearts = await solo.$$eval(`${sel("lives")} .full`, (els) => els.length);
+  if (hearts !== (firstOk ? 3 : 2)) throw new Error(`vies après le premier titre : ${hearts}`);
+  ok(`solo : l'appareil joue lui-même l'extrait ; ${firstOk ? "titre juste (années égales)" : "une erreur coûte une vie"}`);
+
+  // Rechargement en pleine partie : on retrouve la révélation.
+  await solo.reload();
+  // L'adresse rechargée n'a pas ?nosplash : l'écran de démarrage passe d'abord par-dessus.
+  await solo.waitForFunction(() => !document.querySelector('[data-testid="splash"]'), { timeout: 8000 });
+  await painted(solo, sel("solo-advance"), "révélation après rechargement");
+  ok("solo : un rechargement reprend la partie en cours");
+
+  let finished = await soloNext(solo);
+  let turns = 1;
+  for (; !finished && turns < 12; turns++) {
+    if (turns === 1) {
+      await solo.setViewport({ width: 740, height: 300, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+      await sleep(300);
+      await assertFits(solo, "tour solo à 740x300", { vertical: true });
+      await shot(solo, "17b-solo-turn-740x300");
+      await solo.setViewport(phone);
+    }
+    await soloPlace(solo);
+    finished = await soloNext(solo);
+  }
+  if (!finished) throw new Error("le niveau 1 aurait dû se terminer");
+  const endTitle = await solo.$eval(sel("solo-end-title"), (e) => e.textContent.trim());
+  const stars = await solo.$eval(sel("stars"), (e) => Number(e.dataset.stars));
+  if (endTitle !== "Niveau réussi !" || stars !== (firstOk ? 3 : 2)) throw new Error(`fin de niveau inattendue : ${endTitle}, ${stars} étoiles`);
+  await painted(solo, sel("solo-next"), "bouton Niveau suivant");
+  await assertFits(solo, "fin de niveau en paysage", { vertical: true });
+  await shot(solo, "19-solo-level-won");
+  ok(`solo : niveau 1 réussi avec ${stars} étoiles`);
+
+  await solo.click(sel("solo-menu"));
+  await painted(solo, sel("level-tour-du-monde"), "menu solo après le niveau 1");
+  if (await solo.$eval(sel("level-tour-du-monde"), (e) => e.disabled)) throw new Error("le niveau 2 devrait être ouvert");
+  if ((await text(solo, sel("campaign-total"))) !== `${stars}/36`) throw new Error("les étoiles du niveau 1 ne sont pas comptées");
+  await assertFits(solo, "menu solo en paysage");
+  await shot(solo, "20-solo-menu-progress");
+  ok("solo : le niveau 2 s'ouvre, les étoiles sont gardées");
+
+  // Partie libre : catégorie Français, un titre juste puis des erreurs volontaires.
+  await solo.click(sel("solo-free"));
+  await painted(solo, sel("solo-start"), "salon de la partie libre");
+  const allCount = await text(solo, sel("solo-track-count"));
+  await solo.click(sel("solo-category-fr"));
+  await solo.waitForFunction((t) => document.querySelector('[data-testid="solo-track-count"]').textContent.replace(/\s+/g, "") !== t, {}, allCount);
+  await shot(solo, "21-solo-free-lobby");
+  await solo.click(sel("solo-start"));
+  finished = false;
+  for (turns = 0; !finished && turns < 20; turns++) {
+    await soloPlace(solo, { wrong: turns > 0 });
+    finished = await soloNext(solo);
+  }
+  if (!finished) throw new Error("la partie libre aurait dû s'arrêter à la troisième erreur");
+  const freeEnd = await solo.$eval(sel("solo-end-detail"), (e) => e.textContent.replace(/\s+/g, " ").trim());
+  if (!freeEnd.includes("nouveau record")) throw new Error("premier score : record attendu : " + freeEnd);
+  await assertFits(solo, "fin de partie libre en paysage", { vertical: true });
+  await shot(solo, "22-solo-free-end");
+  ok(`solo : partie libre terminée à la troisième erreur (${freeEnd})`);
+  await solo.click(sel("solo-menu"));
+  await painted(solo, sel("solo-best"), "record sur le menu solo");
+  await painted(solo, sel("solo-last"), "dernier score sur le menu solo");
+  ok("solo : le meilleur score et le dernier score de la partie libre s'affichent sur le menu");
+
+  // Rechargement : étoiles, meilleur score et dernier score sont gardés par le navigateur.
+  await go(solo, BASE + "/solo");
+  await painted(solo, sel("solo-last"), "dernier score après rechargement");
+  if ((await text(solo, sel("campaign-total"))) !== `${stars}/36`) throw new Error("étoiles perdues au rechargement : " + (await text(solo, sel("campaign-total"))));
+  if (await solo.$eval(sel("level-tour-du-monde"), (e) => e.disabled)) throw new Error("le niveau 2 s'est refermé au rechargement");
+  if (!(await text(solo, sel("solo-best"))).includes("2cartes")) throw new Error("meilleur score perdu : " + (await text(solo, sel("solo-best"))));
+  await shot(solo, "23-solo-menu-after-reload");
+  ok("solo : après rechargement, étoiles, niveau ouvert, meilleur et dernier score sont toujours là");
 } catch (e) {
   console.log("✗ ÉCHEC :", e.message);
   for (const [k, p] of Object.entries(pages)) await p.screenshot({ path: OUT + "fail-" + k + ".png" }).catch(() => {});
