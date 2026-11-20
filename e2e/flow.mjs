@@ -342,7 +342,11 @@ try {
   await shot(ana, "06-ana-slot");
   await ana.click(sel("place"));
   await host.waitForSelector(sel("advance"));
-  await painted(host, sel("advance"), "bouton Continuer de l'hôte");
+  // Le résultat reste affiché au moins 3 s : « Continuer » est grisé sur l'écran et chez le chef.
+  if (!(await host.$eval(sel("advance"), (b) => b.disabled))) throw new Error("« Continuer » devrait être grisé au début de la révélation");
+  await ana.waitForSelector(sel("leader-advance") + "[disabled]");
+  ok("révélation : « Continuer » grisé au début, sur l'écran et chez le chef");
+  await painted(host, sel("verdict"), "révélation de l'hôte");
   // Pochettes lues chez Apple : chaque image de la frise doit s'être chargée.
   await host.waitForFunction(() => [...document.querySelectorAll("img")].filter((i) => i.src.includes("mzstatic.com")).every((i) => i.complete && i.naturalWidth > 0), { timeout: 10_000 });
   const covers = await host.$$eval("img", (imgs) => imgs.filter((i) => i.src.includes("mzstatic.com") && i.naturalWidth > 0).length);
@@ -378,6 +382,8 @@ try {
   ok("Ben : la révélation tient à 740x300, montre la frise d'Ana et « " + (anaOk ? "Toi aussi !" : "Toi non plus…") + " »");
   await ben.setViewport(phone);
 
+  await ana.waitForSelector(sel("leader-advance") + ":not([disabled])", { timeout: 6000 });
+  if (await host.$eval(sel("advance"), (b) => b.disabled)) throw new Error("« Continuer » est encore grisé sur l'écran après le délai");
   // Passage au joueur suivant : l'extrait d'Ana doit s'éteindre en une seconde environ, pas d'un coup.
   // On relance l'élément s'il s'est arrêté entre-temps, et on note l'instant où il est mis en pause.
   const fadeReady = await host.evaluate(async () => {
@@ -418,7 +424,7 @@ try {
   await ben.click(sel("play-extract"));
   await ben.click(".slot");
   await ben.click(sel("place"));
-  await host.waitForSelector(sel("advance"));
+  await host.waitForSelector(sel("advance") + ":not([disabled])", { timeout: 6000 });
   // Fin de tour de plateau : un double clic ne doit pas faire sauter le récapitulatif.
   await host.evaluate((q) => {
     const b = document.querySelector(q);

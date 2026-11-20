@@ -16,12 +16,14 @@ import RotateOverlay from "@/components/RotateOverlay.vue";
 import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
 import { usePortraitPhone } from "@/composables/useOrientation";
+import { useRevealDelay } from "@/composables/useRevealDelay";
 
 const props = defineProps<{ code?: string }>();
 
 const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
 const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn } = useControls();
+const revealReady = useRevealDelay();
 const portrait = usePortraitPhone();
 
 onMounted(() => {
@@ -132,7 +134,7 @@ function leave() {
         <section v-else-if="view.phase === 'reveal'" class="p-reveal">
           <RevealPanel :view="view" compact :viewer-id="me.id" :note="isLeader ? undefined : 'En attente de la suite…'">
             <template #action>
-              <v-btn v-if="isLeader" class="btn-primary" size="default" append-icon="mdi-arrow-right" data-testid="leader-advance" @click="advance">Continuer</v-btn>
+              <v-btn v-if="isLeader" class="btn-primary" size="default" append-icon="mdi-arrow-right" :disabled="!revealReady" data-testid="leader-advance" @click="advance">Continuer</v-btn>
             </template>
           </RevealPanel>
         </section>

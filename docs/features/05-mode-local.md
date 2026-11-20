@@ -14,7 +14,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Salle d'attente : joueurs connectés avec leur nom et leur avatar, exclusion d'un joueur, bouton de lancement
 - [x] Lecture de l'extrait sur l'écran hôte (le clic de création débloque l'audio ; bandeau « Touche l'écran » si le navigateur bloque quand même)
 - [x] Plateau : joueur actif, frise du joueur actif, barre des joueurs avec leur nombre de cartes
-- [x] Révélation du titre, de l'artiste et de l'année après chaque placement
+- [x] Révélation du titre, de l'artiste et de l'année après chaque placement ; « Continuer » reste grisé 3 s (écran hôte, Entrée et Espace compris, et téléphone du chef) pour laisser le temps de voir le résultat (`useRevealDelay`, pas en solo)
 - [x] Récapitulatif des frises de tous les joueurs après chaque tour de plateau
 - [x] Écran de fin avec le ou les gagnants
 - [x] Passer le tour d'un joueur déconnecté

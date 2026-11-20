@@ -17,12 +17,14 @@ import TimelineStrip from "@/components/TimelineStrip.vue";
 import VinylDisc from "@/components/VinylDisc.vue";
 import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
+import { useRevealDelay } from "@/composables/useRevealDelay";
 import { joinBase, joinLink } from "@/joinUrl";
 import { qrDataUrl } from "@/qr";
 
 const router = useRouter();
 const { connection, view, active } = useGame();
 const { chosen, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick } = useControls();
+const revealReady = useRevealDelay();
 
 const joinUrls = ref<string[]>([]);
 const lastAudioUrl = ref<string>();
@@ -31,7 +33,7 @@ let offAudio: (() => void) | undefined;
 function onKey(e: KeyboardEvent) {
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
-    advance();
+    if (revealReady.value) advance();
   }
 }
 
@@ -230,7 +232,7 @@ watch(turnKey, (key) => {
           <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" groove />
           <RevealPanel :view="view" />
           <div class="next-row">
-            <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Continuer</v-btn>
+            <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" :disabled="!revealReady" data-testid="advance" @click="advance">Continuer</v-btn>
             <span class="muted">Entrée ou Espace · le chef de partie peut aussi continuer depuis son écran</span>
           </div>
         </section>
