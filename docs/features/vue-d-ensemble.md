@@ -12,11 +12,12 @@ Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un ext
 |------|----------|---------------|
 | **Écran hôte** | PC ou télé | Crée la salle, affiche le code et le QR code, joue le son, montre le plateau, les révélations et les récapitulatifs. **Il ne joue pas.** |
 | **Joueur** | Téléphone (en paysage) ou navigateur | Rejoint avec un nom et un avatar, écoute l'extrait et place sa carte à son tour. Pendant le tour des autres, voit la frise du joueur en cours et peut y placer le titre pour un point groove. |
+| **Joueur solo** | Un seul appareil (PC ou téléphone) | Écran et manette à la fois : son appareil joue l'extrait et il y place ses cartes. |
 | **Chef de partie** | Le téléphone du premier joueur arrivé | Un joueur qui pilote aussi la partie (catégories, nombre de cartes pour gagner, lancement, « Continuer », passer un tour, exclure) pour qu'on n'ait pas à toucher l'écran hôte. Remplacé par le joueur connecté suivant s'il se déconnecte. |
 
 ## Déroulement d'une partie
 
-1. **Menu** (`/`) : Héberger, Rejoindre, Multijoueur (grisé, V2), Paramètres. Musique d'ambiance générée par le navigateur.
+1. **Menu** (`/`) : Héberger, Rejoindre, Solo, Multijoueur (grisé, V2), Paramètres. Musique d'ambiance générée par le navigateur.
 2. **Création** : « Héberger » crée une salle (code de 6 caractères) et débloque l'audio de l'écran hôte.
 3. **Salon** (`lobby`) : les joueurs rejoignent en tapant le code ou en scannant le QR code (`/join/CODE`), choisissent un nom (16 caractères, unique) et un avatar parmi 10 (les avatars pris sont grisés). Le chef ou l'hôte choisit les catégories et le nombre de cartes pour gagner (de 3 à 10, 10 par défaut ; les autres joueurs le voient sur leur téléphone), puis lance la partie (2 à 10 joueurs).
 4. **Départ** : chaque joueur reçoit une carte de départ, déjà révélée, dans sa frise.
@@ -26,6 +27,15 @@ Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un ext
 8. **Fin** (`finished`) : trophée et confettis pour le ou les gagnants.
 
 Les titres, artistes et années du titre en cours ne quittent jamais le serveur avant la révélation.
+
+## Le solo
+
+Depuis la boîte « Solo » (`/solo`), sur un seul appareil qui joue lui-même l'extrait. Même déroulement qu'une partie, sans écran hôte, sans groove ni récapitulatif, avec **3 vies** : chaque erreur (ou tour passé) en coûte une.
+
+- **Partie libre** : on choisit ses catégories, puis on va le plus loin possible ; la partie s'arrête après la troisième erreur. Score : la longueur de la frise, avec un record par sélection.
+- **Campagne** : 12 niveaux à thème (Premiers pas, Tour du monde, Pop… jusqu'au Grand final), chacun avec ses catégories et une frise à réunir (5 à 10 cartes). Titres tirés au sort à chaque essai. Niveau réussi si la frise est complète avant la troisième erreur ; une étoile par vie restante (★★★ sans erreur). Réussir un niveau ouvre le suivant.
+
+Étoiles et records sont gardés dans le navigateur. Détail : [10-solo.md](10-solo.md).
 
 ## Règles de victoire
 
@@ -61,6 +71,7 @@ Volume des extraits, musique de menu (activée, volume), animations réduites, �
 | Moteur de jeu | Terminé | — |
 | Salles et temps réel | Terminé | Limite de débit (non prioritaire) |
 | Groove | Terminé | — |
+| Solo (partie libre, campagne) | Terminé | Essais sur vrais téléphones, choix de l'avatar |
 | Mode local (hôte + manettes) | Jouable de bout en bout | Essais sur vrais téléphones et vraie télé, Wake Lock, avancement automatique, mise en évidence des cartes gagnées |
 | Interface | Terminé | Sons d'interface, icône et manifeste web, validation sur appareils |
 | Catalogue | 1214 titres en jeu | Remplacer les titres introuvables, relire les années restantes |
