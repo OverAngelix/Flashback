@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Fichiers que le client importe via l'alias @server : ils doivent tourner dans un navigateur. */
-const SHARED = ["net/protocol.ts", "game/types.ts", "catalog/types.ts"];
+const SHARED = ["net/protocol.ts", "game/types.ts", "game/campaign.ts", "catalog/types.ts"];
 
 describe("fichiers partagés avec le client", () => {
   it("n'importent aucun module Node ni aucun autre fichier du serveur", async () => {

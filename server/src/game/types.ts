@@ -46,6 +46,22 @@ export interface PlacementResult {
   groove: GrooveGuess[];
 }
 
+/**
+ * Partie solo : un seul joueur, qui perd une vie à chaque erreur (ou tour passé). La partie s'arrête
+ * quand il n'a plus de vie, ou dès que sa frise atteint `goal` (niveau de campagne).
+ */
+export interface SoloState {
+  /** Vies au départ. */
+  maxLives: number;
+  /** Vies restantes. */
+  lives: number;
+  /** Nombre de cartes à réunir dans la frise pour gagner (campagne) ; null en partie libre. */
+  goal: number | null;
+}
+
+/** Vies d'une partie solo : la troisième erreur arrête la partie. */
+export const SOLO_LIVES = 3;
+
 export const AVATAR_COUNT = 10;
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 10;

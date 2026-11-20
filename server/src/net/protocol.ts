@@ -1,5 +1,5 @@
 import type { CategorySummary } from "../catalog/types.js";
-import type { Phase } from "../game/types.js";
+import type { Phase, SoloState } from "../game/types.js";
 
 /**
  * Ce fichier est aussi importé par le client (alias @server) : il ne doit dépendre que de
@@ -23,6 +23,12 @@ export type ClientMessage =
   | { type: "host:create" }
   | { type: "host:rejoin"; code: string; token: string }
   | { type: "player:join"; code: string; name: string; avatar: number }
+  /**
+   * Partie solo sur un seul appareil, qui est à la fois écran et manette : une salle à un joueur,
+   * sans écran hôte. `level` = identifiant d'un niveau de campagne (partie lancée tout de suite), ou
+   * null pour une partie libre (salon pour choisir les catégories).
+   */
+  | { type: "solo:create"; name: string; avatar: number; level: string | null }
   | { type: "player:rejoin"; code: string; token: string }
   | { type: "host:setCategories"; categories: string[] }
   /** Nombre de cartes pour gagner (bornes MIN_CARDS_TO_WIN et MAX_CARDS_TO_WIN, vérifiées par le moteur). */
@@ -117,9 +123,16 @@ export interface GameView {
    * jusqu'à la révélation (le joueur actif pourrait s'en inspirer).
    */
   grooveGuessIds: string[];
+  /** Partie solo (vies, objectif, niveau de campagne éventuel) ; null en partie à plusieurs. */
+  solo: SoloView | null;
   /** Résultat du dernier placement, uniquement pendant la phase "reveal". */
   lastResult: { playerId: string; position: number; correct: boolean; track: PublicCard; groove: GrooveView[] } | null;
   winnerIds: string[];
+}
+
+export interface SoloView extends SoloState {
+  /** Identifiant du niveau de campagne, null en partie libre. */
+  level: string | null;
 }
 
 const PHASES: readonly Phase[] = ["lobby", "awaiting-placement", "reveal", "round-recap", "finished"];
@@ -155,6 +168,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case "player:join":
       return isString(m.code, 16) && isString(m.name, 64) && Number.isInteger(m.avatar)
         ? { type: "player:join", code: m.code, name: m.name, avatar: m.avatar as number }
+        : null;
+    case "solo:create":
+      return isString(m.name, 64) && Number.isInteger(m.avatar) && (m.level === null || isString(m.level, 32))
+        ? { type: "solo:create", name: m.name, avatar: m.avatar as number, level: m.level as string | null }
         : null;
     case "host:setCategories":
       return Array.isArray(m.categories) && m.categories.length <= 40 && m.categories.every((c) => isString(c, 32))

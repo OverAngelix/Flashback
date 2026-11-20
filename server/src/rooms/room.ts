@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Catalog } from "../catalog/store.js";
+import type { CampaignLevel } from "../game/campaign.js";
 import { Game } from "../game/game.js";
 import { GameError } from "../game/types.js";
 import type { ClientMessage, ServerMessage } from "../net/protocol.js";
@@ -14,9 +15,17 @@ export interface Connection {
 type HostMessage = Extract<ClientMessage, { type: `host:${string}` }>;
 type PlayerMessage = Extract<ClientMessage, { type: `player:${string}` }>;
 
+/** Salle solo : `level` = niveau de campagne (catégories et objectif imposés), null en partie libre. */
+export interface SoloRoomOptions {
+  level: CampaignLevel | null;
+}
+
 /**
  * Une salle : un écran hôte (qui ne joue pas), des joueurs et une partie. Elle applique les
  * messages, renvoie l'état à tout le monde et ne fait aucune confiance aux clients.
+ *
+ * Salle solo : un seul joueur, dont l'appareil joue lui-même l'extrait ; pas d'écran hôte. Il est
+ * chef de partie, donc pilote la partie avec les messages de contrôle habituels.
  */
 export class Room {
   readonly game: Game;
@@ -24,7 +33,9 @@ export class Room {
   readonly hostToken = randomUUID();
   lastActivity: number;
 
-  private categories: string[] = [];
+  private categories: string[];
+  readonly solo: boolean;
+  readonly level: CampaignLevel | null;
   /** Chef de partie, voir updateLeader. */
   private leaderId: string | null = null;
   private readonly playerTokens = new Map<string, string>(); // jeton -> identifiant joueur
@@ -36,9 +47,17 @@ export class Room {
     private readonly catalog: Catalog,
     private readonly clock: () => number,
     rng?: () => number,
+    solo?: SoloRoomOptions,
   ) {
+    this.solo = !!solo;
+    this.level = solo?.level ?? null;
     // Aucune catégorie choisie : tout le catalogue.
-    this.game = new Game({ rng, tracks: catalog.select([]) });
+    this.categories = [...(this.level?.categories ?? [])];
+    this.game = new Game({
+      rng,
+      tracks: catalog.select(this.categories),
+      solo: solo ? { goal: this.level?.goal ?? null } : undefined,
+    });
     this.lastActivity = clock();
   }
 
@@ -119,6 +138,7 @@ export class Room {
   handleHost(message: HostMessage, actorId?: string): void {
     switch (message.type) {
       case "host:setCategories": {
+        if (this.level) throw new GameError("Les catégories sont fixées par le niveau.");
         const known = new Set(this.catalog.categories().map((c) => c.id as string));
         const chosen = [...new Set(message.categories)];
         if (chosen.some((id) => !known.has(id))) throw new GameError("Catégorie inconnue.");
@@ -163,6 +183,11 @@ export class Room {
       case "player:play": {
         // L'écoute n'est consommée que si l'écran peut réellement jouer le son.
         this.game.assertCanListen(playerId);
+        if (this.solo) {
+          // L'appareil du joueur lance l'extrait lui-même, pendant son geste (lecture autorisée).
+          this.game.listen(playerId);
+          break;
+        }
         if (!this.hostConn) throw new GameError("L'écran n'est pas connecté.");
         const track = this.game.listen(playerId);
         this.hostConn.send({ type: "audio:play", audioUrl: track.previewUrl });
@@ -221,6 +246,7 @@ export class Room {
       availableCategories: this.catalog.categories(),
       connectedPlayerIds: new Set(this.playerConns.keys()),
       leaderId: this.leaderId,
+      level: this.level?.id ?? null,
     });
     this.hostConn?.send({ type: "state", view, you: null });
     for (const [playerId, conn] of this.playerConns) conn.send({ type: "state", view, you: playerId });

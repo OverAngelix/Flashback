@@ -516,3 +516,79 @@ describe("départ d'un joueur en cours de partie", () => {
     assert.deepEqual(game.winnerIds, [b.id]);
   });
 });
+
+describe("solo", () => {
+  /** Paquet fixe pioché par la fin : carte de départ 1990, puis les années dans l'ordre donné. */
+  function solo(draws: number[], goal: number | null = null): { game: Game; id: string } {
+    const years = [...draws].reverse().concat(1990);
+    const game = new Game({ tracks: years.map((y, i) => track(i + 1, y)), rng: noShuffle, solo: { goal } });
+    const id = game.addPlayer("Ana", 0).id;
+    game.start();
+    return { game, id };
+  }
+
+  it("se joue seul, sans second joueur ni récapitulatif", () => {
+    const { game, id } = solo([2000, 2010]);
+    assert.throws(() => game.addPlayer("Ben", 1), GameError);
+    assert.equal(game.phase, "awaiting-placement");
+    assert.equal(game.round, 1);
+    game.placeCard(id, 1);
+    game.advance();
+    assert.equal(game.phase, "awaiting-placement");
+    assert.equal(game.round, 2, "round compte les titres joués");
+    assert.equal(game.activePlayer?.id, id);
+  });
+
+  it("refuse de démarrer sans joueur", () => {
+    const game = new Game({ tracks: [track(1, 1990), track(2, 2000)], solo: {} });
+    assert.throws(() => game.start(), /un joueur/);
+  });
+
+  it("retire une vie par erreur ou tour passé et s'arrête après la révélation de la dernière", () => {
+    const { game, id } = solo([1980, 2000, 1970, 2005, 2010]);
+    assert.deepEqual(game.solo, { maxLives: 3, lives: 3, goal: null });
+    game.placeCard(id, 1); // 1980 après 1990 : faux
+    assert.equal(game.solo?.lives, 2);
+    game.advance();
+    game.placeCard(id, 1); // 2000 : juste
+    assert.equal(game.solo?.lives, 2);
+    game.advance();
+    game.skipTurn();
+    assert.equal(game.solo?.lives, 1);
+    game.advance();
+    game.placeCard(id, 0); // 2005 avant 1990 : faux
+    assert.equal(game.solo?.lives, 0);
+    assert.equal(game.phase, "reveal", "la dernière erreur est d'abord montrée");
+    game.advance();
+    assert.equal(game.phase, "finished");
+    assert.deepEqual(game.winnerIds, [], "une partie libre perdue n'a pas de gagnant");
+    assert.equal(game.players[0]?.timeline.length, 2);
+  });
+
+  it("gagne en campagne dès que la frise atteint l'objectif, avec les vies restantes", () => {
+    const { game, id } = solo([2000, 1950, 2010, 2020], 3);
+    game.placeCard(id, 1); // 2000 : juste, 2 cartes
+    game.advance();
+    game.placeCard(id, 2); // 1950 en fin : faux
+    game.advance();
+    game.placeCard(id, 2); // 2010 : juste, 3 cartes
+    assert.equal(game.phase, "reveal");
+    game.advance();
+    assert.equal(game.phase, "finished");
+    assert.deepEqual(game.winnerIds, [id]);
+    assert.equal(game.solo?.lives, 2);
+  });
+
+  it("perd en campagne si le paquet s'épuise avant l'objectif, gagne en partie libre", () => {
+    const campaign = solo([2000], 5);
+    campaign.game.placeCard(campaign.id, 1);
+    campaign.game.advance();
+    assert.equal(campaign.game.phase, "finished");
+    assert.deepEqual(campaign.game.winnerIds, []);
+
+    const free = solo([2000]);
+    free.game.placeCard(free.id, 1);
+    free.game.advance();
+    assert.deepEqual(free.game.winnerIds, [free.id]);
+  });
+});

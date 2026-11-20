@@ -573,6 +573,69 @@ describe("nettoyage des salles", () => {
   });
 });
 
+describe("solo", () => {
+  function solo(level: string | null) {
+    const me = client();
+    me.send({ type: "solo:create", name: "Ana", avatar: 3, level });
+    return me;
+  }
+
+  it("crée une partie libre à un joueur, sans écran hôte, que personne ne peut rejoindre", () => {
+    const me = solo(null);
+    const s = me.conn.last("session");
+    assert.equal(s.role, "player");
+    const view = me.conn.view();
+    assert.equal(view.phase, "lobby");
+    assert.deepEqual(view.solo, { maxLives: 3, lives: 3, goal: null, level: null });
+    assert.equal(view.leaderId, s.playerId, "le joueur seul pilote sa partie");
+    assert.equal(manager.info(s.code)?.joinable, false);
+    const other = client();
+    other.send({ type: "player:join", code: s.code, name: "Ben", avatar: 1 });
+    assert.equal(other.conn.last("error").code, "rule");
+  });
+
+  it("choisit ses catégories puis joue, l'écoute ne demandant pas d'écran hôte", () => {
+    const me = solo(null);
+    me.send({ type: "host:setCategories", categories: ["international"] });
+    assert.equal(me.conn.view().trackCount, 6);
+    me.send({ type: "host:start" });
+    assert.equal(me.conn.view().phase, "awaiting-placement");
+    me.send({ type: "player:play" });
+    const view = me.conn.view();
+    assert.equal(view.listened, true);
+    assert.ok(!me.conn.sent.some((m) => m.type === "audio:play"), "l'appareil joue l'extrait lui-même");
+    assert.ok(!me.conn.sent.some((m) => m.type === "error"));
+  });
+
+  it("lance un niveau de campagne tout de suite, avec ses catégories et son objectif", () => {
+    const me = solo("premiers-pas");
+    const view = me.conn.view();
+    assert.equal(view.phase, "awaiting-placement");
+    assert.deepEqual(view.categories, ["fr"]);
+    assert.deepEqual(view.solo, { maxLives: 3, lives: 3, goal: 5, level: "premiers-pas" });
+    me.send({ type: "host:setCategories", categories: [] });
+    assert.equal(me.conn.last("error").code, "rule");
+  });
+
+  it("refuse un niveau inconnu sans créer de salle", () => {
+    const me = solo("inconnu");
+    assert.equal(me.conn.last("error").code, "bad-message");
+    assert.equal(manager.size, 0);
+  });
+
+  it("supprime la salle quand le joueur s'en va, et la garde le temps d'une reconnexion", () => {
+    const me = solo("premiers-pas");
+    const { code, token } = me.conn.last("session");
+    me.session.disconnect();
+    const back = client();
+    back.send({ type: "player:rejoin", code, token });
+    assert.equal(back.conn.view().solo?.level, "premiers-pas");
+    back.send({ type: "player:leave" });
+    assert.equal(manager.size, 0);
+    assert.equal(back.conn.closed, true);
+  });
+});
+
 describe("parseClientMessage", () => {
   it("accepte les messages bien formés", () => {
     assert.deepEqual(parseClientMessage('{"type":"host:create"}'), { type: "host:create" });
@@ -581,6 +644,8 @@ describe("parseClientMessage", () => {
     assert.deepEqual(parseClientMessage('{"type":"player:groove","position":0}'), { type: "player:groove", position: 0 });
     assert.deepEqual(parseClientMessage('{"type":"host:setCategories","categories":["fr"]}'), { type: "host:setCategories", categories: ["fr"] });
     assert.deepEqual(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":5}'), { type: "host:setCardsToWin", cardsToWin: 5 });
+    assert.deepEqual(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":null}'), { type: "solo:create", name: "Ana", avatar: 2, level: null });
+    assert.deepEqual(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":"pop"}'), { type: "solo:create", name: "Ana", avatar: 2, level: "pop" });
   });
   it("refuse les types et formes invalides", () => {
     assert.equal(parseClientMessage('{"type":"player:place","position":1.5}'), null);
@@ -589,6 +654,8 @@ describe("parseClientMessage", () => {
     assert.equal(parseClientMessage('{"type":"host:advance","from":"nimporte"}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCategories","categories":[1]}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":"5"}'), null);
+    assert.equal(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2}'), null);
+    assert.equal(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":3}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":4.5}'), null);
     assert.equal(parseClientMessage('{"type":"player:join","code":"A","name":"x".repeat(100),"avatar":0}'), null);
     assert.equal(parseClientMessage(`{"type":"player:join","code":"ABCDEF","name":"${"x".repeat(65)}","avatar":0}`), null);

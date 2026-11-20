@@ -8,11 +8,13 @@ import {
   MIN_CARDS_TO_WIN,
   MAX_PLAYERS,
   MIN_PLAYERS,
+  SOLO_LIVES,
   type GameTrack,
   type GrooveGuess,
   type Phase,
   type PlacementResult,
   type Player,
+  type SoloState,
 } from "./types.js";
 
 export interface GameOptions {
@@ -21,6 +23,8 @@ export interface GameOptions {
   cardsToWin?: number;
   /** Générateur dans [0, 1[, injectable pour les tests. */
   rng?: () => number;
+  /** Partie solo : un seul joueur, des vies (SOLO_LIVES par défaut) et un objectif facultatif. */
+  solo?: { lives?: number; goal?: number | null };
 }
 
 /**
@@ -40,6 +44,11 @@ export interface GameOptions {
  *
  * Déroulement : lobby → awaiting-placement → reveal → (fin de tour de plateau : round-recap)
  * → awaiting-placement … → finished. Le moteur est indépendant du réseau et du mode de jeu.
+ *
+ * Solo (option `solo`) : un seul joueur, sans récapitulatif ni groove. Chaque erreur (ou tour passé)
+ * coûte une vie ; `round` compte les titres joués. Après la révélation, la partie s'arrête s'il n'a
+ * plus de vie ou si sa frise atteint l'objectif (campagne) : il gagne s'il lui reste une vie et que
+ * l'objectif, s'il y en a un, est atteint.
  */
 export { isCorrectPlacement };
 
@@ -63,11 +72,15 @@ export class Game {
   readonly grooveGuesses = new Map<string, number>();
   lastResult?: PlacementResult;
   winnerIds: string[] = [];
+  /** Partie solo (vies, objectif) ; null en partie à plusieurs. */
+  readonly solo: SoloState | null;
 
   constructor(options: GameOptions) {
     this.goal = options.cardsToWin ?? DEFAULT_CARDS_TO_WIN;
     this.rng = options.rng ?? Math.random;
     this.deck = shuffle([...(options.tracks ?? [])], this.rng);
+    const lives = options.solo?.lives ?? SOLO_LIVES;
+    this.solo = options.solo ? { maxLives: lives, lives, goal: options.solo.goal ?? null } : null;
   }
 
   /** Nombre de cartes à atteindre pour gagner. */
@@ -101,7 +114,7 @@ export class Game {
 
   addPlayer(name: string, avatar: number): Player {
     if (this.phase !== "lobby") throw new GameError("La partie a déjà commencé.");
-    if (this.players.length >= MAX_PLAYERS) throw new GameError("La partie est pleine.");
+    if (this.players.length >= (this.solo ? 1 : MAX_PLAYERS)) throw new GameError("La partie est pleine.");
     const clean = name.trim().replace(/\s+/g, " ");
     if (!clean) throw new GameError("Choisissez un nom.");
     if (clean.length > MAX_NAME_LENGTH) {
@@ -151,7 +164,8 @@ export class Game {
 
   start(): void {
     if (this.phase !== "lobby") throw new GameError("La partie a déjà commencé.");
-    if (this.players.length < MIN_PLAYERS) {
+    if (this.players.length === 0) throw new GameError("Il faut un joueur.");
+    if (!this.solo && this.players.length < MIN_PLAYERS) {
       throw new GameError(`Il faut au moins ${MIN_PLAYERS} joueurs.`);
     }
     if (this.deck.length < this.players.length + 1) {
@@ -178,6 +192,7 @@ export class Game {
     const groove = this.settleGroove(player, track);
     const correct = isCorrectPlacement(player.timeline, position, track.year);
     if (correct) player.timeline.splice(position, 0, track);
+    else if (this.solo) this.solo.lives--;
 
     this.lastResult = { playerId, position, correct, track, groove };
     this.current = undefined;
@@ -247,6 +262,7 @@ export class Game {
     }
     const player = this.players[this.turnIndex]!;
     const groove = this.settleGroove(player, this.current);
+    if (this.solo) this.solo.lives--;
     this.lastResult = { playerId: player.id, position: -1, correct: false, track: this.current, groove };
     this.current = undefined;
     this.phase = "reveal";
@@ -258,7 +274,9 @@ export class Game {
    * À la fin d'un tour de plateau : fin de partie s'il y a un vainqueur, sinon récapitulatif.
    */
   advance(): void {
-    if (this.phase === "reveal") {
+    if (this.phase === "reveal" && this.solo) {
+      this.nextSolo(this.solo);
+    } else if (this.phase === "reveal") {
       this.nextTurn(this.turnIndex + 1);
     } else if (this.phase === "round-recap") {
       this.draw();
@@ -288,6 +306,29 @@ export class Game {
     this.phase = "round-recap";
   }
 
+  /** Solo, après la révélation : fin de partie (plus de vie, objectif atteint) ou titre suivant. */
+  private nextSolo(solo: SoloState): void {
+    const length = this.players[0]?.timeline.length ?? 0;
+    if (solo.lives <= 0 || (solo.goal !== null && length >= solo.goal)) {
+      this.finishSolo(solo);
+      return;
+    }
+    this.round++;
+    this.draw();
+  }
+
+  /**
+   * Fin d'une partie solo : gagnée s'il reste une vie et que l'objectif éventuel est atteint (en
+   * partie libre, seul un paquet épuisé fait gagner).
+   */
+  private finishSolo(solo: SoloState): void {
+    const player = this.players[0];
+    const won = !!player && solo.lives > 0 && (solo.goal === null || player.timeline.length >= solo.goal);
+    this.winnerIds = won ? [player.id] : [];
+    this.current = undefined;
+    this.phase = "finished";
+  }
+
   /** Joueurs en tête de frise, seulement si la tête a atteint l'objectif (sinon aucun). */
   private leadersAtGoal(): Player[] {
     const best = Math.max(...this.players.map((p) => p.timeline.length));
@@ -299,7 +340,8 @@ export class Game {
   private draw(): void {
     const next = this.deck.pop();
     if (!next) {
-      this.finishWithBest();
+      if (this.solo) this.finishSolo(this.solo);
+      else this.finishWithBest();
       return;
     }
     this.current = next;

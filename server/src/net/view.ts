@@ -19,6 +19,8 @@ export interface ViewContext {
   availableCategories: CategorySummary[];
   connectedPlayerIds: ReadonlySet<string>;
   leaderId: string | null;
+  /** Niveau de campagne d'une partie solo. */
+  level?: string | null;
 }
 
 /**
@@ -47,6 +49,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
     current: game.current ? { audioUrl: game.current.previewUrl } : null,
     listened: game.listened,
     grooveGuessIds: game.phase === "awaiting-placement" ? [...game.grooveGuesses.keys()] : [],
+    solo: game.solo ? { ...game.solo, level: ctx.level ?? null } : null,
     lastResult:
       game.phase === "reveal" && game.lastResult
         ? {

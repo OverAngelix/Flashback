@@ -2,7 +2,8 @@ import { randomInt, timingSafeEqual } from "node:crypto";
 import type { Catalog } from "../catalog/store.js";
 import { AVATAR_COUNT, GameError, MAX_PLAYERS } from "../game/types.js";
 import { CONTROL_MESSAGE_TYPES, parseClientMessage, ROOM_CODE_LENGTH, type ErrorCode } from "../net/protocol.js";
-import { Room, type Connection } from "./room.js";
+import { campaignLevel } from "../game/campaign.js";
+import { Room, type Connection, type SoloRoomOptions } from "./room.js";
 
 /** Sans I, O, 0 et 1 : un code lu sur une télé ne doit pas prêter à confusion. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -50,13 +51,13 @@ export class RoomManager {
     return this.rooms.size;
   }
 
-  createRoom(): Room {
+  createRoom(solo?: SoloRoomOptions): Room {
     if (this.rooms.size >= this.maxRooms) throw new GameError("Le serveur est plein, réessayez plus tard.");
     let code: string;
     do {
       code = Array.from({ length: ROOM_CODE_LENGTH }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
     } while (this.rooms.has(code));
-    const room = new Room(code, this.options.catalog, this.now, this.options.rng);
+    const room = new Room(code, this.options.catalog, this.now, this.options.rng, solo);
     this.rooms.set(code, room);
     return room;
   }
@@ -74,7 +75,7 @@ export class RoomManager {
       phase,
       playerCount: players.length,
       takenAvatars: players.map((p) => p.avatar).sort((a, b) => a - b),
-      joinable: phase === "lobby" && players.length < MAX_PLAYERS && players.length < AVATAR_COUNT,
+      joinable: !room.solo && phase === "lobby" && players.length < MAX_PLAYERS && players.length < AVATAR_COUNT,
     };
   }
 
@@ -172,6 +173,33 @@ export class Session {
         room.broadcast();
         return;
       }
+      case "solo:create": {
+        this.requireUnbound();
+        const level = message.level === null ? null : campaignLevel(message.level);
+        if (level === undefined) throw new ProtocolError("bad-message", "Niveau inconnu.");
+        const room = this.manager.createRoom({ level });
+        let joined: { playerId: string; token: string };
+        try {
+          joined = room.join(this.conn, message.name, message.avatar);
+          // Un niveau de campagne a tout ce qu'il faut : pas de salon.
+          if (level) room.game.start();
+        } catch (error) {
+          this.manager.close(room);
+          throw error;
+        }
+        this.binding = { room, playerId: joined.playerId };
+        this.conn.send({ type: "session", role: "player", code: room.code, token: joined.token, playerId: joined.playerId });
+        room.broadcast();
+        return;
+      }
+      case "player:leave": {
+        // En solo, le joueur qui s'en va emporte la salle avec lui.
+        const b = this.binding;
+        if (!b?.playerId || !b.room.solo) return this.forward(message);
+        this.binding = undefined;
+        this.manager.close(b.room);
+        return;
+      }
       case "host:close": {
         const b = this.binding;
         if (!b || b.playerId) throw new ProtocolError("not-allowed", "Réservé à l'écran hôte.");
@@ -179,22 +207,26 @@ export class Session {
         this.manager.close(b.room);
         return;
       }
-      default: {
-        const b = this.binding;
-        if (!b) throw new ProtocolError("not-allowed", "Rejoignez d'abord une salle.");
-        b.room.touch();
-        if (message.type.startsWith("host:")) {
-          // L'écran hôte, ou le chef de partie pour les messages de contrôle (pas host:create/rejoin).
-          const control = (CONTROL_MESSAGE_TYPES as readonly string[]).includes(message.type);
-          if (b.playerId && !(control && b.room.isLeader(b.playerId))) {
-            throw new ProtocolError("not-allowed", "Réservé à l'écran hôte ou au chef de partie.");
-          }
-          b.room.handleHost(message as Parameters<Room["handleHost"]>[0], b.playerId);
-        } else {
-          if (!b.playerId) throw new ProtocolError("not-allowed", "Réservé aux joueurs.");
-          b.room.handlePlayer(b.playerId, message as Parameters<Room["handlePlayer"]>[1]);
-        }
+      default:
+        this.forward(message);
+    }
+  }
+
+  /** Message de jeu ordinaire : transmis à la salle selon le rôle de l'expéditeur. */
+  private forward(message: NonNullable<ReturnType<typeof parseClientMessage>>): void {
+    const b = this.binding;
+    if (!b) throw new ProtocolError("not-allowed", "Rejoignez d'abord une salle.");
+    b.room.touch();
+    if (message.type.startsWith("host:")) {
+      // L'écran hôte, ou le chef de partie pour les messages de contrôle (pas host:create/rejoin).
+      const control = (CONTROL_MESSAGE_TYPES as readonly string[]).includes(message.type);
+      if (b.playerId && !(control && b.room.isLeader(b.playerId))) {
+        throw new ProtocolError("not-allowed", "Réservé à l'écran hôte ou au chef de partie.");
       }
+      b.room.handleHost(message as Parameters<Room["handleHost"]>[0], b.playerId);
+    } else {
+      if (!b.playerId) throw new ProtocolError("not-allowed", "Réservé aux joueurs.");
+      b.room.handlePlayer(b.playerId, message as Parameters<Room["handlePlayer"]>[1]);
     }
   }
 
