@@ -54,5 +54,6 @@ Un « tour de plateau » = tous les joueurs ont joué une fois. À la fin, l'éc
 
 - [x] Écran de récapitulatif sur l'hôte et sur les manettes ; sur la manette, la frise du joueur est centrée au milieu de l'écran (largeur et hauteur)
 - [x] Bouton « Tour suivant » (touche Entrée ou Espace aussi) ; un double clic est ignoré par le serveur
+- [x] Écran hôte : le récapitulatif (et l'écran de fin) tient dans la hauteur de l'écran, « Tour suivant » toujours visible en bas ; quand les frises ne tiennent pas (beaucoup de joueurs), elles défilent toutes seules (pause de 3 s en haut, descente à 50 px/s, pause en bas, remontée), sans rien toucher ; un défilement à la main met en pause 6 s (`RecapPanel fill`, `src/autoScroll.ts`, `useAutoScroll`)
 - [ ] Durée d'affichage automatique (à décider avec l'avancement sans pointeur)
 - [ ] Mise en évidence des cartes gagnées pendant le tour

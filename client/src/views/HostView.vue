@@ -84,6 +84,12 @@ const status = computed(() => {
   return audio.playing ? "Écoute…" : `${name} place le titre dans sa frise`;
 });
 
+/**
+ * Récapitulatif et fin : tout tient dans la hauteur de l'écran, bouton compris ; les frises défilent
+ * toutes seules dans le panneau quand il y a beaucoup de joueurs.
+ */
+const fitScreen = computed(() => view.value?.phase === "round-recap" || view.value?.phase === "finished");
+
 /** Change à chaque phase et à chaque tour : déclenche la transition entre écrans. */
 const stageKey = computed(() => (view.value ? `${view.value.phase}-${view.value.round}-${view.value.activePlayerId}` : "loading"));
 
@@ -119,7 +125,7 @@ watch(turnKey, (key) => {
 </script>
 
 <template>
-  <div class="host" @click="audio.blocked && reactivateSound()">
+  <div class="host" :class="{ fit: fitScreen }" @click="audio.blocked && reactivateSound()">
     <header class="top">
       <div class="brand"><BrandMark class="mark" /><span class="display">Flashback</span></div>
       <v-btn v-if="view" icon="mdi-exit-to-app" class="btn-ghost" size="default" title="Mettre fin à la partie" data-testid="host-leave" @click.stop="requestLeave" />
@@ -241,7 +247,7 @@ watch(turnKey, (key) => {
 
         <!-- Récapitulatif de fin de tour -->
         <section v-else-if="view.phase === 'round-recap'" class="h-recap">
-          <RecapPanel :view="view" />
+          <RecapPanel :view="view" fill />
           <div class="next-row">
             <v-btn class="btn-primary" size="x-large" append-icon="mdi-arrow-right" data-testid="advance" @click="advance">Tour suivant</v-btn>
           </div>
@@ -249,7 +255,7 @@ watch(turnKey, (key) => {
 
         <!-- Fin de partie -->
         <section v-else-if="view.phase === 'finished'" class="h-recap">
-          <RecapPanel :view="view" final />
+          <RecapPanel :view="view" final fill />
           <div class="next-row">
             <v-btn class="btn-primary" size="x-large" prepend-icon="mdi-replay" data-testid="replay" @click="replay">Rejouer avec les mêmes joueurs</v-btn>
             <v-btn class="btn-ghost" size="x-large" prepend-icon="mdi-home" data-testid="host-home" @click="leave">Retour au menu</v-btn>
@@ -264,6 +270,18 @@ watch(turnKey, (key) => {
 .host {
   min-height: 100dvh;
   padding: 20px clamp(16px, 3vw, 44px) 40px;
+}
+.host.fit {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding-bottom: 20px;
+  overflow: hidden;
+}
+.fit .stage,
+.fit .h-recap {
+  flex: 1;
+  min-height: 0;
 }
 .top {
   display: flex;

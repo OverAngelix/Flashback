@@ -448,6 +448,28 @@ try {
   if (!(await host.evaluate(() => document.body.innerText.includes("Frises après le tour 1")))) throw new Error("le récapitulatif a été sauté");
   await shot(host, "09-host-recap");
   ok("hôte : récapitulatif des frises après le tour de plateau, même avec un double clic");
+  // Le récapitulatif tient dans l'écran, « Tour suivant » compris : la page ne défile jamais. Quand les
+  // frises ne tiennent pas (beaucoup de joueurs, ici un écran bas), elles défilent toutes seules.
+  const recapFits = (page) =>
+    page.evaluate(() => {
+      const b = document.querySelector('[data-testid="advance"]').getBoundingClientRect();
+      return document.documentElement.scrollHeight <= innerHeight + 1 && b.bottom <= innerHeight && b.top >= 0;
+    });
+  if (!(await recapFits(host))) throw new Error("le récapitulatif de l'écran hôte dépasse de l'écran");
+  await host.setViewport({ width: 1280, height: 420 });
+  await sleep(300);
+  if (!(await recapFits(host))) throw new Error("le récapitulatif dépasse d'un écran bas au lieu de défiler dans son panneau");
+  const rowsBox = await host.$eval(sel("recap-rows"), (e) => ({ overflow: e.scrollHeight - e.clientHeight, top: e.scrollTop }));
+  if (rowsBox.overflow <= 0) throw new Error("les frises devraient dépasser à 1280x420");
+  await host.waitForFunction(() => document.querySelector('[data-testid="recap-rows"]').scrollTop > 20, { timeout: 8000 });
+  await host.waitForFunction(
+    (max) => document.querySelector('[data-testid="recap-rows"]').scrollTop >= max - 1,
+    { timeout: 15000 },
+    rowsBox.overflow,
+  );
+  await shot(host, "09c-host-recap-autoscroll");
+  await host.setViewport({ width: 1280, height: 720 });
+  ok(`hôte : récapitulatif tenu dans l'écran ; sur un écran bas, les frises défilent toutes seules (${rowsBox.overflow} px)`);
   await ana.waitForFunction(() => document.body.innerText.includes("Ta frise après le tour 1"));
   await assertFits(ana, "récapitulatif du téléphone", { vertical: true });
   await shot(ana, "09b-ana-recap");
