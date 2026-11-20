@@ -220,6 +220,18 @@ try {
   if (urls.length > 0 && /localhost|127\.0\.0\.1/.test(qrLink)) throw new Error("le QR code pointe vers localhost, injoignable depuis un téléphone");
   ok(`hôte : le QR code se lit et mène à ${qrLink.replace(/\/join\/.*/, "")}/join/${code}`);
 
+  // « Copier le lien » : le même lien que le QR code, à coller dans une conversation.
+  const stubClipboard = (page) => page.evaluate(() => { navigator.clipboard.writeText = async (t) => { window.__copied = t; }; });
+  await stubClipboard(host);
+  await host.click(sel("copy-link"));
+  await host.waitForFunction(() => document.querySelector('[data-testid="copy-link"]').innerText.includes("Lien copié"));
+  if ((await host.evaluate(() => window.__copied)) !== qrLink) throw new Error("le lien copié n'est pas celui du QR code");
+  await stubClipboard(ana);
+  await ana.click(sel("player-copy-link"));
+  const anaLink = await ana.evaluate(() => window.__copied);
+  if (!anaLink?.endsWith(`/join/${code}`)) throw new Error("le lien copié depuis le téléphone est incorrect : " + anaLink);
+  ok("hôte et Ana : « Copier le lien » copie le lien direct vers la salle");
+
   // Avatar 0 pris : Ben ne peut pas le choisir
   const ben = await newPage("Ben", phone);
   await go(ben, qrLink);

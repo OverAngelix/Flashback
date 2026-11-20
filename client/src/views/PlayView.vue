@@ -5,6 +5,7 @@ import AvatarBadge from "@/components/AvatarBadge.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
 import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import CopyLinkButton from "@/components/CopyLinkButton.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
 import PlayGroove from "@/components/PlayGroove.vue";
 import PlayJoin from "@/components/PlayJoin.vue";
@@ -17,6 +18,7 @@ import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
 import { usePortraitPhone } from "@/composables/useOrientation";
 import { useRevealDelay } from "@/composables/useRevealDelay";
+import { joinLink } from "@/joinUrl";
 
 const props = defineProps<{ code?: string }>();
 
@@ -24,6 +26,8 @@ const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
 const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn } = useControls();
 const revealReady = useRevealDelay();
+/** Le téléphone a déjà ouvert la page sur une adresse joignable par les autres (réseau local ou domaine). */
+const origin = location.origin;
 const portrait = usePortraitPhone();
 
 onMounted(() => {
@@ -86,6 +90,7 @@ function leave() {
               <div class="display t-md text-truncate">{{ me.name }}</div>
               <div class="muted">Partie <span class="display">{{ view.code }}</span></div>
             </div>
+            <CopyLinkButton :link="joinLink(origin, view.code)" size="small" testid="player-copy-link" class="p-copy" />
           </header>
 
           <template v-if="isLeader">
@@ -217,9 +222,14 @@ function leave() {
 }
 .me-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   padding-top: 18px;
+}
+.p-copy {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .banner,
 .wait {

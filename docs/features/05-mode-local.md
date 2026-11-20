@@ -24,6 +24,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] L'écran hôte montre le chef de partie (couronne) et le dit dans le salon
 - [ ] Avancement automatique optionnel après quelques secondes (pour une partie sans aucun pilotage)
 - [x] Code QR pour rejoindre sans taper l'adresse : il mène à `/join/CODE` (code pré-rempli) et utilise l'adresse du réseau local, jamais `localhost`
+- [x] Bouton « Copier le lien » sous l'adresse : copie le lien direct `/join/CODE` (le même que le QR code) pour l'envoyer dans une conversation ; copie à l'ancienne quand la page est en http (réseau local), sinon le lien s'affiche pour une copie à la main (`CopyLinkButton`, `src/clipboard.ts`)
 - [ ] Empêcher la mise en veille de l'écran pendant la partie (Wake Lock)
 - [x] Quitter l'écran met fin à la partie pour tout le monde (`host:close`, confirmation s'il y a des joueurs) : la salle est supprimée et les téléphones reviennent à l'accueil avec « L'hôte a mis fin à la partie »
 - [x] L'extrait s'éteint en fondu d'une seconde dès qu'on quitte son tour (joueur suivant, récapitulatif, fin de partie, départ du joueur actif)
@@ -31,6 +32,7 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 ## Manette joueur (téléphone ou PC)
 
 - [x] Saisie du code de salle, ou lien direct `/join/CODE` (QR code) : dans ce cas le champ code disparaît, il ne reste que le nom et l'avatar (bouton « Changer » pour corriger)
+- [x] Salon : bouton « Copier le lien » à côté du nom, pour inviter d'autres joueurs depuis son téléphone
 - [x] Choix du nom et d'un avatar parmi 10 avant de rejoindre ; les avatars déjà pris sont grisés en direct
 - [x] Salon du chef de partie : catégories, nombre de cartes pour gagner (`GoalPicker`) et bouton de lancement ; les autres joueurs voient « Premier à N cartes » ; « Continuer », « Tour suivant » et « Passer son tour » aux bons moments
 - [x] Pendant le tour d'un autre, la manette montre la frise du joueur en cours (et non plus la sienne) ; au récapitulatif, chacun voit sa propre frise

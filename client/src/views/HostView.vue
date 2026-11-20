@@ -8,6 +8,7 @@ import BrandMark from "@/components/BrandMark.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
 import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import CopyLinkButton from "@/components/CopyLinkButton.vue";
 import Equalizer from "@/components/Equalizer.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
 import PlayersBar from "@/components/PlayersBar.vue";
@@ -160,6 +161,7 @@ watch(turnKey, (key) => {
                 <span class="grad-text url" data-testid="join-url">{{ joinUrl }}</span>
                 et entre le code.
               </p>
+              <CopyLinkButton v-if="qrLink" :link="qrLink" class="h-copy" />
             </div>
           </div>
 
@@ -356,6 +358,9 @@ watch(turnKey, (key) => {
   margin: 6px 0 0;
   font-size: 1.05rem;
   line-height: 1.5;
+}
+.h-copy {
+  margin-top: 10px;
 }
 .url {
   display: block;
