@@ -64,6 +64,18 @@ export const RELEASES: readonly Release[] = [
       },
     ],
   },
+  {
+    version: "1.1",
+    items: [
+      {
+        id: "commentator",
+        icon: "mdi-microphone",
+        title: "Commentateur (bêta)",
+        text: "Un présentateur à voix IA commente la partie sur l'écran hôte. À activer dans le salon.",
+        updateTitle: "Nouveau : un commentateur (bêta)",
+      },
+    ],
+  },
 ];
 
 export interface NewsSection {
