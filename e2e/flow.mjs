@@ -54,7 +54,8 @@ async function newPage(label, viewport) {
   await page.evaluateOnNewDocument(() => {
     window.__plays = [];
     const orig = HTMLMediaElement.prototype.play;
-    HTMLMediaElement.prototype.play = function () { window.__plays.push(this.src); window.__lastAudio = this; return orig.call(this); };
+    // __lastAudio : le dernier extrait joué (la voix du commentateur a son propre élément).
+    HTMLMediaElement.prototype.play = function () { window.__plays.push(this.src); if (this.src.includes("/commentator/")) window.__voice = this; else window.__lastAudio = this; return orig.call(this); };
   });
   return page;
 }
@@ -284,6 +285,17 @@ try {
   await painted(ana, sel("leader-goal-5"), "objectif du chef");
   await shot(ana, "02c-ana-leader-lobby");
   ok("Ana (chef) : règle l'objectif à 5 cartes ; l'écran hôte et Ben l'affichent");
+  // Commentateur (bêta) : coupé par défaut ; le chef l'active, le coupe puis le réactive, l'écran hôte suit.
+  const commentatorOn = (page, id) => page.$eval(sel(id), (e) => e.getAttribute("aria-checked") === "true");
+  if ((await commentatorOn(host, "commentator")) || (await commentatorOn(ana, "leader-commentator"))) throw new Error("le commentateur devrait être coupé par défaut");
+  if (!(await text(host, sel("commentator"))).includes("Bêta")) throw new Error("l'interrupteur du commentateur devrait porter « Bêta »");
+  for (const want of ["true", "false", "true"]) {
+    await ana.click(sel("leader-commentator"));
+    await host.waitForFunction((w) => document.querySelector('[data-testid="commentator"]').getAttribute("aria-checked") === w, {}, want);
+  }
+  const voiceFile = await fetch(BASE + "/commentator/start-1.m4a");
+  if (voiceFile.status !== 200 || !/audio/.test(voiceFile.headers.get("content-type") ?? "")) throw new Error(`voix du commentateur non servie : ${voiceFile.status} ${voiceFile.headers.get("content-type")}`);
+  ok("commentateur : marqué « Bêta », coupé par défaut, activé, coupé puis réactivé par le chef ; l'écran hôte suit");
   await shot(host, "03-host-lobby");
   await ana.waitForFunction(() => !document.querySelector('[data-testid="leader-start"]').disabled);
   await ana.click(sel("leader-start"));
@@ -293,7 +305,10 @@ try {
   await painted(ana, sel("play-extract"), "tour d'Ana");
   await shot(ana, "04-ana-turn");
   await host.waitForFunction(() => document.body.innerText.includes("lance l'extrait"));
+  await host.waitForFunction(() => window.__plays.some((u) => u.includes("/commentator/start-")));
+  if (await host.$(sel("voice-line"))) throw new Error("le commentateur ne devrait rien afficher");
   await shot(host, "05-host-waiting");
+  ok(`commentateur : annonce le lancement à voix haute, sans rien afficher (${(await host.evaluate(() => window.__voice.src.split("/").at(-1)))})`);
   ok("Ana : c'est son tour ; l'hôte l'attend");
 
   // Ben ne voit pas le bouton d'écoute
@@ -379,6 +394,13 @@ try {
   await shot(ana, "06-ana-slot");
   await ana.click(sel("place"));
   await host.waitForSelector(sel("advance"));
+  // Le commentateur réagit au placement ; pendant qu'il parle, l'extrait baisse.
+  await host.waitForFunction(() => window.__plays.some((u) => /\/commentator\/(correct|close|stolen|far|wrong)-/.test(u)));
+  const duck = await host.evaluate(() => ({ speaking: !window.__voice.paused && !window.__voice.ended, volume: window.__lastAudio.volume }));
+  if (!duck.speaking) throw new Error("le commentateur devrait encore parler au début de la révélation");
+  if (duck.volume > 0.5) throw new Error("l'extrait devrait baisser pendant que le commentateur parle : volume " + duck.volume);
+  const revealLine = await host.evaluate(() => window.__plays.filter((u) => u.includes("/commentator/")).at(-1).split("/").at(-1));
+  ok(`commentateur : réagit au placement (${revealLine})` + `, extrait baissé à ${duck.volume.toFixed(2)}`);
   // Le résultat reste affiché au moins 3 s : « Continuer » est grisé sur l'écran et chez le chef.
   if (!(await host.$eval(sel("advance"), (b) => b.disabled))) throw new Error("« Continuer » devrait être grisé au début de la révélation");
   await ana.waitForSelector(sel("leader-advance") + "[disabled]");

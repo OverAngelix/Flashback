@@ -8,24 +8,33 @@ export const audio = reactive({
   /** Le navigateur a refusé la lecture : il faut un geste de l'utilisateur. */
   blocked: false,
   playing: false,
+  /** Le commentateur est en train de parler. */
+  speaking: false,
 });
 
+/** Volume de l'extrait pendant que le commentateur parle, par rapport au volume réglé. */
+const DUCK = 0.3;
+
 let element: HTMLAudioElement | undefined;
+let voice: HTMLAudioElement | undefined;
 let pendingUrl: string | undefined;
 let fadeTimer: ReturnType<typeof setInterval> | undefined;
+
+/** Volume de l'extrait : celui des réglages, baissé tant que le commentateur parle. */
+const extractVolume = () => useSettings().volume * (audio.speaking ? DUCK : 1);
 
 /** Arrête un fondu en cours et rend à l'élément le volume réglé. */
 function cancelFade(): void {
   if (fadeTimer === undefined) return;
   clearInterval(fadeTimer);
   fadeTimer = undefined;
-  if (element) element.volume = useSettings().volume;
+  if (element) element.volume = extractVolume();
 }
 
 function ensure(): HTMLAudioElement {
   if (!element) {
     element = new Audio();
-    element.volume = useSettings().volume;
+    element.volume = extractVolume();
     element.addEventListener("playing", () => (audio.playing = true));
     element.addEventListener("pause", () => (audio.playing = false));
     element.addEventListener("ended", () => (audio.playing = false));
@@ -35,6 +44,10 @@ function ensure(): HTMLAudioElement {
 
 /** À appeler dans un gestionnaire de clic : l'élément audio reste ensuite utilisable sans geste. */
 export function unlockAudio(): void {
+  // La voix du commentateur a son propre élément : Safari demande de débloquer chacun.
+  const v = ensureVoice();
+  v.src = SILENT_WAV;
+  v.play().catch(() => {});
   const el = ensure();
   el.src = SILENT_WAV;
   el.play().then(
@@ -49,7 +62,7 @@ export function unlockAudio(): void {
 export function playExtract(url: string): void {
   cancelFade();
   const el = ensure();
-  el.volume = useSettings().volume;
+  el.volume = extractVolume();
   pendingUrl = url;
   el.src = url;
   el.currentTime = 0;
@@ -87,13 +100,37 @@ export function fadeOutExtract(ms = 1000): void {
   }, 40);
 }
 
-// Le volume règle aussi un extrait en cours de lecture.
-watch(
-  () => useSettings().volume,
-  (v) => {
-    if (element && fadeTimer === undefined) element.volume = v;
-  },
-);
+// Le volume (et la voix du commentateur) règlent aussi un extrait en cours de lecture.
+watch(extractVolume, (v) => {
+  if (element && fadeTimer === undefined) element.volume = v;
+});
+
+function ensureVoice(): HTMLAudioElement {
+  if (!voice) {
+    voice = new Audio();
+    const done = () => (audio.speaking = false);
+    voice.addEventListener("ended", done);
+    voice.addEventListener("error", done);
+  }
+  return voice;
+}
+
+/**
+ * Le commentateur dit une phrase (sans rien afficher) ; l'extrait en cours baisse le temps
+ * qu'il parle. Une nouvelle phrase coupe la précédente. Fichier absent ou lecture refusée : il se tait.
+ */
+export function playVoice(url: string): void {
+  const v = ensureVoice();
+  v.volume = useSettings().volume;
+  v.src = url;
+  audio.speaking = true;
+  v.play().catch(() => (audio.speaking = false));
+}
+
+export function stopVoice(): void {
+  voice?.pause();
+  audio.speaking = false;
+}
 
 /** Un bip court au volume réglé, pour entendre le réglage sans lancer de partie. */
 export function playTestTone(): void {

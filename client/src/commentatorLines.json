@@ -1,0 +1,61 @@
+{
+  "start": [
+    { "id": "start-1", "text": "Mesdames et messieurs, bienvenue sur le plateau de Flashback ! Que la meilleure oreille gagne !" },
+    { "id": "start-2", "text": "C'est parti pour Flashback ! Ouvrez grand vos oreilles, et pas de triche !" },
+    { "id": "start-3", "text": "Bonsoir, bonsoir ! Ce soir, on remonte le temps en musique !" },
+    { "id": "start-4", "text": "Les platines chauffent, le public est en délire… Que la partie commence !" },
+    { "id": "start-5", "text": "Attachez vos ceintures, on part pour un voyage dans le temps !" }
+  ],
+  "correct": [
+    { "id": "correct-1", "text": "Ouiii ! C'est dans le mille !" },
+    { "id": "correct-2", "text": "Magnifique ! Quelle oreille, mes amis !" },
+    { "id": "correct-3", "text": "Bravo ! Une vraie encyclopédie musicale !" },
+    { "id": "correct-4", "text": "Et c'est validé ! Le public est debout !" },
+    { "id": "correct-5", "text": "Impeccable ! Rien à redire !" },
+    { "id": "correct-6", "text": "Waouh ! On a un expert sur le plateau !" }
+  ],
+  "close": [
+    { "id": "close-1", "text": "Oh non ! À un cheveu près !" },
+    { "id": "close-2", "text": "Si près du but ! Le public n'en revient pas !" },
+    { "id": "close-3", "text": "Aïe aïe aïe… Raté, mais d'un rien !" },
+    { "id": "close-4", "text": "Presque ! Il s'en est fallu d'un souffle !" },
+    { "id": "close-5", "text": "Rhooo, c'était tout près ! Quel suspense !" }
+  ],
+  "stolen": [
+    { "id": "stolen-1", "text": "Raté ! Mais d'autres avaient la réponse, eux !" },
+    { "id": "stolen-2", "text": "Ah ! Les petits malins du groove avaient trouvé !" },
+    { "id": "stolen-3", "text": "La réponse était dans la salle ! Bravo au groove !" },
+    { "id": "stolen-4", "text": "Raté… Mais la boule à facettes brille pour les autres !" }
+  ],
+  "far": [
+    { "id": "far-1", "text": "Ah… on n'est pas du tout à la bonne décennie, là !" },
+    { "id": "far-2", "text": "Oula ! La machine à remonter le temps s'est emballée !" },
+    { "id": "far-3", "text": "Alors là… c'est ce qu'on appelle un voyage dans le temps raté !" },
+    { "id": "far-4", "text": "Hmm, il va falloir réviser ses classiques !" },
+    { "id": "far-5", "text": "Aïe ! Même mes grands-parents ne l'auraient pas placé là !" }
+  ],
+  "wrong": [
+    { "id": "wrong-1", "text": "Ah, dommage ! Ce n'était pas la bonne place." },
+    { "id": "wrong-2", "text": "Raté ! Mais rien n'est perdu, la partie continue !" },
+    { "id": "wrong-3", "text": "Oh non… La frise ne pardonne pas !" },
+    { "id": "wrong-4", "text": "Pas cette fois ! On se reprend au prochain tour !" },
+    { "id": "wrong-5", "text": "Et non ! Le public est déçu, mais on y croit encore !" }
+  ],
+  "recap": [
+    { "id": "recap-1", "text": "Fin du tour ! Petit coup d'œil au tableau des scores." },
+    { "id": "recap-2", "text": "Le tour est bouclé ! Voyons qui mène la danse." },
+    { "id": "recap-3", "text": "On fait le point ! Les frises s'allongent, la tension monte !" },
+    { "id": "recap-4", "text": "Pause publicité… Non, je plaisante ! Voici les frises !" }
+  ],
+  "tie": [
+    { "id": "tie-1", "text": "Égalité ! Incroyable ! On joue les prolongations !" },
+    { "id": "tie-2", "text": "Ex æquo ! Il va falloir un tour de plus pour vous départager !" },
+    { "id": "tie-3", "text": "Personne ne lâche rien ! On repart pour un tour !" }
+  ],
+  "victory": [
+    { "id": "victory-1", "text": "Et nous avons un vainqueur ! Quelle performance !" },
+    { "id": "victory-2", "text": "C'est terminé ! Un tonnerre d'applaudissements pour notre gagnant !" },
+    { "id": "victory-3", "text": "Victoire ! Le public est en délire !" },
+    { "id": "victory-4", "text": "Quelle partie ! Le trophée de la frise est attribué !" }
+  ]
+}

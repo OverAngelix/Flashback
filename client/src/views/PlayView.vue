@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AvatarBadge from "@/components/AvatarBadge.vue";
+import CommentatorToggle from "@/components/CommentatorToggle.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
 import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -24,7 +25,7 @@ const props = defineProps<{ code?: string }>();
 
 const router = useRouter();
 const { connection, view, me, active, isMyTurn } = useGame();
-const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, replay } = useControls();
+const { chosen, isLeader, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, setCommentator, start, advance, skipTurn, replay } = useControls();
 const revealReady = useRevealDelay();
 /** Le téléphone a déjà ouvert la page sur une adresse joignable par les autres (réseau local ou domaine). */
 const origin = location.origin;
@@ -98,12 +99,13 @@ function leave() {
               <v-icon icon="mdi-crown" color="warning" size="28" />
               <div>
                 <div class="display">Tu es le chef de partie</div>
-                <div class="muted small">Choisis les catégories et le nombre de cartes, puis lance la partie quand tout le monde est là.</div>
+                <div class="muted small">Choisis les catégories, le nombre de cartes et le commentateur, puis lance la partie quand tout le monde est là.</div>
               </div>
             </div>
             <CategoryPicker :categories="view.availableCategories" :chosen="chosen" testid-prefix="leader-category" @toggle="toggleCategory" @clear="clearCategories" />
             <div class="muted label">Cartes pour gagner</div>
             <GoalPicker :value="view.cardsToWin" testid-prefix="leader-goal" @pick="setCardsToWin" />
+            <CommentatorToggle :value="view.commentator" testid="leader-commentator" class="p-commentator" @toggle="setCommentator" />
             <v-btn class="btn-success w-100" size="x-large" prepend-icon="mdi-play" :disabled="!canStart" data-testid="leader-start" @click="start">Lancer la partie</v-btn>
             <div class="muted small text-center" data-testid="leader-track-count">{{ startBlocker ?? `${view.trackCount} titres dans le paquet` }}</div>
           </template>
@@ -164,6 +166,10 @@ function leave() {
 </template>
 
 <style scoped>
+/* L'interrupteur garde sa taille : pleine largeur, il ressemblerait au bouton de lancement. */
+.p-commentator {
+  align-self: flex-start;
+}
 .loading {
   display: flex;
   flex-direction: column;

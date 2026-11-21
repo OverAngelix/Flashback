@@ -19,12 +19,14 @@ Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un ext
 
 1. **Menu** (`/`) : Héberger, Rejoindre, Solo, Multijoueur (grisé, V2), Paramètres. Musique d'ambiance générée par le navigateur. À la première visite, une modale présente le jeu ; à chaque nouvelle version, elle revient une fois avec les seules nouveautés (version vue gardée dans le navigateur).
 2. **Création** : « Héberger » crée une salle (code de 6 caractères) et débloque l'audio de l'écran hôte.
-3. **Salon** (`lobby`) : les joueurs rejoignent en tapant le code, en scannant le QR code ou en ouvrant le lien copié depuis l'écran hôte ou le téléphone d'un joueur (`/join/CODE`), choisissent un nom (16 caractères, unique) et un avatar parmi 10 (les avatars pris sont grisés). Le chef ou l'hôte choisit les catégories et le nombre de cartes pour gagner (de 3 à 10, 10 par défaut ; les autres joueurs le voient sur leur téléphone), puis lance la partie (2 à 10 joueurs).
+3. **Salon** (`lobby`) : les joueurs rejoignent en tapant le code, en scannant le QR code ou en ouvrant le lien copié depuis l'écran hôte ou le téléphone d'un joueur (`/join/CODE`), choisissent un nom (16 caractères, unique) et un avatar parmi 10 (les avatars pris sont grisés). Le chef ou l'hôte choisit les catégories, le nombre de cartes pour gagner (de 3 à 10, 10 par défaut ; les autres joueurs le voient sur leur téléphone) et s'il veut le commentateur (bêta, coupé par défaut), puis lance la partie (2 à 10 joueurs).
 4. **Départ** : chaque joueur reçoit une carte de départ, déjà révélée, dans sa frise.
 5. **Tour d'un joueur** (`awaiting-placement`) : il appuie sur « Écouter » (une seule écoute par tour), l'écran hôte joue l'extrait, puis il fait défiler sa frise et choisit l'emplacement (« Placer ici »). Pendant ce temps, les autres voient sa frise sur leur écran et peuvent y placer le titre eux aussi (**groove**), une fois, et avant lui : dès qu'il a placé, c'est trop tard. L'écran montre qui a déjà placé, jamais où.
 6. **Révélation** (`reveal`) : titre, artiste, année et pochette apparaissent ; confettis si c'est bon, secousse sinon. Tous les écrans montrent la frise du joueur avec sa carte à l'endroit choisi, en vert si c'est juste, en rouge sinon (avec, dans ce cas, tous les emplacements qui étaient justes en vert), et le verdict porte le nom du joueur (« Dark a trouvé ! », « Dark n'a pas trouvé… ») ; l'écran hôte dit qui a trouvé le groove (« Ben et Cléo ont aussi trouvé », « Personne n'a trouvé ») ; chaque téléphone ne donne que le résultat de son joueur (« Toi non plus… »). « Continuer » reste grisé 3 s sur l'écran hôte et chez le chef, le temps que tout le monde voie le résultat. Détail : [09-groove.md](09-groove.md).
 7. **Récapitulatif** (`round-recap`) : quand tous les joueurs ont joué une fois (un « tour de plateau »), l'écran affiche la frise de chacun, avec cartes et points groove (sans avoir à faire défiler : avec beaucoup de joueurs, les frises défilent toutes seules au-dessus de « Tour suivant ») ; chaque manette montre la frise de son joueur, centrée.
 8. **Fin** (`finished`) : trophée et confettis pour le ou les gagnants. L'hôte ou le chef peut **rejouer avec les mêmes joueurs** : tout le monde revient au salon de la même salle (même code, réglages gardés, frises vidées) pour choisir de nouvelles catégories et un nouvel objectif.
+
+**Commentateur** : s'il est activé, l'écran hôte fait réagir un présentateur (phrases enregistrées, sans rien afficher) au lancement, à chaque révélation (juste, raté de peu, raté de loin, trouvé en groove), au récapitulatif, à une égalité et à la victoire ; l'extrait baisse pendant qu'il parle. Détail : [11-commentateur.md](11-commentateur.md).
 
 Les titres, artistes et années du titre en cours ne quittent jamais le serveur avant la révélation.
 
@@ -71,6 +73,7 @@ Volume des extraits, musique de menu (activée, volume), animations réduites, �
 | Moteur de jeu | Terminé | — |
 | Salles et temps réel | Terminé | Limite de débit (non prioritaire) |
 | Groove | Terminé | — |
+| Commentateur | Bêta, voix provisoires | Enregistrer les 41 phrases |
 | Solo (partie libre, campagne) | Terminé | Essais sur vrais téléphones, choix de l'avatar |
 | Mode local (hôte + manettes) | Jouable de bout en bout | Essais sur vrais téléphones et vraie télé, Wake Lock, avancement automatique, mise en évidence des cartes gagnées |
 | Interface | Terminé | Sons d'interface, icône et manifeste web, validation sur appareils |

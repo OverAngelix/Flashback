@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "npm run type-check && vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p tsconfig.node.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "commentator:build": "node scripts/commentator.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fredoka": "^5.3.0",

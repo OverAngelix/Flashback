@@ -7,3 +7,5 @@ client/node_modules
 client/dist
 client/.env*
 server/src/**/*.test.ts
+# Enregistrements bruts du commentateur : seuls les fichiers convertis (public/commentator) servent.
+client/commentator

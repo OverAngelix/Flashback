@@ -6,6 +6,7 @@ import DiscoBall from "@/components/DiscoBall.vue";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import CategoryPicker from "@/components/CategoryPicker.vue";
+import CommentatorToggle from "@/components/CommentatorToggle.vue";
 import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import CopyLinkButton from "@/components/CopyLinkButton.vue";
@@ -16,6 +17,7 @@ import RecapPanel from "@/components/RecapPanel.vue";
 import RevealPanel from "@/components/RevealPanel.vue";
 import TimelineStrip from "@/components/TimelineStrip.vue";
 import VinylDisc from "@/components/VinylDisc.vue";
+import { useCommentator } from "@/composables/useCommentator";
 import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
 import { useRevealDelay } from "@/composables/useRevealDelay";
@@ -24,8 +26,9 @@ import { qrDataUrl } from "@/qr";
 
 const router = useRouter();
 const { connection, view, active } = useGame();
-const { chosen, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, start, advance, skipTurn, kick, replay } = useControls();
+const { chosen, leader, canStart, startBlocker, toggleCategory, clearCategories, setCardsToWin, setCommentator, start, advance, skipTurn, kick, replay } = useControls();
 const revealReady = useRevealDelay();
+useCommentator(view);
 
 const joinUrls = ref<string[]>([]);
 const lastAudioUrl = ref<string>();
@@ -200,6 +203,7 @@ watch(turnKey, (key) => {
               <span class="display">Cartes pour gagner</span>
               <GoalPicker :value="view.cardsToWin" @pick="setCardsToWin" />
             </div>
+            <CommentatorToggle :value="view.commentator" @toggle="setCommentator" />
             <span class="muted">{{ startBlocker ?? `${view.trackCount} titres dans le paquet` }}</span>
           </div>
         </section>
