@@ -101,6 +101,31 @@ try {
   await host.screenshot({ path: OUT + "00-splash.png" });
   await host.waitForFunction(() => !document.querySelector('[data-testid="splash"]'), { timeout: 8000 });
   ok("écran de démarrage : affiché au chargement, puis disparaît");
+
+  // Nouveautés : présentées au premier passage, puis plus jamais pour cette version.
+  await painted(host, sel("news"), "modale des nouveautés");
+  const newsVersion = (await text(host, sel("news-version"))).replace(/^v/, "");
+  const newsItems = await host.$$eval(`${sel("news")} .news-item`, (els) => els.length);
+  if (!/^\d+(\.\d+)*$/.test(newsVersion) || newsItems < 1) throw new Error(`nouveautés inattendues : v${newsVersion}, ${newsItems} éléments`);
+  await assertFits(host, "modale des nouveautés");
+  await shot(host, "00b-news");
+  await host.click(sel("news-close"));
+  await host.waitForFunction(() => !document.querySelector('[data-testid="news"]'));
+  if ((await host.evaluate(() => localStorage.getItem("flashback.news"))) !== newsVersion) throw new Error("version vue non mémorisée");
+  await go(host, BASE);
+  await host.waitForSelector(sel("menu-host"));
+  await sleep(800);
+  if (await host.$(sel("news"))) throw new Error("la modale des nouveautés revient après avoir été fermée");
+  // Un joueur qui a vu une version plus ancienne ne voit que les nouveautés.
+  await host.evaluate(() => localStorage.setItem("flashback.news", "0.1"));
+  await go(host, BASE);
+  await painted(host, sel("news"), "nouveautés pour un ancien joueur");
+  if (!(await text(host, sel("news"))).includes("Quoideneuf")) throw new Error("un ancien joueur devrait voir « Quoi de neuf ? »");
+  await host.keyboard.press("Escape");
+  await host.waitForFunction(() => !document.querySelector('[data-testid="news"]'));
+  if ((await host.evaluate(() => localStorage.getItem("flashback.news"))) !== newsVersion) throw new Error("Échap n'a pas mémorisé la version vue");
+  ok(`nouveautés v${newsVersion} : ${newsItems} éléments au premier passage, plus rien une fois fermées, les seules nouveautés pour un ancien joueur`);
+
   await shot(host, "01-home");
   await host.waitForSelector(sel("menu-host"));
 
@@ -572,6 +597,9 @@ try {
 
   const solo = await newPage("solo", { width: 1280, height: 720 });
   await go(solo, BASE);
+  await painted(solo, sel("news"), "nouveautés (solo)");
+  await solo.click(sel("news-close"));
+  await solo.waitForFunction(() => !document.querySelector('[data-testid="news"]'));
   await solo.waitForSelector(sel("menu-solo"));
   await solo.click(sel("menu-solo"));
   await painted(solo, sel("level-premiers-pas"), "menu solo");

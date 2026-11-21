@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppBackground from "@/components/AppBackground.vue";
+import NewsDialog from "@/components/NewsDialog.vue";
 import SplashScreen from "@/components/SplashScreen.vue";
 import { menuMusic } from "@/menuMusic";
 import { useConnection } from "@/net/connection";
@@ -60,6 +61,8 @@ onUnmounted(() => document.removeEventListener("visibilitychange", onVisible));
         </Transition>
       </router-view>
     </v-main>
+    <!-- Nouveautés : sur le menu, une fois l'écran de démarrage parti. -->
+    <NewsDialog v-if="!booting && route.path === '/'" />
     <Transition name="splash">
       <SplashScreen v-if="booting" data-testid="splash" />
     </Transition>

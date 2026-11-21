@@ -18,6 +18,7 @@ Direction : « néon sur fond de nuit », disques vinyle et notes de musique. Th
 - [x] Révélation : confettis si bon placement, secousse sinon ; fin de partie : trophée et confettis
 - [x] Transitions entre écrans (page et phase), `prefers-reduced-motion` respecté
 - [x] Lisible sur un écran de 740x300 (téléphone en paysage) et de 320 à 390 px de large en portrait
+- [x] Nouveautés : modale versionnée sur le menu, après l'écran de démarrage (`client/src/news.ts`, `NewsDialog`) ; présentation complète au nouveau venu (dernière formulation de chaque élément), nouveautés seules à qui a vu une version précédente ; fermée d'une façon ou d'une autre, la version est notée dans le navigateur (`flashback.news`)
 - [ ] Sons d'interface et jingle de victoire
 - [ ] Écouter la musique de menu sur de vrais haut-parleurs et ajuster le mixage (vérifié seulement par mesure : niveau, saturation, silences)
 - [ ] Icône d'application (favicon, écran d'accueil du téléphone) et manifeste web
