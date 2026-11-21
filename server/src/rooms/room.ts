@@ -34,6 +34,8 @@ export class Room {
   lastActivity: number;
 
   private categories: string[];
+  /** Commentateur de l'écran hôte (bêta, coupé par défaut) : un réglage de la salle, gardé quand on rejoue. */
+  private commentator = false;
   readonly solo: boolean;
   readonly level: CampaignLevel | null;
   /** Chef de partie, voir updateLeader. */
@@ -149,6 +151,10 @@ export class Room {
       case "host:setCardsToWin":
         this.game.setCardsToWin(message.cardsToWin);
         break;
+      case "host:setCommentator":
+        if (this.game.phase !== "lobby") throw new GameError("La partie a déjà commencé.");
+        this.commentator = message.enabled;
+        break;
       case "host:start":
         this.game.start();
         break;
@@ -263,6 +269,7 @@ export class Room {
       availableCategories: this.catalog.categories(),
       connectedPlayerIds: new Set(this.playerConns.keys()),
       leaderId: this.leaderId,
+      commentator: this.commentator,
       level: this.level?.id ?? null,
     });
     this.hostConn?.send({ type: "state", view, you: null });

@@ -12,6 +12,7 @@ export const ROOM_CODE_LENGTH = 6;
 export const CONTROL_MESSAGE_TYPES = [
   "host:setCategories",
   "host:setCardsToWin",
+  "host:setCommentator",
   "host:start",
   "host:advance",
   "host:skipTurn",
@@ -34,6 +35,8 @@ export type ClientMessage =
   | { type: "host:setCategories"; categories: string[] }
   /** Nombre de cartes pour gagner (bornes MIN_CARDS_TO_WIN et MAX_CARDS_TO_WIN, vérifiées par le moteur). */
   | { type: "host:setCardsToWin"; cardsToWin: number }
+  /** Commentateur de l'écran hôte (voix enregistrées), activé ou non ; uniquement dans le salon. */
+  | { type: "host:setCommentator"; enabled: boolean }
   | { type: "host:start" }
   /** `from` = phase que l'hôte croit quitter : un message en double (double clic) est ignoré. */
   | { type: "host:advance"; from: Phase }
@@ -105,6 +108,8 @@ export interface GameView {
   phase: Phase;
   round: number;
   cardsToWin: number;
+  /** L'écran hôte fait parler le commentateur (bêta, réglé dans le salon, faux par défaut). */
+  commentator: boolean;
   /** Catégories choisies par l'hôte (aucune : tout le catalogue). */
   categories: string[];
   /** Toutes les catégories avec leur nombre de titres (pour l'écran de sélection). */
@@ -183,6 +188,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         : null;
     case "host:setCardsToWin":
       return Number.isInteger(m.cardsToWin) ? { type: "host:setCardsToWin", cardsToWin: m.cardsToWin as number } : null;
+    case "host:setCommentator":
+      return typeof m.enabled === "boolean" ? { type: "host:setCommentator", enabled: m.enabled } : null;
     case "host:kick":
       return isString(m.playerId, 16) ? { type: "host:kick", playerId: m.playerId } : null;
     case "player:place":

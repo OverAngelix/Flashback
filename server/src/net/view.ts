@@ -19,6 +19,7 @@ export interface ViewContext {
   availableCategories: CategorySummary[];
   connectedPlayerIds: ReadonlySet<string>;
   leaderId: string | null;
+  commentator: boolean;
   /** Niveau de campagne d'une partie solo. */
   level?: string | null;
 }
@@ -33,6 +34,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
     phase: game.phase,
     round: game.round,
     cardsToWin: game.cardsToWin,
+    commentator: ctx.commentator,
     categories: ctx.categories,
     availableCategories: ctx.availableCategories,
     trackCount: game.remainingTracks,

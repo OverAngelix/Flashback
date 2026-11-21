@@ -498,6 +498,23 @@ describe("chef de partie", () => {
     assert.equal(host.conn.view().cardsToWin, 3);
   });
 
+  it("active ou coupe le commentateur, comme l'écran hôte, seulement dans le salon", () => {
+    const { host, ana, ben } = lobby();
+    assert.equal(host.conn.view().commentator, false, "coupé par défaut (bêta)");
+    ben.send({ type: "host:setCommentator", enabled: true });
+    assert.equal(ben.conn.last("error").code, "not-allowed");
+    ana.send({ type: "host:setCommentator", enabled: true });
+    assert.equal(host.conn.view().commentator, true);
+    host.send({ type: "host:setCommentator", enabled: false });
+    assert.equal(ben.conn.view().commentator, false);
+    host.send({ type: "host:setCommentator", enabled: true });
+    ana.send({ type: "host:setCategories", categories: ["fr"] });
+    ana.send({ type: "host:start" });
+    host.send({ type: "host:setCommentator", enabled: false });
+    assert.match(host.conn.last("error").message, /déjà commencé/);
+    assert.equal(host.conn.view().commentator, true);
+  });
+
   it("fait avancer la partie et passe un tour", () => {
     const { host, ana, ben } = started();
     ana.send({ type: "player:place", position: 0 });
@@ -574,6 +591,7 @@ describe("rejouer avec les mêmes joueurs", () => {
     const { host, ana, ben, code } = lobby();
     host.send({ type: "host:setCategories", categories: ["fr"] });
     host.send({ type: "host:setCardsToWin", cardsToWin: 3 });
+    host.send({ type: "host:setCommentator", enabled: true });
     host.send({ type: "host:start" });
     playToEnd(host, [ana, ben]);
 
@@ -584,6 +602,7 @@ describe("rejouer avec les mêmes joueurs", () => {
     assert.deepEqual(view.players.map((p) => [p.name, p.timeline.length, p.groove]), [["Ana", 0, 0], ["Ben", 0, 0]]);
     assert.deepEqual(view.categories, ["fr"]);
     assert.equal(view.cardsToWin, 3);
+    assert.equal(view.commentator, true);
     assert.equal(view.trackCount, 12);
     assert.deepEqual(view.winnerIds, []);
     assert.equal(view.leaderId, ana.conn.last("session").playerId);
@@ -712,6 +731,7 @@ describe("parseClientMessage", () => {
     assert.deepEqual(parseClientMessage('{"type":"player:groove","position":0}'), { type: "player:groove", position: 0 });
     assert.deepEqual(parseClientMessage('{"type":"host:setCategories","categories":["fr"]}'), { type: "host:setCategories", categories: ["fr"] });
     assert.deepEqual(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":5}'), { type: "host:setCardsToWin", cardsToWin: 5 });
+    assert.deepEqual(parseClientMessage('{"type":"host:setCommentator","enabled":false}'), { type: "host:setCommentator", enabled: false });
     assert.deepEqual(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":null}'), { type: "solo:create", name: "Ana", avatar: 2, level: null });
     assert.deepEqual(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":"pop"}'), { type: "solo:create", name: "Ana", avatar: 2, level: "pop" });
   });
@@ -725,6 +745,7 @@ describe("parseClientMessage", () => {
     assert.equal(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2}'), null);
     assert.equal(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":3}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":4.5}'), null);
+    assert.equal(parseClientMessage('{"type":"host:setCommentator","enabled":"non"}'), null);
     assert.equal(parseClientMessage('{"type":"player:join","code":"A","name":"x".repeat(100),"avatar":0}'), null);
     assert.equal(parseClientMessage(`{"type":"player:join","code":"ABCDEF","name":"${"x".repeat(65)}","avatar":0}`), null);
   });
