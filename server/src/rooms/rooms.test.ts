@@ -173,6 +173,37 @@ describe("partie complète", () => {
     assert.equal(host.conn.sent.filter((m) => m.type === "audio:play").length, 2);
   });
 
+  it("relaie aux téléphones où en est l'extrait sur l'écran hôte", () => {
+    const { host, ana, ben } = started();
+    host.send({ type: "host:extract", position: 0, duration: 30, playing: true });
+    assert.equal(ben.conn.view().extract, null, "pas d'extrait avant l'écoute");
+
+    ana.send({ type: "player:play" });
+    assert.equal(ben.conn.view().extract, null, "chargement : l'écran n'a pas encore commencé");
+    clock = 1000;
+    host.send({ type: "host:extract", position: 0.5, duration: 29.9, playing: true });
+    assert.deepEqual(ben.conn.view().extract, { position: 0.5, duration: 29.9, playing: true });
+
+    // La position avance avec l'horloge à chaque nouvel envoi de l'état (ici, Ben place en groove).
+    clock = 3000;
+    ben.send({ type: "player:groove", position: 0 });
+    assert.deepEqual(ana.conn.view().extract, { position: 2.5, duration: 29.9, playing: true });
+    host.send({ type: "host:extract", position: 29.9, duration: 29.9, playing: false });
+    assert.deepEqual(ana.conn.view().extract, { position: 29.9, duration: 29.9, playing: false });
+
+    // Seul l'écran hôte le dit, même le chef de partie ne peut pas.
+    ana.send({ type: "host:extract", position: 3, duration: 30, playing: true });
+    assert.equal(ana.conn.last("error").code, "not-allowed");
+
+    // Nouveau tour : rien tant que l'écran n'a pas relancé l'extrait ; un message tardif est ignoré.
+    ana.send({ type: "player:place", position: 0 });
+    assert.equal(ana.conn.view().extract, null);
+    host.send({ type: "host:advance", from: "reveal" });
+    host.send({ type: "host:extract", position: 12, duration: 30, playing: false });
+    ben.send({ type: "player:play" });
+    assert.equal(ana.conn.view().extract, null);
+  });
+
   it("ne consomme pas l'écoute quand l'écran est absent", () => {
     const { host, ana, code } = started();
     const { token } = host.conn.last("session");
@@ -732,6 +763,7 @@ describe("parseClientMessage", () => {
     assert.deepEqual(parseClientMessage('{"type":"host:setCategories","categories":["fr"]}'), { type: "host:setCategories", categories: ["fr"] });
     assert.deepEqual(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":5}'), { type: "host:setCardsToWin", cardsToWin: 5 });
     assert.deepEqual(parseClientMessage('{"type":"host:setCommentator","enabled":false}'), { type: "host:setCommentator", enabled: false });
+    assert.deepEqual(parseClientMessage('{"type":"host:extract","position":1.5,"duration":29.9,"playing":true}'), { type: "host:extract", position: 1.5, duration: 29.9, playing: true });
     assert.deepEqual(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":null}'), { type: "solo:create", name: "Ana", avatar: 2, level: null });
     assert.deepEqual(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":"pop"}'), { type: "solo:create", name: "Ana", avatar: 2, level: "pop" });
   });
@@ -746,6 +778,9 @@ describe("parseClientMessage", () => {
     assert.equal(parseClientMessage('{"type":"solo:create","name":"Ana","avatar":2,"level":3}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCardsToWin","cardsToWin":4.5}'), null);
     assert.equal(parseClientMessage('{"type":"host:setCommentator","enabled":"non"}'), null);
+    assert.equal(parseClientMessage('{"type":"host:extract","position":-1,"duration":30,"playing":true}'), null);
+    assert.equal(parseClientMessage('{"type":"host:extract","position":1,"duration":null,"playing":true}'), null);
+    assert.equal(parseClientMessage('{"type":"host:extract","position":1,"duration":30}'), null);
     assert.equal(parseClientMessage('{"type":"player:join","code":"A","name":"x".repeat(100),"avatar":0}'), null);
     assert.equal(parseClientMessage(`{"type":"player:join","code":"ABCDEF","name":"${"x".repeat(65)}","avatar":0}`), null);
   });

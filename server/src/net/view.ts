@@ -1,7 +1,7 @@
 import type { CategorySummary } from "../catalog/types.js";
 import type { Game } from "../game/game.js";
 import type { GameTrack } from "../game/types.js";
-import type { GameView, PublicCard } from "./protocol.js";
+import type { ExtractView, GameView, PublicCard } from "./protocol.js";
 
 export function publicCard(track: GameTrack): PublicCard {
   return {
@@ -22,6 +22,8 @@ export interface ViewContext {
   commentator: boolean;
   /** Niveau de campagne d'une partie solo. */
   level?: string | null;
+  /** Extrait en cours sur l'écran hôte (voir `Room.extractView`). */
+  extract?: ExtractView | null;
 }
 
 /**
@@ -50,6 +52,7 @@ export function buildView(game: Game, ctx: ViewContext): GameView {
     activePlayerId: game.activePlayer?.id ?? null,
     current: game.current ? { audioUrl: game.current.previewUrl } : null,
     listened: game.listened,
+    extract: game.phase === "awaiting-placement" && game.listened ? (ctx.extract ?? null) : null,
     grooveGuessIds: game.phase === "awaiting-placement" ? [...game.grooveGuesses.keys()] : [],
     solo: game.solo ? { ...game.solo, level: ctx.level ?? null } : null,
     lastResult:

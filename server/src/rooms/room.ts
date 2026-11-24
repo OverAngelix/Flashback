@@ -3,7 +3,7 @@ import type { Catalog } from "../catalog/store.js";
 import type { CampaignLevel } from "../game/campaign.js";
 import { Game } from "../game/game.js";
 import { GameError } from "../game/types.js";
-import type { ClientMessage, ServerMessage } from "../net/protocol.js";
+import type { ClientMessage, ExtractView, ServerMessage } from "../net/protocol.js";
 import { buildView } from "../net/view.js";
 
 /** Un canal vers un client (WebSocket en production, faux canal dans les tests). */
@@ -42,6 +42,8 @@ export class Room {
   private leaderId: string | null = null;
   private readonly playerTokens = new Map<string, string>(); // jeton -> identifiant joueur
   private hostConn?: Connection;
+  /** Dernier point de l'écran hôte sur l'extrait du tour (`at` : horloge de la salle), effacé à chaque écoute. */
+  private extract: { position: number; duration: number; playing: boolean; at: number } | null = null;
   private readonly playerConns = new Map<string, Connection>();
 
   constructor(
@@ -166,6 +168,11 @@ export class Room {
       case "host:skipTurn":
         this.game.skipTurn();
         break;
+      case "host:extract":
+        // Seulement pendant l'écoute du tour en cours : un message tardif (fondu du tour d'avant) est ignoré.
+        if (actorId || this.solo || this.game.phase !== "awaiting-placement" || !this.game.listened) return;
+        this.extract = { position: Math.min(message.position, message.duration), duration: message.duration, playing: message.playing, at: this.clock() };
+        break;
       case "host:kick":
         if (message.playerId === actorId) throw new GameError("Vous ne pouvez pas vous exclure vous-même.");
         this.kick(message.playerId);
@@ -201,6 +208,7 @@ export class Room {
         }
         if (!this.hostConn) throw new GameError("L'écran n'est pas connecté.");
         const track = this.game.listen(playerId);
+        this.extract = null;
         this.hostConn.send({ type: "audio:play", audioUrl: track.previewUrl });
         break;
       }
@@ -260,6 +268,14 @@ export class Room {
 
   // --- Diffusion ------------------------------------------------------------------------------
 
+  /** L'extrait à l'instant présent : la position avance avec l'horloge tant qu'il joue. */
+  private extractView(): ExtractView | null {
+    const e = this.extract;
+    if (!e) return null;
+    const position = e.playing ? Math.min(e.duration, e.position + (this.clock() - e.at) / 1000) : e.position;
+    return { position, duration: e.duration, playing: e.playing && position < e.duration };
+  }
+
   /** Envoie l'état courant à l'hôte et à chaque joueur connecté. */
   broadcast(): void {
     this.updateLeader();
@@ -271,6 +287,7 @@ export class Room {
       leaderId: this.leaderId,
       commentator: this.commentator,
       level: this.level?.id ?? null,
+      extract: this.extractView(),
     });
     this.hostConn?.send({ type: "state", view, you: null });
     for (const [playerId, conn] of this.playerConns) conn.send({ type: "state", view, you: playerId });

@@ -46,6 +46,11 @@ export type ClientMessage =
   | { type: "host:replay" }
   /** L'écran hôte met fin à la partie : la salle est supprimée, les joueurs reçoivent `closed`. */
   | { type: "host:close" }
+  /**
+   * L'écran hôte (lui seul) dit où en est l'extrait du tour, quand la lecture démarre ou s'interrompt
+   * (fin, attente du réseau) : position et durée en secondes. Relayé aux téléphones par `GameView.extract`.
+   */
+  | { type: "host:extract"; position: number; duration: number; playing: boolean }
   | { type: "player:place"; position: number }
   /** Un autre joueur place le titre dans la frise du joueur actif, avant lui, pour un point groove. */
   | { type: "player:groove"; position: number }
@@ -127,6 +132,11 @@ export interface GameView {
   /** Le joueur actif a déjà écouté l'extrait : il ne peut plus le relancer pendant ce tour. */
   listened: boolean;
   /**
+   * Où en est l'extrait sur l'écran hôte, au moment de l'envoi de la vue (les téléphones avancent
+   * ensuite eux-mêmes si `playing`) ; null tant que l'écran ne l'a pas lancé (chargement, son bloqué).
+   */
+  extract: ExtractView | null;
+  /**
    * Joueurs qui ont déjà fait leur placement groove pendant ce tour. Les positions restent secrètes
    * jusqu'à la révélation (le joueur actif pourrait s'en inspirer).
    */
@@ -136,6 +146,14 @@ export interface GameView {
   /** Résultat du dernier placement, uniquement pendant la phase "reveal". */
   lastResult: { playerId: string; position: number; correct: boolean; track: PublicCard; groove: GrooveView[] } | null;
   winnerIds: string[];
+}
+
+export interface ExtractView {
+  /** Secondes déjà jouées. */
+  position: number;
+  /** Durée de l'extrait en secondes (environ 30). */
+  duration: number;
+  playing: boolean;
 }
 
 export interface SoloView extends SoloState {
@@ -190,6 +208,12 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return Number.isInteger(m.cardsToWin) ? { type: "host:setCardsToWin", cardsToWin: m.cardsToWin as number } : null;
     case "host:setCommentator":
       return typeof m.enabled === "boolean" ? { type: "host:setCommentator", enabled: m.enabled } : null;
+    case "host:extract": {
+      const ok = (v: unknown, max: number): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max;
+      return ok(m.position, 600) && ok(m.duration, 600) && typeof m.playing === "boolean"
+        ? { type: "host:extract", position: m.position, duration: m.duration, playing: m.playing }
+        : null;
+    }
     case "host:kick":
       return isString(m.playerId, 16) ? { type: "host:kick", playerId: m.playerId } : null;
     case "player:place":
