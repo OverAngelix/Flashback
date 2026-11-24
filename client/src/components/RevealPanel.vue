@@ -11,7 +11,8 @@ import TrackCard from "./TrackCard.vue";
 /**
  * Tous les écrans montrent la frise du joueur qui vient de jouer, avec sa carte à l'endroit choisi
  * (verte si juste, rouge sinon) et, si elle est fausse, les emplacements qui étaient justes. L'écran
- * hôte dit qui a trouvé le groove ; un téléphone (`viewerId`) ne donne que le résultat de son joueur.
+ * hôte dit qui a trouvé le groove ; un téléphone (`viewerId`) ne donne que le résultat de son joueur,
+ * et se borde de vert ou de rouge selon ce résultat (placement ou groove).
  */
 const props = defineProps<{ view: GameView; compact?: boolean; viewerId?: string | null; note?: string }>();
 
@@ -44,6 +45,18 @@ const verdict = computed(() => {
 });
 
 /**
+ * Téléphone : le résultat de celui qui le tient, pour colorer tout l'écran. Joueur actif : son
+ * placement ; joueur qui a tenté le groove : son groove ; sinon (spectateur, tour passé) rien.
+ */
+const personal = computed<"ok" | "ko" | null>(() => {
+  const r = result.value;
+  if (!props.viewerId || !r) return null;
+  if (props.viewerId === player.value?.id) return skipped.value ? null : r.correct ? "ok" : "ko";
+  const mine = r.groove?.find((g) => g.playerId === props.viewerId);
+  return mine ? (mine.correct ? "ok" : "ko") : null;
+});
+
+/**
  * Ligne groove. Écran hôte : « Ben et Cléo ont (aussi) trouvé », rien si personne n'a tenté.
  * Téléphone : seulement le résultat du spectateur s'il a placé (« Toi non plus… »), sans les autres.
  */
@@ -69,13 +82,14 @@ const groove = computed(() => {
 <template>
   <div v-if="result && player" class="reveal" :class="{ compact, wrong: !result.correct }">
     <Confetti v-if="result.correct && !compact" />
+    <div v-if="personal" class="personal-glow" :class="personal" data-testid="personal-result" :data-result="personal" aria-hidden="true" />
     <div class="card-wrap"><TrackCard :card="result.track" big :tone="skipped ? undefined : result.correct ? 'ok' : 'ko'" /></div>
     <div class="side">
       <div class="head">
         <AvatarBadge :avatar="player.avatar" :size="compact ? 34 : 64" />
         <div class="min-width-0">
           <div class="verdict display" :class="result.correct ? 'ok' : 'ko'" data-testid="verdict">{{ verdict }}</div>
-          <div v-if="groove" class="groove-line text-truncate" :class="groove.ok ? 'ok' : 'ko'" data-testid="groove-result">
+          <div v-if="groove" class="groove-line text-truncate" :class="[groove.ok ? 'ok' : 'ko', { mine: !!viewerId }]" data-testid="groove-result">
             <DiscoBall :size="18" class="mr-1" />{{ groove.text }}
           </div>
         </div>
@@ -167,6 +181,47 @@ const groove = computed(() => {
 }
 .compact .groove-line {
   margin-top: 0;
+}
+/* Téléphone : son propre groove, en vert ou rouge comme le liseré, et lisible d'un coup d'œil. */
+.groove-line.mine.ok {
+  color: var(--green);
+}
+.groove-line.mine.ko {
+  color: var(--red);
+}
+.compact .groove-line.mine {
+  font-size: 1.1rem;
+}
+/* Liseré sur tout l'écran du téléphone : vert si c'est bon pour celui qui le tient, rouge sinon. */
+.personal-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 5px var(--glow), inset 0 0 36px 4px var(--glow-soft);
+  animation: glow-in 0.9s ease both;
+}
+.personal-glow.ok {
+  --glow: var(--green);
+  --glow-soft: rgba(46, 229, 157, 0.35);
+}
+.personal-glow.ko {
+  --glow: var(--red);
+  --glow-soft: rgba(255, 92, 112, 0.35);
+}
+@keyframes glow-in {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 @keyframes shake {
   20%,

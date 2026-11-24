@@ -439,6 +439,14 @@ try {
   const benGroove = await text(ben, sel("groove-result"));
   if (benGroove !== (anaOk ? "Toiaussi!" : "Toinonplus…")) throw new Error("résultat groove de Ben incorrect : " + benGroove);
   ok("Ben : la révélation tient à 740x300, montre la frise d'Ana et « " + (anaOk ? "Toi aussi !" : "Toi non plus…") + " »");
+  // Chaque téléphone se borde de vert ou de rouge selon son propre résultat (placement d'Ana, groove de Ben).
+  const tone = anaOk ? "ok" : "ko";
+  for (const [name, page] of [["Ana", ana], ["Ben", ben]]) {
+    const got = await page.$eval(sel("personal-result"), (e) => e.dataset.result);
+    if (got !== tone) throw new Error(`liseré de ${name} : ${got} au lieu de ${tone}`);
+  }
+  if (await host.$(sel("personal-result"))) throw new Error("l'écran hôte ne devrait pas avoir de liseré personnel");
+  ok(`révélation : téléphones d'Ana et Ben bordés de ${anaOk ? "vert" : "rouge"}, pas l'écran hôte`);
   await ben.setViewport(phone);
 
   await ana.waitForSelector(sel("leader-advance") + ":not([disabled])", { timeout: 6000 });
@@ -607,6 +615,8 @@ try {
     await (await page.$$(".slot"))[pos].click();
     await page.click(sel("place"));
     await painted(page, sel("solo-advance"), "révélation solo");
+    const glow = await page.$eval(sel("personal-result"), (e) => e.dataset.result);
+    if (glow !== (good.includes(pos) ? "ok" : "ko")) throw new Error("solo : liseré " + glow + " pour un placement " + (good.includes(pos) ? "juste" : "faux"));
     return good.includes(pos);
   }
   /** Après la révélation : titre suivant ou fin de partie. Renvoie vrai si la partie est finie. */

@@ -30,7 +30,8 @@ Décision : les points groove sont **uniquement pour le style**. Ils ne comptent
 - [x] Manette du joueur en cours : « 1 joueur a déjà placé » pour mettre la pression
 - [x] Écran hôte pendant le tour : « Les autres : placez aussi ce titre dans cette frise depuis votre écran, avant Ana, pour un point groove. 1/2 ont placé. » et une pastille sur chaque joueur qui a placé
 - [x] Révélation, écran hôte : « Ben a aussi trouvé » (si Ana a trouvé), « Ben a trouvé » (si elle a raté), « Ben et Cléo ont aussi trouvé », « Personne n'a trouvé » ; rien si personne n'a tenté
-- [x] Révélation, téléphone : uniquement son propre résultat, s'il a placé (« Toi aussi ! », « Toi, tu as trouvé ! », « Toi non plus… », « Toi, tu n'as pas trouvé… »)
+- [x] Révélation, téléphone : uniquement son propre résultat, s'il a placé (« Toi aussi ! », « Toi, tu as trouvé ! », « Toi non plus… », « Toi, tu n'as pas trouvé… »), en vert ou en rouge
+- [x] Révélation, téléphone : liseré vert ou rouge sur tout l'écran selon le résultat de celui qui le tient (son placement s'il jouait, son groove s'il a tenté ; rien pour un spectateur qui n'a pas placé ni pour un tour passé), aussi en solo
 - [x] Pas d'avatar sur la frise pour le groove : juste le texte de qui a trouvé
 - [x] Points groove dans la barre des joueurs de l'écran hôte et au récapitulatif (« 0 groove »)
 - [x] Logo : boule disco dessinée en SVG (`DiscoBall.vue`), Material Design Icons n'en ayant pas
