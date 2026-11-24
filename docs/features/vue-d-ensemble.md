@@ -35,7 +35,7 @@ Les titres, artistes et années du titre en cours ne quittent jamais le serveur 
 Depuis la boîte « Solo » (`/solo`), sur un seul appareil qui joue lui-même l'extrait. Même déroulement qu'une partie, sans écran hôte, sans groove ni récapitulatif, avec **3 vies** : chaque erreur (ou tour passé) en coûte une.
 
 - **Partie libre** : on choisit ses catégories, puis on va le plus loin possible ; la partie s'arrête après la troisième erreur. Score : la longueur de la frise, avec un record par sélection.
-- **Campagne** : 12 niveaux à thème (Premiers pas, Tour du monde, Pop… jusqu'au Grand final), chacun avec ses catégories et une frise à réunir (5 à 10 cartes). Titres tirés au sort à chaque essai. Niveau réussi si la frise est complète avant la troisième erreur ; une étoile par vie restante (★★★ sans erreur). Réussir un niveau ouvre le suivant.
+- **Campagne** : 12 niveaux à thème (Premiers pas, Tour du monde, Pop… jusqu'au Grand final), chacun avec ses catégories et une frise à réunir (5 à 10 cartes). Titres tirés au sort à chaque essai. Chaque niveau se présente avant son premier titre (numéro, thème, cartes à réunir), son nom reste affiché pendant le jeu. Niveau réussi si la frise est complète avant la troisième erreur ; une étoile par vie restante (★★★ sans erreur). Réussir un niveau ouvre le suivant.
 
 Étoiles et records sont gardés dans le navigateur. Détail : [10-solo.md](10-solo.md).
 

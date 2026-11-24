@@ -639,7 +639,16 @@ try {
   await painted(solo, sel("level-premiers-pas"), "menu solo sur téléphone");
   await assertFits(solo, "menu solo en paysage");
   await solo.click(sel("level-premiers-pas"));
+  // Un niveau démarre tout de suite : une fiche dit d'abord lequel c'est.
+  await painted(solo, sel("solo-intro-go"), "présentation du niveau 1");
+  if ((await text(solo, sel("solo-intro-number"))) !== "Niveau1/12") throw new Error("numéro de niveau inattendu : " + (await text(solo, sel("solo-intro-number"))));
+  if ((await text(solo, sel("solo-intro-title"))) !== "Premierspas") throw new Error("titre de niveau inattendu : " + (await text(solo, sel("solo-intro-title"))));
+  await assertFits(solo, "présentation du niveau en paysage", { vertical: true });
+  await shot(solo, "16b-solo-intro");
+  await solo.click(sel("solo-intro-go"));
   await painted(solo, sel("play-extract"), "niveau 1");
+  if ((await text(solo, sel("solo-level-name"))) !== "Niv.1·Premierspas") throw new Error("nom du niveau absent du tour : " + (await text(solo, sel("solo-level-name"))));
+  ok("solo : le niveau se présente avant le premier titre, puis son nom reste affiché");
   if ((await text(solo, sel("solo-progress"))) !== "1/5cartes") throw new Error("progression inattendue : " + (await text(solo, sel("solo-progress"))));
   await shot(solo, "17-solo-turn");
   const firstOk = await soloPlace(solo, { wrong: true });
@@ -677,7 +686,16 @@ try {
   await shot(solo, "19-solo-level-won");
   ok(`solo : niveau 1 réussi avec ${stars} étoiles`);
 
-  await solo.click(sel("solo-menu"));
+  // « Niveau suivant » lance le niveau 2 : sa fiche le présente. On l'abandonne pour revenir au menu.
+  await solo.click(sel("solo-next"));
+  await painted(solo, sel("solo-intro-go"), "présentation du niveau 2");
+  if ((await text(solo, sel("solo-intro-title"))) !== "Tourdumonde") throw new Error("« Niveau suivant » devrait présenter le niveau 2 : " + (await text(solo, sel("solo-intro-title"))));
+  ok("solo : « Niveau suivant » présente le niveau 2 (Tour du monde)");
+  await solo.click(sel("solo-leave"));
+  await painted(solo, sel("solo-leave-confirm-ok"), "confirmation d'abandon");
+  // Le dialogue grandit en s'ouvrant : un clic trop tôt peut tomber sur le fond, ce qui l'annule.
+  await sleep(300);
+  await solo.click(sel("solo-leave-confirm-ok"));
   await painted(solo, sel("level-tour-du-monde"), "menu solo après le niveau 1");
   if (await solo.$eval(sel("level-tour-du-monde"), (e) => e.disabled)) throw new Error("le niveau 2 devrait être ouvert");
   if ((await text(solo, sel("campaign-total"))) !== `${stars}/36`) throw new Error("les étoiles du niveau 1 ne sont pas comptées");

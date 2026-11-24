@@ -28,7 +28,8 @@ Décisions : 3 vies dans les deux modes (une vie perdue par erreur) ; titres de 
 - [x] Corrigé : la progression n'était plus enregistrée après avoir quitté `/solo` (étoiles perdues au rechargement) ; enregistrement détaché des écrans (`effectScope`)
 - [x] Menu solo : meilleur score et dernier score de la partie libre
 - [x] Musique de menu aussi sur `/solo`
-- [x] Test de bout en bout : menu, niveau 1 avec une erreur volontaire puis sans faute (2 étoiles), rechargement en pleine partie, tour à 740x300, déblocage du niveau 2, partie libre jusqu'à la troisième erreur, record
+- [x] Présentation du niveau avant le premier titre (« Niveau 2 / 12 », titre, description, cartes à réunir, vies, étoiles déjà gagnées, bouton « C'est parti ») : un niveau démarre tout de suite, et après « Niveau suivant » on ne savait pas lequel c'était ; le nom du niveau reste ensuite affiché en haut de la colonne de jeu (« Niv. 2 · Tour du monde »)
+- [x] Test de bout en bout : menu, présentation du niveau 1, niveau 1 avec une erreur volontaire puis sans faute (2 étoiles), rechargement en pleine partie, tour à 740x300, « Niveau suivant » qui présente le niveau 2, déblocage du niveau 2, partie libre jusqu'à la troisième erreur, record
 
 ## Idées hors cadre (non demandées)
 

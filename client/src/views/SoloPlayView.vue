@@ -45,9 +45,22 @@ const nextLevel = computed(() => {
   const index = CAMPAIGN.findIndex((l) => l.id === level.value?.id);
   return index >= 0 ? CAMPAIGN[index + 1] : undefined;
 });
+const levelNumber = computed(() => (level.value ? CAMPAIGN.indexOf(level.value) + 1 : 0));
 const cards = computed(() => me.value?.timeline.length ?? 0);
 const playing = computed(() => view.value?.phase === "awaiting-placement" || view.value?.phase === "reveal");
-const stageKey = computed(() => (view.value ? `${view.value.phase}-${view.value.round}` : "loading"));
+
+/**
+ * Un niveau démarre dès sa création (aussi par « Niveau suivant ») : avant le premier titre, une fiche
+ * dit lequel c'est. Elle se ferme d'un geste, une fois par partie (code de la salle).
+ */
+const introSeen = ref<string | null>(null);
+const showIntro = computed(() => {
+  const v = view.value;
+  return !!level.value && !!v && v.phase === "awaiting-placement" && v.round === 1 && !v.listened && introSeen.value !== v.code;
+});
+const levelStars = computed(() => (level.value ? (progress.stars[level.value.id] ?? 0) : 0));
+
+const stageKey = computed(() => (view.value ? (showIntro.value ? "intro" : `${view.value.phase}-${view.value.round}`) : "loading"));
 
 /** Où en est la frise : « 3 / 5 cartes » en campagne, « 3 cartes » en partie libre. */
 const progressText = computed(() => {
@@ -159,9 +172,23 @@ function replay() {
           </div>
         </section>
 
+        <!-- Campagne : présentation du niveau avant le premier titre -->
+        <section v-else-if="showIntro && level" class="s-intro" data-testid="solo-intro">
+          <div class="muted" data-testid="solo-intro-number">Niveau {{ levelNumber }} / {{ CAMPAIGN.length }}</div>
+          <div class="display t-lg grad-text" data-testid="solo-intro-title">{{ level.title }}</div>
+          <div class="muted">{{ level.description }}</div>
+          <div class="s-intro-meta">
+            <span class="display"><v-icon icon="mdi-cards-outline" size="20" /> {{ level.goal }} cartes à réunir</span>
+            <LivesBar :lives="solo.lives" :max="solo.maxLives" :size="20" />
+            <StarRating v-if="levelStars" :stars="levelStars" :size="20" />
+          </div>
+          <v-btn class="btn-primary" size="large" append-icon="mdi-arrow-right" data-testid="solo-intro-go" @click="introSeen = view.code">C'est parti</v-btn>
+        </section>
+
         <!-- Mon titre : l'appareil joue l'extrait lui-même -->
         <PlayTurn v-else-if="view.phase === 'awaiting-placement'" :me="me" :listened="view.listened" :audio-url="view.current?.audioUrl">
           <template #head>
+            <div v-if="level" class="s-level-name muted text-truncate" data-testid="solo-level-name">Niv. {{ levelNumber }} · {{ level.title }}</div>
             <div class="s-status">
               <LivesBar :lives="solo.lives" :max="solo.maxLives" />
               <span class="display" data-testid="solo-progress">{{ progressText }}</span>
@@ -181,7 +208,7 @@ function replay() {
         <section v-else-if="view.phase === 'finished' && outcome" class="s-end">
           <Confetti v-if="outcome.won || newRecord" :count="70" />
           <div class="s-end-head">
-            <div v-if="level" class="muted">Niveau {{ CAMPAIGN.indexOf(level) + 1 }} · {{ level.title }}</div>
+            <div v-if="level" class="muted">Niveau {{ levelNumber }} · {{ level.title }}</div>
             <div class="display t-lg" :class="outcome.won || newRecord ? 'grad-text' : ''" data-testid="solo-end-title">{{ endTitle }}</div>
             <StarRating v-if="level && outcome.won" :stars="outcome.stars" :size="44" />
             <div v-if="level" class="muted" data-testid="solo-end-detail">
@@ -254,6 +281,30 @@ function replay() {
   gap: 14px;
   padding-top: 8px;
 }
+.s-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 640px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
+}
+.s-intro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 18px;
+  margin: 4px 0 6px;
+}
+.s-level-name {
+  margin-bottom: -6px;
+  font-size: 0.85rem;
+}
 .s-status {
   display: flex;
   flex-wrap: wrap;
@@ -299,6 +350,12 @@ function replay() {
   }
   .s-end-head {
     gap: 2px;
+  }
+  .s-intro {
+    gap: 4px;
+  }
+  .s-intro .t-lg {
+    font-size: 1.8rem;
   }
   .s-end-head .t-lg {
     font-size: 1.6rem;
