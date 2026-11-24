@@ -43,6 +43,13 @@ describe("newsFor", () => {
       { icon: "mdi-moon", title: "Mode nuit", text: "Pour les yeux." },
     ]);
   });
+  it("garde les éléments `updateOnly` pour qui a vu une version précédente", () => {
+    const more = [...releases, { version: "1.2", items: [{ id: "fix", icon: "mdi-wrench", title: "Correction", text: "Réparé.", updateOnly: true }] }];
+    const welcome = newsFor(null, more);
+    expect(welcome?.version).toBe("1.2");
+    expect(welcome?.sections[0]?.items.map((i) => i.title)).toEqual(["Plus de 1 500 musiques", "Mode solo", "Mode nuit"]);
+    expect(newsFor("1.1", more)?.sections).toEqual([{ version: "1.2", items: [{ icon: "mdi-wrench", title: "Correction", text: "Réparé." }] }]);
+  });
   it("liste les versions manquées, la plus récente d'abord", () => {
     const more = [...releases, { version: "1.2", items: [{ id: "x", icon: "mdi-x", title: "X", text: "x" }] }];
     expect(newsFor("1.0", more)?.sections.map((s) => s.version)).toEqual(["1.2", "1.1"]);

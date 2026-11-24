@@ -25,6 +25,8 @@ export interface NewsItem {
   /** Formulation pour qui a vu une version précédente ; `text` par défaut. */
   updateTitle?: string;
   update?: string;
+  /** Réservé à qui a vu une version précédente (une correction, un détail) : absent de la présentation complète. */
+  updateOnly?: boolean;
 }
 
 export interface Release {
@@ -76,6 +78,25 @@ export const RELEASES: readonly Release[] = [
       },
     ],
   },
+  {
+    version: "1.2",
+    items: [
+      {
+        id: "solo-level-name",
+        icon: "mdi-flag-checkered",
+        title: "Correction du mode solo",
+        text: "Le nom du niveau s'affiche quand on passe au suivant (merci pour vos retours !).",
+        updateOnly: true,
+      },
+      {
+        id: "reveal-glow",
+        icon: "mdi-check-circle-outline",
+        title: "Bon ou raté, d'un coup d'œil",
+        text: "À la révélation, ton écran se borde de vert si tu avais bon, de rouge sinon : ton placement, ou ton groove si tu as tenté.",
+        updateOnly: true,
+      },
+    ],
+  },
 ];
 
 export interface NewsSection {
@@ -118,7 +139,7 @@ export function newsFor(seen: string | null, releases: readonly Release[] = RELE
   if (!known) {
     // Ordre de première apparition, formulation la plus récente.
     const merged = new Map<string, NewsItem>();
-    for (const release of releases) for (const item of release.items) merged.set(item.id, item);
+    for (const release of releases) for (const item of release.items) if (!item.updateOnly) merged.set(item.id, item);
     const items = [...merged.values()].map(({ icon, title, text }) => ({ icon, title, text }));
     return { version: latest.version, welcome: true, sections: [{ version: latest.version, items }] };
   }
