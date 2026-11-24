@@ -22,7 +22,7 @@ Décisions : 3 vies dans les deux modes (une vie perdue par erreur) ; titres de 
 
 - [x] Menu : boîte « Solo » (rangée Héberger, Rejoindre, Solo ; puis Multijoueur et Paramètres)
 - [x] `/solo` (`SoloView`) : partie libre (avec la meilleure frise), carte de la campagne (numéro, thème, taille de la frise, étoiles, cadenas, total sur 36)
-- [x] `/solo/play` (`SoloPlayView`) : salon de la partie libre (catégories, record de la sélection), tour (`PlayTurn` avec `audio-url` : l'appareil joue l'extrait pendant le geste ; cœurs et « 3 / 5 cartes » en haut), révélation (cœurs, « Continuer » ou « Voir le résultat »), fin (étoiles ou record, frise, Rejouer / Réessayer, Niveau suivant, Menu solo)
+- [x] `/solo/play` (`SoloPlayView`) : salon de la partie libre (catégories, record de la sélection), tour (`PlayTurn` avec `audio-url` : l'appareil joue l'extrait pendant le geste, un anneau autour du bouton « Écouter » tourne pendant le chargement puis montre la progression, avec les secondes restantes dans le bouton ; cœurs et « 3 / 5 cartes » en haut), révélation (cœurs, « Continuer » ou « Voir le résultat »), fin (étoiles ou record, frise, Rejouer / Réessayer, Niveau suivant, Menu solo)
 - [x] Abandon en cours de partie avec confirmation ; rechargement : reprise de la partie
 - [x] Progression : `src/soloProgress.ts` (`localStorage`, meilleure note par niveau, record par sélection, dernier score de la partie libre, déblocage), testée
 - [x] Corrigé : la progression n'était plus enregistrée après avoir quitté `/solo` (étoiles perdues au rechargement) ; enregistrement détaché des écrans (`effectScope`)

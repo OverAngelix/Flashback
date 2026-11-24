@@ -40,7 +40,9 @@ Client : Vite, Vue 3, Vuetify 4, TypeScript (`client/`). Écran hôte : `client/
 - [x] Groove pendant le tour des autres (placement, points, écrans) : voir [09-groove.md](09-groove.md)
 - [x] Révélation sur tous les écrans : frise du joueur avec la carte à l'endroit choisi, en vert si juste, en rouge sinon (carte fausse affichée puis défaussée, et tous les emplacements qui étaient justes marqués d'une pastille verte) ; verdict avec le nom (« Dark a trouvé ! », « Dark n'a pas trouvé… », « Dark passe ce tour » ; « Bien joué ! » ou « Raté… » sur le téléphone de Dark) ; révélation centrée sur la manette (PC compris, la frise ne défile que si la carte jouée est cachée), « En attente de la suite… » ou « Continuer » en bas au centre ; résultat groove : voir [09-groove.md](09-groove.md)
 - [x] Au tour du joueur : bouton « Écouter » (l'écran hôte joue le son, une seule écoute par tour), frise défilante avec emplacements entre les cartes, bouton « Placer ici » ; les deux boutons sont dans la colonne de gauche, visibles même sur un écran de 740x300
-- [x] L'écran hôte suit l'écoute : attente du lancement, « Écoute… », puis « place le titre dans sa frise » à la fin de l'extrait
+- [x] L'écran hôte suit l'écoute : attente du lancement, « Chargement de l'extrait… », « Écoute… », puis « place le titre dans sa frise » à la fin de l'extrait
+- [x] Durée de l'extrait sur l'écran hôte : anneau autour du disque (qui tourne pendant le chargement, puis se remplit au fil de l'extrait) et temps restant (« 0:27 ») à côté de l'égaliseur ; disque de 240 px
+- [x] Même chrono sur les téléphones : anneau autour du bouton « Écouter » avec les secondes restantes au tour du joueur, petit anneau dans la colonne de gauche pendant le tour d'un autre (groove)
 - [x] Formulaire d'entrée sans débordement de 320 à 390 px de large
 - [x] Paysage obligatoire pendant la partie : écran « Tourne ton téléphone » tant que le téléphone est en portrait (le salon et la saisie du nom restent possibles en portrait ; le formulaire passe sur deux colonnes en paysage)
 - [x] Reprise automatique après une coupure ou un rechargement, et dès le réveil du téléphone

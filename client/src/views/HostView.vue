@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { audio, fadeOutExtract, playExtract, stopExtract, unlockAudio } from "@/audio";
+import { audio, extractSnapshot, fadeOutExtract, playExtract, stopExtract, unlockAudio } from "@/audio";
 import DiscoBall from "@/components/DiscoBall.vue";
 import AvatarBadge from "@/components/AvatarBadge.vue";
 import BrandMark from "@/components/BrandMark.vue";
@@ -11,6 +11,7 @@ import GoalPicker from "@/components/GoalPicker.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import CopyLinkButton from "@/components/CopyLinkButton.vue";
 import Equalizer from "@/components/Equalizer.vue";
+import ExtractRing from "@/components/ExtractRing.vue";
 import MusicLoader from "@/components/MusicLoader.vue";
 import PlayersBar from "@/components/PlayersBar.vue";
 import RecapPanel from "@/components/RecapPanel.vue";
@@ -21,6 +22,7 @@ import { useCommentator } from "@/composables/useCommentator";
 import { useControls } from "@/composables/useControls";
 import { useGame } from "@/composables/useGame";
 import { useRevealDelay } from "@/composables/useRevealDelay";
+import { extractClock, formatSeconds } from "@/extractClock";
 import { joinBase, joinLink } from "@/joinUrl";
 import { qrDataUrl } from "@/qr";
 
@@ -84,8 +86,25 @@ watch(
 const status = computed(() => {
   const name = active.value?.name ?? "";
   if (!view.value?.listened) return `${name}, lance l'extrait depuis ton écran`;
+  if (audio.loading) return "Chargement de l'extrait…";
   return audio.playing ? "Écoute…" : `${name} place le titre dans sa frise`;
 });
+
+/** Anneau autour du disque : vide avant l'écoute, qui tourne pendant le chargement, puis plein à la fin. */
+const clock = computed(() => extractClock(audio.position, audio.duration));
+const ringProgress = computed(() => (!view.value?.listened ? 0 : audio.loading ? null : clock.value.progress));
+
+/**
+ * Les téléphones affichent le même chrono : à chaque démarrage ou arrêt de la lecture (fin, attente du
+ * réseau), l'écran dit au serveur où en est l'extrait. Le serveur ignore ce qui ne concerne pas l'écoute en cours.
+ */
+watch(
+  () => audio.playing && !audio.loading,
+  (playing) => {
+    if (view.value?.phase !== "awaiting-placement" || !view.value.listened) return;
+    connection.send({ type: "host:extract", ...extractSnapshot(), playing });
+  },
+);
 
 /**
  * Récapitulatif et fin : tout tient dans la hauteur de l'écran, bouton compris ; les frises défilent
@@ -212,7 +231,9 @@ watch(turnKey, (key) => {
         <section v-else-if="view.phase === 'awaiting-placement' && active" class="turn">
           <PlayersBar :players="view.players" :active-id="view.activePlayerId" :leader-id="view.leaderId" groove :guessed-ids="view.grooveGuessIds" />
           <div class="spotlight">
-            <VinylDisc :size="260" :spinning="audio.playing" />
+            <ExtractRing :progress="ringProgress" :size="270" :thickness="7" data-testid="extract-ring">
+              <VinylDisc :size="240" :spinning="audio.playing" />
+            </ExtractRing>
             <div class="info">
               <div class="who">
                 <AvatarBadge :avatar="active.avatar" :size="84" />
@@ -222,7 +243,11 @@ watch(turnKey, (key) => {
                 </div>
               </div>
               <div class="status display t-md" data-testid="turn-status">{{ status }}</div>
-              <div class="eq-row"><Equalizer :active="audio.playing" /><span class="muted">{{ view.listened ? "Une seule écoute par tour." : "Une seule écoute : bien écouter !" }}</span></div>
+              <div class="eq-row">
+                <Equalizer :active="audio.playing" />
+                <span v-if="audio.playing" class="h-clock display" data-testid="extract-clock">{{ formatSeconds(clock.remaining) }}</span>
+                <span class="muted">{{ view.listened ? "Une seule écoute par tour." : "Une seule écoute : bien écouter !" }}</span>
+              </div>
               <div class="groove-hint" data-testid="groove-hint">
                 <DiscoBall :size="30" />
                 <span>
@@ -504,6 +529,11 @@ watch(turnKey, (key) => {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+.h-clock {
+  min-width: 2.6em;
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
 }
 .groove-hint {
   display: flex;

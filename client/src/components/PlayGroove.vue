@@ -4,6 +4,8 @@ import type { PlayerView } from "@server/net/protocol";
 import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 import TimelineStrip from "./TimelineStrip.vue";
+import ExtractRing from "./ExtractRing.vue";
+import { useExtractProgress } from "@/composables/useExtractProgress";
 import { useConnection } from "@/net/connection";
 
 /**
@@ -22,6 +24,9 @@ const props = defineProps<{
 const emit = defineEmits<{ skip: [] }>();
 const connection = useConnection();
 const selected = ref<number | null>(null);
+
+/** L'extrait joué sur l'écran hôte : anneau et secondes restantes, comme au tour du joueur. */
+const { progress, remaining, loading } = useExtractProgress();
 
 const canPlace = computed(() => props.listened && !props.guessed);
 const hint = computed(() => {
@@ -50,6 +55,13 @@ function place() {
         Toi : {{ me.timeline.length }} carte{{ me.timeline.length > 1 ? "s" : "" }} ·
         <span class="gv"><DiscoBall :size="14" class="mr-1" />{{ me.groove }} groove</span>
       </div>
+      <div v-if="listened" class="clock" data-testid="groove-clock">
+        <ExtractRing :progress="progress" :size="44" :thickness="4">
+          <span v-if="remaining !== null" class="display secs" data-testid="extract-clock">{{ remaining }}</span>
+          <v-icon v-else-if="!loading" icon="mdi-check" size="20" color="success" />
+        </ExtractRing>
+        <span class="muted">{{ loading ? "Chargement…" : remaining !== null ? "Écoute…" : "Extrait terminé" }}</span>
+      </div>
       <div class="hint muted" data-testid="groove-hint">{{ hint }}</div>
       <v-btn v-if="!guessed" class="btn-success w-100" :disabled="!canPlace || selected === null" data-testid="groove-place" @click="place"><template #prepend><DiscoBall :size="20" /></template>Placer ici</v-btn>
       <div v-else class="done display" data-testid="groove-done"><v-icon icon="mdi-check-circle" /> Placé</div>
@@ -76,6 +88,16 @@ function place() {
   gap: 10px;
   width: 176px;
   flex-shrink: 0;
+}
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+.secs {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
 }
 .who {
   display: flex;

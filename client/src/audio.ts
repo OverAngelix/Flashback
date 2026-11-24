@@ -10,6 +10,11 @@ export const audio = reactive({
   playing: false,
   /** Le commentateur est en train de parler. */
   speaking: false,
+  /** Un extrait est demandé mais pas encore audible (chargement ou mise en mémoire tampon). */
+  loading: false,
+  /** Position (s) et durée (s, 0 tant qu'elle est inconnue) de l'extrait en cours : voir `extractClock`. */
+  position: 0,
+  duration: 0,
 });
 
 /** Volume de l'extrait pendant que le commentateur parle, par rapport au volume réglé. */
@@ -19,6 +24,21 @@ let element: HTMLAudioElement | undefined;
 let voice: HTMLAudioElement | undefined;
 let pendingUrl: string | undefined;
 let fadeTimer: ReturnType<typeof setInterval> | undefined;
+/** L'élément joue un extrait (et pas le son silencieux de `unlockAudio`) : seul cas suivi par l'horloge. */
+let isExtract = false;
+let clockFrame: number | undefined;
+
+/** Recopie la position de lecture à chaque image, pour un anneau de progression fluide. */
+function tick(): void {
+  clockFrame = undefined;
+  if (!element || !isExtract) return;
+  audio.position = element.currentTime;
+  if (!element.paused && !element.ended) clockFrame = requestAnimationFrame(tick);
+}
+
+function readDuration(): void {
+  if (element && isExtract && Number.isFinite(element.duration)) audio.duration = element.duration;
+}
 
 /** Volume de l'extrait : celui des réglages, baissé tant que le commentateur parle. */
 const extractVolume = () => useSettings().volume * (audio.speaking ? DUCK : 1);
@@ -35,9 +55,27 @@ function ensure(): HTMLAudioElement {
   if (!element) {
     element = new Audio();
     element.volume = extractVolume();
-    element.addEventListener("playing", () => (audio.playing = true));
-    element.addEventListener("pause", () => (audio.playing = false));
-    element.addEventListener("ended", () => (audio.playing = false));
+    const el = element;
+    el.addEventListener("playing", () => {
+      audio.playing = true;
+      audio.loading = false;
+      if (isExtract && clockFrame === undefined) clockFrame = requestAnimationFrame(tick);
+    });
+    el.addEventListener("pause", () => {
+      audio.playing = false;
+      audio.loading = false;
+    });
+    el.addEventListener("ended", () => {
+      audio.playing = false;
+      audio.loading = false;
+      if (isExtract) audio.position = audio.duration || el.currentTime;
+    });
+    el.addEventListener("waiting", () => {
+      if (isExtract && !el.paused) audio.loading = true;
+    });
+    el.addEventListener("error", () => (audio.loading = false));
+    el.addEventListener("loadedmetadata", readDuration);
+    el.addEventListener("durationchange", readDuration);
   }
   return element;
 }
@@ -49,6 +87,7 @@ export function unlockAudio(): void {
   v.src = SILENT_WAV;
   v.play().catch(() => {});
   const el = ensure();
+  isExtract = false;
   el.src = SILENT_WAV;
   el.play().then(
     () => {
@@ -64,6 +103,10 @@ export function playExtract(url: string): void {
   const el = ensure();
   el.volume = extractVolume();
   pendingUrl = url;
+  isExtract = true;
+  audio.loading = true;
+  audio.position = 0;
+  audio.duration = 0;
   el.src = url;
   el.currentTime = 0;
   el.play().then(
@@ -71,14 +114,25 @@ export function playExtract(url: string): void {
       audio.blocked = false;
       pendingUrl = undefined;
     },
-    () => (audio.blocked = true),
+    () => {
+      audio.blocked = true;
+      audio.loading = false;
+    },
   );
+}
+
+/** Position et durée (s) lues directement sur l'élément, pour les relayer aux téléphones. */
+export function extractSnapshot(): { position: number; duration: number } {
+  const el = element;
+  if (!el || !isExtract) return { position: 0, duration: 0 };
+  return { position: el.currentTime || 0, duration: Number.isFinite(el.duration) ? el.duration : 0 };
 }
 
 export function stopExtract(): void {
   cancelFade();
   element?.pause();
   pendingUrl = undefined;
+  audio.loading = false;
 }
 
 /**

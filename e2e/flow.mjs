@@ -383,6 +383,21 @@ try {
   // Pendant l'extrait, puis à la fin de la musique : l'écran hôte suit.
   await host.evaluate(() => window.__lastAudio.dispatchEvent(new Event("playing")));
   await host.waitForFunction(() => document.querySelector('[data-testid="turn-status"]').textContent.includes("Écoute"));
+  await host.waitForFunction(() => /^\d+:\d\d$/.test(document.querySelector('[data-testid="extract-clock"]')?.textContent.trim() ?? ""));
+  await painted(host, sel("extract-ring"), "anneau de l'extrait");
+  await shot(host, "05d-host-extract-clock");
+  ok("hôte : pendant l'extrait, un anneau autour du disque et le temps restant");
+  // Les téléphones suivent l'extrait de l'écran hôte (relayé par le serveur) : chrono qui décompte.
+  const phoneClock = (page) => page.waitForFunction(() => /^\d+$/.test(document.querySelector('[data-testid="extract-clock"]')?.textContent.trim() ?? ""), { timeout: 5000 });
+  await phoneClock(ana);
+  await phoneClock(ben);
+  const t0 = Number(await text(ana, sel("extract-clock")));
+  await sleep(2100);
+  const t1 = Number(await text(ana, sel("extract-clock")));
+  if (!(t1 < t0)) throw new Error(`le chrono d'Ana ne décompte pas : ${t0} puis ${t1}`);
+  await shot(ana, "05e-ana-extract-clock");
+  await shot(ben, "05f-ben-groove-clock");
+  ok(`téléphones : le chrono de l'extrait décompte chez Ana (${t0} → ${t1}) et chez Ben (groove)`);
   await host.evaluate(() => window.__lastAudio.dispatchEvent(new Event("ended")));
   await host.waitForFunction(() => document.querySelector('[data-testid="turn-status"]').textContent.includes("place le titre dans sa frise"));
   ok("hôte : à la fin de l'extrait, l'écran indique que le joueur doit placer son titre");
@@ -599,11 +614,16 @@ try {
   // de l'adresse de l'extrait que l'appareil vient de jouer.
   const yearOf = new Map(JSON.parse(readFileSync(ROOT + "server/data/catalog.json", "utf8")).map((t) => [t.previewUrl, t.year]));
   /** Écoute le titre puis le place, juste ou faux (si une position fausse existe). Renvoie le verdict. */
-  async function soloPlace(page, { wrong = false } = {}) {
+  async function soloPlace(page, { wrong = false, clockShot } = {}) {
     await painted(page, sel("play-extract"), "tour solo");
     const before = await page.evaluate(() => window.__plays.length);
     await page.click(sel("play-extract"));
     await page.waitForFunction((n) => window.__plays.length > n, { timeout: 3000 }, before);
+    if (clockShot) {
+      // Le compte à rebours s'affiche dans le bouton dès que l'extrait joue sur l'appareil.
+      await page.waitForFunction(() => /^\d+$/.test(document.querySelector('[data-testid="extract-clock"]')?.textContent.trim() ?? ""), { timeout: 8000 });
+      await shot(page, clockShot);
+    }
     const url = await page.evaluate(() => window.__plays.at(-1));
     const year = yearOf.get(url);
     if (year === undefined) throw new Error("solo : l'appareil n'a pas joué un extrait du catalogue : " + url);
@@ -661,11 +681,11 @@ try {
   ok("solo : le niveau se présente avant le premier titre, puis son nom reste affiché");
   if ((await text(solo, sel("solo-progress"))) !== "1/5cartes") throw new Error("progression inattendue : " + (await text(solo, sel("solo-progress"))));
   await shot(solo, "17-solo-turn");
-  const firstOk = await soloPlace(solo, { wrong: true });
+  const firstOk = await soloPlace(solo, { wrong: true, clockShot: "17c-solo-extract-clock" });
   await shot(solo, "18-solo-reveal");
   const hearts = await solo.$$eval(`${sel("lives")} .full`, (els) => els.length);
   if (hearts !== (firstOk ? 3 : 2)) throw new Error(`vies après le premier titre : ${hearts}`);
-  ok(`solo : l'appareil joue lui-même l'extrait ; ${firstOk ? "titre juste (années égales)" : "une erreur coûte une vie"}`);
+  ok(`solo : l'appareil joue lui-même l'extrait, avec le temps restant dans le bouton ; ${firstOk ? "titre juste (années égales)" : "une erreur coûte une vie"}`);
 
   // Rechargement en pleine partie : on retrouve la révélation.
   await solo.reload();

@@ -4,14 +4,18 @@ import type { PlayerView } from "@server/net/protocol";
 import DiscoBall from "./DiscoBall.vue";
 import AvatarBadge from "./AvatarBadge.vue";
 import Equalizer from "./Equalizer.vue";
+import ExtractRing from "./ExtractRing.vue";
 import TimelineStrip from "./TimelineStrip.vue";
 import { playExtract } from "@/audio";
+import { useExtractProgress } from "@/composables/useExtractProgress";
 import { useConnection } from "@/net/connection";
 
 /**
  * `grooveCount` : nombre d'autres joueurs qui ont déjà placé ce titre dans ma frise (point groove).
  * `audioUrl` (solo) : cet appareil joue lui-même l'extrait, pendant le geste (lecture autorisée sur
  * mobile) ; sinon c'est l'écran hôte. Le haut de la colonne (slot `head`) est remplaçable.
+ * Un anneau autour du bouton montre le chargement puis la progression de l'extrait, et les secondes
+ * restantes s'affichent dans le bouton (joué ici en solo, sur l'écran hôte sinon).
  */
 const props = defineProps<{ me: PlayerView; listened: boolean; leader?: boolean; grooveCount?: number; audioUrl?: string }>();
 const connection = useConnection();
@@ -21,6 +25,13 @@ const hint = computed(() => {
   if (!props.listened) return "Une seule écoute : écoute bien !";
   if (selected.value === null) return "Touche un emplacement de ta frise.";
   return "Valide ton choix.";
+});
+
+const { progress: ringProgress, remaining: countdown, loading } = useExtractProgress();
+const label = computed(() => {
+  if (!props.listened) return "Écouter";
+  if (loading.value) return "Chargement…";
+  return countdown.value !== null ? "Écoute…" : "Écouté";
 });
 
 function listen() {
@@ -46,12 +57,15 @@ function place() {
         </div>
       </slot>
       <div class="listen">
-        <button type="button" class="play" :class="{ done: listened }" :disabled="listened" data-testid="play-extract" aria-label="Écouter l'extrait" @click="listen">
-          <v-icon :icon="listened ? 'mdi-check' : 'mdi-play'" size="34" />
-        </button>
+        <ExtractRing :progress="ringProgress" :size="80" :thickness="5">
+          <button type="button" class="play" :class="{ done: listened }" :disabled="listened" data-testid="play-extract" aria-label="Écouter l'extrait" @click="listen">
+            <span v-if="countdown !== null" class="countdown display" data-testid="extract-clock">{{ countdown }}</span>
+            <v-icon v-else :icon="listened ? 'mdi-check' : 'mdi-play'" size="34" />
+          </button>
+        </ExtractRing>
         <div class="listen-text">
-          <span class="display">{{ listened ? "Écouté" : "Écouter" }}</span>
-          <Equalizer :active="listened" :bars="4" />
+          <span class="display">{{ label }}</span>
+          <Equalizer :active="countdown !== null" :bars="4" />
         </div>
       </div>
       <div class="hint muted">{{ hint }}</div>
@@ -109,12 +123,17 @@ function place() {
   border-radius: 50%;
   color: #fff;
   background: var(--grad);
-  box-shadow: 0 8px 26px rgba(255, 61, 154, 0.5), 0 0 0 6px rgba(255, 61, 154, 0.18);
+  box-shadow: 0 8px 26px rgba(255, 61, 154, 0.5);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
 .play:active:not(:disabled) {
   transform: scale(0.94);
+}
+.countdown {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
 }
 .play.done {
   background: var(--glass-strong);

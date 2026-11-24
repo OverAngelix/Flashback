@@ -21,6 +21,7 @@ function view(patch: Partial<GameView>): GameView {
     activePlayerId: null,
     current: null,
     listened: false,
+    extract: null,
     grooveGuessIds: [],
     solo: null,
     lastResult: null,

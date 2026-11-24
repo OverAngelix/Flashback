@@ -15,6 +15,7 @@ WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code
 - [x] Protocole de messages typé et validé (`server/src/net/protocol.ts`)
 - [x] Vue publique de l'état, identique pour tous : jamais le titre, l'artiste, l'année ni la pochette du titre courant avant la révélation (testé)
 - [x] Lancement de l'extrait : le joueur actif envoie `player:play` (une seule fois par tour, et seulement si l'écran est connecté), l'hôte reçoit `audio:play` et joue le son ; l'état porte `listened`
+- [x] Chrono de l'extrait sur les téléphones : l'écran hôte envoie `host:extract` (position, durée, lecture ou non) à chaque démarrage ou arrêt de la lecture ; la salle le garde (effacé à chaque écoute, ignoré hors de l'écoute en cours, refusé aux joueurs) et l'état porte `extract`, position avancée à l'instant de l'envoi ; le téléphone avance ensuite seul
 - [x] Déconnexion : le joueur reste dans la partie, marqué absent ; il revient avec son jeton (`player:rejoin`) ; l'hôte aussi (`host:rejoin`)
 - [x] Battement de cœur (ping toutes les 20 s) pour détecter un téléphone en veille
 - [x] L'hôte peut passer le tour d'un joueur absent (`host:skipTurn`) et exclure un joueur dans le salon (`host:kick`)
@@ -26,7 +27,7 @@ WebSocket sur le même port que le HTTP, chemin `/ws` (bibliothèque `ws`). Code
 
 ## Messages (résumé)
 
-Client → serveur : `host:create`, `host:rejoin`, `host:setCategories`, `host:setCardsToWin` (de 3 à 10), `host:start`, `host:advance` (avec `from`), `host:skipTurn`, `host:kick`, `player:join`, `player:rejoin`, `player:place`, `player:play`, `player:leave`.
+Client → serveur : `host:create`, `host:rejoin`, `host:setCategories`, `host:setCardsToWin` (de 3 à 10), `host:start`, `host:advance` (avec `from`), `host:skipTurn`, `host:kick`, `host:extract`, `player:join`, `player:rejoin`, `player:place`, `player:play`, `player:leave`.
 
 Serveur → client : `session` (jeton à conserver), `state` (vue complète à chaque changement, `you` = identifiant du joueur ou null pour l'hôte), `audio:play`, `kicked`, `error` (`bad-message`, `room-not-found`, `not-allowed`, `rule`, `internal`).
 

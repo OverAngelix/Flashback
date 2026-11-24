@@ -97,6 +97,18 @@ export const RELEASES: readonly Release[] = [
       },
     ],
   },
+  {
+    version: "1.3",
+    items: [
+      {
+        id: "extract-clock",
+        icon: "mdi-timer-outline",
+        title: "Le chrono de l'extrait",
+        text: "Un anneau montre le chargement puis le temps qui reste sur l'extrait, sur la télé comme sur chaque téléphone, en solo aussi.",
+        updateOnly: true,
+      },
+    ],
+  },
 ];
 
 export interface NewsSection {
