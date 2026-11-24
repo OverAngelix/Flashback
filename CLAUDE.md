@@ -122,6 +122,14 @@ Pièges connus :
 - Certains tubes n'existent pas dans l'API de recherche (Bad Bunny, NTM, Booba, PNL) : les remplacer plutôt que de forcer.
 - Les titres de la liste d'origine peuvent être inexacts (« Les yeux revolver » est en réalité « Elle a les yeux revolver ») : un échec de correspondance vient souvent de là, regarder `catalog-misses.json`.
 
+## Pubs (réseaux sociaux)
+
+Dans `marketing/` : une page HTML par format, `instagram.html` (publication, 1080x1350), `story.html` (story Instagram, 1080x1920 ; Instagram recouvre environ 250 px en haut et en bas, d'où les marges) et `twitter.html` (1600x900), qui partagent `pub.css` (couleurs, polices et cartes du jeu) et `pub.js` (logo, icônes, cartes remplies d'après `data-card="année|titre|sous-titre|couleur|couleur|étiquette"` et `data-mystery`). `./render.sh` les rend en `flashback-<format>.png` avec Chrome sans interface (`CHROME_PATH` si besoin). Les polices sont lues dans `client/node_modules` : faire `npm install` dans `client/` avant. Les textes à poster sont dans `textes.md` (le tweet fait environ 275 caractères au compte de X, donc il n'y a presque plus de marge).
+
+- Pas de vraies pochettes Apple dans les pubs (droits des labels) : les cartes sont des vinyles dessinés.
+- Après une modification, relancer `render.sh` puis regarder les PNG : un débordement (carte mystère sur le sous-titre, titre qui passe sur plusieurs lignes) ne se voit que là. La carte mystère (`.drop`) est en position absolue au-dessus de la frise, donc elle ne compte pas dans la mise en page : dans `story.html`, `.stage` lui réserve sa hauteur avec `padding-top`.
+- Les chiffres annoncés (nombre de titres, objectif de 10 cartes, 12 niveaux) doivent suivre le jeu : le nombre de titres jouables est donné par `tracks` dans `/api/health`.
+
 ## Déploiement
 
 Sur le VPS, comme SDPC (GitHub Actions, registre privé, K3s, Keel, Traefik) : voir [DEPLOY.md](DEPLOY.md). L'image client se construit depuis la racine du dépôt (alias `@server`), et Traefik envoie `/api` et `/ws` au serveur. Aucun média à envoyer : seul `catalog.json`, dans l'image.

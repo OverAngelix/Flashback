@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Flashback · Instagram</title>
+<link rel="stylesheet" href="pub.css" />
+<style>
+  :root { --W: 1080px; --H: 1350px; }
+  .page { position: relative; height: 100%; padding: 72px 80px 76px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .brand { font-size: 44px; }
+  h1 { margin-top: 40px; font-size: 86px; }
+  .sub { margin-top: 22px; font-size: 32px; line-height: 1.35; max-width: 860px; }
+  .stage { position: relative; margin-top: auto; --card-w: 176px; --slot: 62px; --gap: 22px; }
+  .target-wrap { position: relative; }
+  .drop {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 84px);
+    --card-w: 212px;
+    transform: translateX(-50%) rotate(-5deg);
+  }
+  .arrow {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 18px);
+    transform: translateX(-50%);
+    width: 6px;
+    height: 52px;
+    background: repeating-linear-gradient(180deg, var(--pink) 0 12px, transparent 12px 22px);
+    border-radius: 3px;
+  }
+  .chips { margin-top: 52px; display: flex; gap: 16px; font-size: 25px; }
+  .chips .chip svg { color: var(--cyan); }
+  .cta { margin-top: 40px; font-size: 40px; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="brand" data-brand>Flashback</div>
+
+    <h1 class="display">Tu connais la chanson.<br /><span class="grad-text">Mais de quelle année ?</span></h1>
+    <p class="sub muted">30 secondes d'extrait, une seule écoute.<br />Place le titre au bon endroit dans ta frise.</p>
+
+    <div class="stage">
+      <div class="timeline">
+        <div data-card="1978|Disco|Années 70|#ff3d9a|#ffc94d|#ffc94d"></div>
+        <div class="target-wrap">
+          <div class="arrow"></div>
+          <div class="drop" data-mystery="Titre mystère|Avant ou après ?"></div>
+          <div class="slot target">+</div>
+        </div>
+        <div data-card="1994|Rock|Années 90|#7c5cff|#27d9ff|#27d9ff"></div>
+        <div class="slot">+</div>
+        <div data-card="2011|Électro|Années 2010|#2ee59d|#7c5cff|#2ee59d"></div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip" data-icon="tv">La télé joue le son</span>
+      <span class="chip" data-icon="phone">Les téléphones en manette</span>
+      <span class="chip" data-icon="check">Sans appli</span>
+    </div>
+    <div class="cta" data-icon="arrow">flashback.moonfeather.fr</div>
+  </div>
+  <script src="pub.js"></script>
+</body>
+</html>

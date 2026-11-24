@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Flashback · Story Instagram</title>
+<link rel="stylesheet" href="pub.css" />
+<style>
+  /* Instagram recouvre environ 250 px en haut et en bas : tout le contenu reste dans la zone centrale. */
+  :root { --W: 1080px; --H: 1920px; }
+  .page { position: relative; height: 100%; padding: 250px 70px 260px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .brand { font-size: 50px; }
+  h1 { margin-top: 48px; font-size: 88px; }
+  .sub { margin-top: 28px; font-size: 34px; line-height: 1.38; }
+  .stage { position: relative; margin: auto 0 60px; padding-top: 340px; --card-w: 196px; --slot: 66px; --gap: 22px; }
+  .target-wrap { position: relative; }
+  .drop { position: absolute; left: 50%; bottom: calc(100% + 90px); --card-w: 240px; transform: translateX(-50%) rotate(-5deg); }
+  .arrow {
+    position: absolute; left: 50%; bottom: calc(100% + 18px); transform: translateX(-50%);
+    width: 6px; height: 56px; border-radius: 3px;
+    background: repeating-linear-gradient(180deg, var(--pink) 0 12px, transparent 12px 22px);
+  }
+  .chips { margin-top: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; font-size: 28px; max-width: 900px; }
+  .chips .chip svg { color: var(--cyan); }
+  .cta { margin-top: 48px; font-size: 42px; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="brand" data-brand>Flashback</div>
+
+    <h1 class="display">Tu connais la chanson.<br /><span class="grad-text">Mais de quelle année ?</span></h1>
+    <p class="sub muted">30 secondes d'extrait, une seule écoute.<br />Place le titre au bon endroit dans ta frise.</p>
+
+    <div class="stage">
+      <div class="timeline">
+        <div data-card="1978|Disco|Années 70|#ff3d9a|#ffc94d|#ffc94d"></div>
+        <div class="target-wrap">
+          <div class="arrow"></div>
+          <div class="drop" data-mystery="Titre mystère|Avant ou après ?"></div>
+          <div class="slot target">+</div>
+        </div>
+        <div data-card="1994|Rock|Années 90|#7c5cff|#27d9ff|#27d9ff"></div>
+        <div class="slot">+</div>
+        <div data-card="2011|Électro|Années 2010|#2ee59d|#7c5cff|#2ee59d"></div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip" data-icon="tv">La télé joue le son</span>
+      <span class="chip" data-icon="phone">Les téléphones en manette</span>
+      <span class="chip" data-icon="check">Sans appli</span>
+      <span class="chip" data-icon="star">Solo : 12 niveaux</span>
+    </div>
+    <div class="cta" data-icon="arrow">flashback.moonfeather.fr</div>
+  </div>
+  <script src="pub.js"></script>
+</body>
+</html>

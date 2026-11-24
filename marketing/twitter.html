@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Flashback · Twitter</title>
+<link rel="stylesheet" href="pub.css" />
+<style>
+  :root { --W: 1600px; --H: 900px; }
+  .page { position: relative; height: 100%; display: grid; grid-template-columns: 900px 1fr; padding: 70px 0 70px 90px; }
+  .left { display: flex; flex-direction: column; align-items: flex-start; }
+  .brand { font-size: 42px; }
+  h1 { margin-top: 64px; font-size: 80px; white-space: nowrap; }
+  .sub { margin-top: 26px; font-size: 30px; line-height: 1.4; }
+  .chips { margin-top: auto; display: flex; flex-wrap: wrap; gap: 14px; font-size: 23px; max-width: 820px; }
+  .chips .chip svg { color: var(--cyan); }
+  .cta { margin-top: 34px; font-size: 36px; }
+  .right { position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 92px; overflow: visible; }
+  .stage { --card-w: 168px; --slot: 60px; --gap: 18px; }
+  .target-wrap { position: relative; }
+  .drop { position: absolute; left: 50%; bottom: calc(100% + 96px); --card-w: 236px; transform: translateX(-50%) rotate(-5deg); }
+  .arrow {
+    position: absolute; left: 50%; bottom: calc(100% + 16px); transform: translateX(-50%);
+    width: 6px; height: 64px; border-radius: 3px;
+    background: repeating-linear-gradient(180deg, var(--pink) 0 12px, transparent 12px 22px);
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="left">
+      <div class="brand" data-brand>Flashback</div>
+      <h1 class="display">Tu connais la chanson.<br /><span class="grad-text">Mais de quelle année ?</span></h1>
+      <p class="sub muted">Le blind test où la date compte : écoute 30 secondes,<br />place le titre dans ta frise. Premier à 10 cartes gagne.</p>
+      <div class="chips">
+        <span class="chip" data-icon="tv">La télé joue le son</span>
+        <span class="chip" data-icon="phone">Les téléphones en manette</span>
+        <span class="chip" data-icon="star">Solo : 12 niveaux</span>
+      </div>
+      <div class="cta" data-icon="arrow">flashback.moonfeather.fr</div>
+    </div>
+    <div class="right">
+      <div class="stage">
+        <div class="timeline">
+          <div data-card="1978|Disco|Années 70|#ff3d9a|#ffc94d|#ffc94d"></div>
+          <div class="target-wrap">
+            <div class="arrow"></div>
+            <div class="drop" data-mystery="Titre mystère|Avant ou après ?"></div>
+            <div class="slot target">+</div>
+          </div>
+          <div data-card="1994|Rock|Années 90|#7c5cff|#27d9ff|#27d9ff"></div>
+          <div class="slot">+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="pub.js"></script>
+</body>
+</html>

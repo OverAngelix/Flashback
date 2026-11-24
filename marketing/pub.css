@@ -1,0 +1,175 @@
+/* Visuels publicitaires : mêmes couleurs, polices et cartes que le jeu (client/src/styles.css, TrackCard). */
+@font-face {
+  font-family: "Fredoka";
+  src: url("../client/node_modules/@fontsource-variable/fredoka/files/fredoka-latin-wght-normal.woff2") format("woff2");
+  font-weight: 300 700;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("../client/node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+}
+:root {
+  --bg: #0b0720;
+  --pink: #ff3d9a;
+  --violet: #7c5cff;
+  --cyan: #27d9ff;
+  --gold: #ffc94d;
+  --green: #2ee59d;
+  --border: rgba(255, 255, 255, 0.14);
+  --grad: linear-gradient(135deg, var(--pink), var(--violet));
+  --grad-wide: linear-gradient(90deg, var(--pink), var(--violet) 55%, var(--cyan));
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: var(--W); height: var(--H); overflow: hidden; }
+body {
+  position: relative;
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  background:
+    radial-gradient(60% 45% at 8% 6%, rgba(255, 61, 154, 0.34), transparent 70%),
+    radial-gradient(55% 50% at 100% 85%, rgba(124, 92, 255, 0.42), transparent 70%),
+    radial-gradient(40% 35% at 90% 10%, rgba(39, 217, 255, 0.14), transparent 70%),
+    var(--bg);
+}
+/* Notes et grain discrets en fond. */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+}
+.display { font-family: "Fredoka", sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.02; }
+.grad-text {
+  background: var(--grad-wide);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.muted { color: rgba(255, 255, 255, 0.66); }
+
+.brand { display: flex; align-items: center; gap: 0.35em; font-family: "Fredoka"; font-weight: 700; }
+.brand svg { width: 1.25em; height: 1.25em; }
+
+/* --- Frise ----------------------------------------------------------------------------------- */
+.timeline { position: relative; display: flex; align-items: center; gap: var(--gap); }
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: -200px;
+  right: -200px;
+  top: 50%;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35) 15%, rgba(255, 255, 255, 0.35) 85%, transparent);
+}
+.card {
+  --w: var(--card-w);
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: var(--w);
+  overflow: hidden;
+  border-radius: calc(var(--w) * 0.11);
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)), #150e38;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.cover { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--cover); }
+.cover svg.vinyl { position: absolute; width: 82%; left: 9%; top: 9%; }
+.year {
+  position: absolute;
+  left: calc(var(--w) * 0.06);
+  bottom: calc(var(--w) * 0.06);
+  padding: 0 calc(var(--w) * 0.075);
+  border-radius: 999px;
+  font-family: "Fredoka";
+  font-weight: 700;
+  font-size: calc(var(--w) * 0.19);
+  line-height: 1.32;
+  background: var(--grad);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+.meta { padding: calc(var(--w) * 0.07) calc(var(--w) * 0.09) calc(var(--w) * 0.09); }
+.meta .t { font-family: "Fredoka"; font-weight: 600; font-size: calc(var(--w) * 0.11); white-space: nowrap; }
+.meta .a { font-size: calc(var(--w) * 0.085); color: rgba(255, 255, 255, 0.6); white-space: nowrap; }
+
+.slot {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: var(--slot);
+  height: var(--slot);
+  border-radius: 50%;
+  border: 3px dashed rgba(255, 255, 255, 0.85);
+  background: #120b30;
+  color: #fff;
+  font-family: "Fredoka";
+  font-weight: 600;
+  font-size: calc(var(--slot) * 0.62);
+  line-height: 1;
+}
+.slot.target {
+  border: 0;
+  background: var(--grad);
+  box-shadow: 0 0 0 6px rgba(255, 61, 154, 0.25), 0 0 40px rgba(255, 61, 154, 0.7);
+}
+
+/* La carte mystère, au-dessus de l'emplacement visé. */
+.mystery {
+  border-color: transparent;
+  box-shadow: 0 0 0 3px var(--pink), 0 0 60px rgba(255, 61, 154, 0.6), 0 24px 50px rgba(0, 0, 0, 0.55);
+}
+.mystery .cover { display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, #3a1f7a, #160c3c 75%); }
+.play {
+  position: relative;
+  width: 52%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--grad);
+  box-shadow: 0 10px 30px rgba(255, 61, 154, 0.5);
+}
+.play::after {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: conic-gradient(var(--cyan) 0 62%, rgba(255, 255, 255, 0.14) 62% 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+}
+.play svg { width: 42%; margin-left: 8%; }
+.mystery .year { background: #fff; color: #2a1660; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 0.95em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip svg { width: 1.15em; height: 1.15em; flex-shrink: 0; }
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  padding: 0.55em 1.2em;
+  border-radius: 999px;
+  background: var(--grad);
+  box-shadow: 0 14px 40px rgba(255, 61, 154, 0.45);
+  font-family: "Fredoka";
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cta svg { width: 1em; height: 1em; }
