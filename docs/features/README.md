@@ -38,6 +38,7 @@ Statuts : À faire · En cours · Terminé · V2 (reporté).
 - Nombre de cartes pour gagner : 10 par défaut, réglable de 3 à 10 dans le salon par l'hôte ou le chef de partie.
 - Un joueur peut quitter à tout moment : en cours de partie, il est retiré avec sa frise et les autres continuent. L'hôte qui quitte met fin à la partie pour tous.
 - Front : Vite, Vue 3, Vuetify 4 et TypeScript.
+- Mentions légales (`/legal`) : éditeur OverAngelix, particulier non professionnel qui ne publie pas ses coordonnées (LCEN), hébergeur OVH SAS, contact par Discord ou X (pas d'adresse e-mail). Jeu gratuit, sans publicité, achats ni dons.
 - Sur téléphone, le jeu se joue en paysage (obligatoire pendant la partie) pour faire glisser la frise.
 - Le joueur doit toucher l'écran pour lancer la musique (restriction d'autoplay des navigateurs mobiles).
 - Version actuelle : 1214 titres jouables, uniquement des titres connus.

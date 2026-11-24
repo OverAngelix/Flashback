@@ -17,7 +17,7 @@ Un jeu musical de type Hitster entre amis. À son tour, un joueur écoute un ext
 
 ## Déroulement d'une partie
 
-1. **Menu** (`/`) : Héberger, Rejoindre, Solo, Multijoueur (grisé, V2), Paramètres. Musique d'ambiance générée par le navigateur. À la première visite, une modale présente le jeu ; à chaque nouvelle version, elle revient une fois avec les seules nouveautés (version vue gardée dans le navigateur).
+1. **Menu** (`/`) : Héberger, Rejoindre, Solo, Multijoueur (grisé, V2), Paramètres. Musique d'ambiance générée par le navigateur. À la première visite, une modale présente le jeu ; à chaque nouvelle version, elle revient une fois avec les seules nouveautés (version vue gardée dans le navigateur). En bas, deux lignes de mentions (jeu non officiel, extraits fournis par iTunes) et les liens vers la page des mentions légales et de confidentialité (`/legal`), dont le retrait de contenu et le contact.
 2. **Création** : « Héberger » crée une salle (code de 6 caractères) et débloque l'audio de l'écran hôte.
 3. **Salon** (`lobby`) : les joueurs rejoignent en tapant le code, en scannant le QR code ou en ouvrant le lien copié depuis l'écran hôte ou le téléphone d'un joueur (`/join/CODE`), choisissent un nom (16 caractères, unique) et un avatar parmi 10 (les avatars pris sont grisés). Le chef ou l'hôte choisit les catégories, le nombre de cartes pour gagner (de 3 à 10, 10 par défaut ; les autres joueurs le voient sur leur téléphone) et s'il veut le commentateur (bêta, coupé par défaut), puis lance la partie (2 à 10 joueurs).
 4. **Départ** : chaque joueur reçoit une carte de départ, déjà révélée, dans sa frise.

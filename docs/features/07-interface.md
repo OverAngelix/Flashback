@@ -19,6 +19,7 @@ Direction : « néon sur fond de nuit », disques vinyle et notes de musique. Th
 - [x] Transitions entre écrans (page et phase), `prefers-reduced-motion` respecté
 - [x] Lisible sur un écran de 740x300 (téléphone en paysage) et de 320 à 390 px de large en portrait
 - [x] Nouveautés : modale versionnée sur le menu, après l'écran de démarrage (`client/src/news.ts`, `NewsDialog`) ; présentation complète au nouveau venu (dernière formulation de chaque élément), nouveautés seules à qui a vu une version précédente (les éléments `updateOnly`, comme les corrections de la 1.2, ne sont montrés qu'à eux) ; fermée d'une façon ou d'une autre, la version est notée dans le navigateur (`flashback.news`)
+- [x] Mentions en bas du menu (jeu non officiel et gratuit, extraits et pochettes fournis par iTunes, droits aux artistes) avec liens vers la page `/legal` (`LegalView`) : projet, éditeur (particulier non professionnel, LCEN) et hébergeur (OVH), droits et ressources, retrait de contenu, confidentialité (données en mémoire, journaux, stockage local, Apple), règles d'usage, contact (Discord et X OverAngelix) ; le menu tient toujours à 1280x720
 - [ ] Sons d'interface et jingle de victoire
 - [ ] Écouter la musique de menu sur de vrais haut-parleurs et ajuster le mixage (vérifié seulement par mesure : niveau, saturation, silences)
 - [ ] Icône d'application (favicon, écran d'accueil du téléphone) et manifeste web

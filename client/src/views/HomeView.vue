@@ -71,6 +71,19 @@ function hostGame() {
         <span class="muted sub">Son, affichage, nom</span>
       </router-link>
     </nav>
+
+    <footer class="credits muted" data-testid="menu-credits">
+      <p>
+        Jeu non officiel, gratuit et sans but lucratif, ni affilié ni approuvé par Apple. Extraits et pochettes fournis par iTunes, propriété de leurs artistes et
+        ayants droit.
+      </p>
+      <p class="sign">
+        © 2026 Flashback · un jeu d'<strong>OverAngelix</strong> ·
+        <router-link to="/legal" data-testid="menu-legal">Mentions légales et confidentialité</router-link> ·
+        <router-link to="/legal#retrait">Retrait de contenu</router-link> ·
+        <router-link to="/legal#contact">Contact</router-link>
+      </p>
+    </footer>
   </div>
 </template>
 
@@ -82,7 +95,40 @@ function hostGame() {
   justify-content: center;
   gap: clamp(18px, 4dvh, 48px);
   min-height: 100dvh;
-  padding: 24px clamp(16px, 4vw, 56px) clamp(24px, 6dvh, 80px);
+  padding: 24px clamp(16px, 4vw, 56px) 10px;
+}
+/* Marges automatiques : le logo et les boîtes restent centrés dans la place libre, les mentions en bas de page. */
+.logo {
+  margin-top: auto;
+}
+.tiles {
+  margin-bottom: auto;
+}
+/* Collées aux boîtes plutôt qu'à l'écart du gap de .menu : le menu doit tenir sans défiler à 1280x720. */
+.credits {
+  max-width: 980px;
+  margin: calc(6px - clamp(18px, 4dvh, 48px)) auto 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0.8;
+}
+.credits p {
+  margin: 0;
+}
+.credits .sign {
+  margin-top: 2px;
+}
+.credits a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+.credits a:hover {
+  color: #fff;
+}
+.credits strong {
+  color: var(--gold);
+  font-weight: 600;
 }
 .logo {
   display: flex;
