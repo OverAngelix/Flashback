@@ -52,6 +52,8 @@ export class Room {
     private readonly clock: () => number,
     rng?: () => number,
     solo?: SoloRoomOptions,
+    /** Appelé à chaque lancement de partie (journal du serveur). */
+    private readonly onStart?: (room: Room) => void,
   ) {
     this.solo = !!solo;
     this.level = solo?.level ?? null;
@@ -63,6 +65,12 @@ export class Room {
       solo: solo ? { goal: this.level?.goal ?? null } : undefined,
     });
     this.lastActivity = clock();
+  }
+
+  /** Lance la partie (salon, ou niveau de campagne qui n'en a pas). */
+  start(): void {
+    this.game.start();
+    this.onStart?.(this);
   }
 
   touch(): void {
@@ -158,7 +166,7 @@ export class Room {
         this.commentator = message.enabled;
         break;
       case "host:start":
-        this.game.start();
+        this.start();
         break;
       case "host:advance":
         // Message obsolète (double clic, ou état déjà passé à la suite) : on l'ignore sans erreur.

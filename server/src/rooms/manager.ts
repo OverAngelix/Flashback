@@ -26,6 +26,8 @@ export interface RoomManagerOptions {
   ttlMs?: number;
   maxRooms?: number;
   onError?: (error: unknown) => void;
+  /** Appelé à chaque lancement de partie (rejouer compris), pour le journal du serveur. */
+  onGameStart?: (room: Room) => void;
 }
 
 export interface RoomInfo {
@@ -57,7 +59,7 @@ export class RoomManager {
     do {
       code = Array.from({ length: ROOM_CODE_LENGTH }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
     } while (this.rooms.has(code));
-    const room = new Room(code, this.options.catalog, this.now, this.options.rng, solo);
+    const room = new Room(code, this.options.catalog, this.now, this.options.rng, solo, this.options.onGameStart);
     this.rooms.set(code, room);
     return room;
   }
@@ -182,7 +184,7 @@ export class Session {
         try {
           joined = room.join(this.conn, message.name, message.avatar);
           // Un niveau de campagne a tout ce qu'il faut : pas de salon.
-          if (level) room.game.start();
+          if (level) room.start();
         } catch (error) {
           this.manager.close(room);
           throw error;

@@ -14,7 +14,14 @@ if (skipped.length > 0) {
   for (const q of skipped) console.warn(`  - ${q}`);
 }
 
-const rooms = new RoomManager({ catalog });
+const rooms = new RoomManager({
+  catalog,
+  onGameStart: (room) => {
+    const names = room.game.players.map((p) => p.name).join(", ");
+    const where = room.solo ? `solo${room.level ? `, niveau ${room.level.id}` : ""}` : `salle ${room.code}`;
+    console.log(`[INFO] PARTIE COMMENCE avec les utilisateurs : ${names} (${where})`);
+  },
+});
 const clientDir = resolve(DEFAULT_DATA_DIR, "../../client/dist");
 if (!existsSync(clientDir)) console.warn("client/dist absent : lancer npm run build dans client/ (ou utiliser le serveur de dev Vite).");
 // Extraits et pochettes sont lus chez Apple : leurs adresses sont vérifiées au démarrage puis chaque jour.

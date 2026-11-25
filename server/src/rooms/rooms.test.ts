@@ -785,3 +785,16 @@ describe("parseClientMessage", () => {
     assert.equal(parseClientMessage(`{"type":"player:join","code":"ABCDEF","name":"${"x".repeat(65)}","avatar":0}`), null);
   });
 });
+
+describe("journal des lancements", () => {
+  it("prévient à chaque partie lancée, au salon comme en niveau solo", () => {
+    const starts: string[][] = [];
+    manager = new RoomManager({ catalog, now: () => clock, rng: () => 0.999999, onError: (e) => { throw e; }, onGameStart: (room) => starts.push(room.game.players.map((p) => p.name)) });
+    const l = lobby();
+    assert.deepEqual(starts, []);
+    l.host.send({ type: "host:start" });
+    assert.deepEqual(starts, [["Ana", "Ben"]]);
+    client().send({ type: "solo:create", level: "premiers-pas", name: "Solène", avatar: 2 });
+    assert.deepEqual(starts, [["Ana", "Ben"], ["Solène"]]);
+  });
+});
