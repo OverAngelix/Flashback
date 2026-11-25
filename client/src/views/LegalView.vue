@@ -34,7 +34,7 @@ watch(() => route.hash, scrollToHash);
       <BrandMark class="mark" />
       <div>
         <h1 class="display t-md">Mentions légales et confidentialité</h1>
-        <p class="muted small">Dernière mise à jour : 24 novembre 2026</p>
+        <p class="muted small">Dernière mise à jour : 25 novembre 2026</p>
       </div>
     </header>
 
@@ -99,8 +99,9 @@ watch(() => route.hash, scrollToHash);
       </p>
       <h3 class="display">Journaux techniques</h3>
       <p>
-        Comme la plupart des sites, le serveur note les requêtes qu'il reçoit (adresse IP comprise) pour fonctionner et se protéger des abus. Ces journaux ne sont ni
-        analysés ni partagés, et sont effacés à chaque mise à jour du serveur.
+        Comme la plupart des sites, le serveur note les requêtes qu'il reçoit (adresse IP comprise) pour fonctionner et se protéger des abus, ainsi que le lancement de
+        chaque partie avec les pseudos des joueurs, pour savoir combien de parties sont jouées. Ces journaux ne sont
+        pas partagés et sont effacés à chaque mise à jour du serveur.
       </p>
       <h3 class="display">Sur ton appareil</h3>
       <p>Le jeu enregistre dans le stockage local de ton navigateur (ce ne sont pas des cookies, et rien n'est envoyé ailleurs) :</p>
